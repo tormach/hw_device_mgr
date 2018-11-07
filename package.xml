@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>hal_402_device_mgr</name>
+  <version>0.0.1</version>
+  <description>Machinekit hal_402_device_mgr package</description>
+  <maintainer email="bdebruijn@luminize.nl">bdb</maintainer>
+  <license>MPLv2</license>
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
