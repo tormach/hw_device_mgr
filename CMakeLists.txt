@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(machinekit_402_device_mgr)
+project(hal_402_device_mgr)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
