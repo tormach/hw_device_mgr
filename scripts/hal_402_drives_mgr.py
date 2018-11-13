@@ -5,9 +5,27 @@ import rospy
 import hal
 
 
+class pin_402(object):
+
+    def __init__(self, name, dir, type, bit_pos):
+        self.name = name
+        self.dir = dir
+        self.type = type
+        self.bit_pos = bit_pos
+        self.halpin = None
+
+    def set_parent_comp(self, component):
+        self.parent_comp = component
+
+    def create_halpin(self):
+        self.halpin = self.parent_comp.newpin(self.name, self.type, self.dir)
+
+
 class drive_402(object):
 
-    def __init__(self, drive_name):
+    def __init__(self, drive_name, parent):
+        # hal_402_drives_mgr
+        self.parent = parent
         # bitmask and value
         self.drive_name = drive_name
         self.states_402 = {
@@ -20,9 +38,90 @@ class drive_402(object):
             'FAULT REACTION ACTIVE':    [0x4F, 0x0F],
             'QUICK STOP ACTIVE':        [0x6F, 0x07]
         }
+        self.pins_402 = {
+            # bits 0-3 and 7 and 8 of the controlword, bit 4-6 and
+            # 9 - 15 intentionally not implemented yest
+            'switch_on':            pin_402('%s.switch_on'
+                                            % self.drive_name,
+                                            hal.HAL_OUT,
+                                            hal.HAL_BIT,
+                                            0),
+            'enable_voltage':       pin_402('%s.enable_voltage'
+                                            % self.drive_name,
+                                            hal.HAL_OUT,
+                                            hal.HAL_BIT,
+                                            1),
+            'quick_stop':           pin_402('%s.quick_stop'
+                                            % self.drive_name,
+                                            hal.HAL_OUT,
+                                            hal.HAL_BIT,
+                                            2),
+            'enable_operation':     pin_402('%s.enable_operation'
+                                            % self.drive_name,
+                                            hal.HAL_OUT,
+                                            hal.HAL_BIT,
+                                            3),
+            'fault_reset':          pin_402('%s.fault_reset'
+                                            % self.drive_name,
+                                            hal.HAL_OUT,
+                                            hal.HAL_BIT,
+                                            7),
+            'halt':                 pin_402('%s.halt'
+                                            % self.drive_name,
+                                            hal.HAL_OUT,
+                                            hal.HAL_BIT,
+                                            8),
+            # bits in the status word, bit 8 - 15 intentionally
+            # not implemented yet
+            'ready_to_switch_on':   pin_402('%s.ready_to_switch_on'
+                                            % self.drive_name,
+                                            hal.HAL_IN,
+                                            hal.HAL_BIT,
+                                            0),
+            'switched_on':          pin_402('%s.switched_on'
+                                            % self.drive_name,
+                                            hal.HAL_IN,
+                                            hal.HAL_BIT,
+                                            1),
+            'operation_enabled':    pin_402('%s.operation_enabled'
+                                            % self.drive_name,
+                                            hal.HAL_IN,
+                                            hal.HAL_BIT,
+                                            2),
+            'fault':                pin_402('%s.fault'
+                                            % self.drive_name,
+                                            hal.HAL_IN,
+                                            hal.HAL_BIT,
+                                            3),
+            'voltage_enabled':      pin_402('%s.voltage_enabled'
+                                            % self.drive_name,
+                                            hal.HAL_IN,
+                                            hal.HAL_BIT,
+                                            4),
+            # because of duplicity of pin 'quick_stop' of control word
+            # this pin is called quick_stop_active
+            'quick_stop_active':    pin_402('%s.quick_stop_active'
+                                            % self.drive_name,
+                                            hal.HAL_IN,
+                                            hal.HAL_BIT,
+                                            5),
+            'switch_on_disabled':   pin_402('%s.switch_on_disabled'
+                                            % self.drive_name,
+                                            hal.HAL_IN,
+                                            hal.HAL_BIT,
+                                            6),
+            'warning':              pin_402('%s.warning'
+                                            % self.drive_name,
+                                            hal.HAL_IN,
+                                            hal.HAL_BIT,
+                                            7)
+        }
+        self.create_pins()
 
-    def create_pins():
-        pass
+    def create_pins(self):
+        for key, pin in self.pins_402.items():
+            pin.set_parent_comp(self.parent.halcomp)
+            pin.create_halpin()
 
     def create_topics():
         pass
@@ -49,7 +148,7 @@ class drive_402(object):
 class hal_402_drives_mgr(object):
 
     def __init__(self):
-        self.compname = 'hal_402_drives_mgr'
+        self.compname = 'hal_402_mgr'
         self.drives = dict()
 
         # create ROS node
@@ -60,8 +159,10 @@ class hal_402_drives_mgr(object):
         self.halcomp = hal.component(self.compname)
         rospy.loginfo("%s: HAL component created" % self.compname)
 
-        # create drives
+        # create drives which create pins
         self.create_drives()
+        self.halcomp.ready()
+
         self.create_service()
         self.create_publisher()
 
@@ -69,7 +170,7 @@ class hal_402_drives_mgr(object):
         for i in range(0, 6):
             # create 6 drives, later do this from ROS parameters
             drivename = "drive_%s" % (i + 1)
-            self.drives[drivename] = drive_402(drivename)
+            self.drives[drivename] = drive_402(drivename, self)
             rospy.loginfo("%s: %s created" % (self.compname, drivename))
 
     def create_publisher(self):
@@ -87,6 +188,7 @@ class hal_402_drives_mgr(object):
 
 
 def call_cleanup():
+    # need to unload the userland component here?
     rospy.loginfo("%s: Stopping ..." % hal_402_drives_mgr.compname)
     rospy.loginfo("%s: Stopped" % hal_402_drives_mgr.compname)
 
