@@ -3,6 +3,7 @@
 
 import rospy
 import hal
+from hal_402_device_mgr.msg import msg_error, msg_status
 
 
 class pin_402(object):
@@ -123,8 +124,33 @@ class drive_402(object):
             pin.set_parent_comp(self.parent.halcomp)
             pin.create_halpin()
 
-    def create_topics():
-        pass
+    def create_topics(self):
+        # for each drive, an error and status topic are created
+        # messages are defined in msg/ directory of this package
+        self.topics = {
+            'error': rospy.Publisher('%s/%s_error' %
+                                     (self.parent.compname, self.drive_name),
+                                     msg_error,
+                                     queue_size=1,
+                                     latch=True),
+            'status': rospy.Publisher('%s/%s_status' %
+                                      (self.parent.compname, self.drive_name),
+                                      msg_status,
+                                      queue_size=1,
+                                      latch=True)
+        }
+
+    def test_publisher(self):
+        # iterate dict and send a test message
+        for key, topic in self.topics.items():
+            print(topic)
+            message = \
+                'This is a testmessage for the {} channel of {}'.format(
+                    key, self.drive_name)
+            if key == 'error':
+                topic.publish(msg_error(message, 0))
+            if key == 'status':
+                topic.publish(msg_status(message, 'unknown'))
 
     def get_halpins():
         pass
@@ -174,7 +200,13 @@ class hal_402_drives_mgr(object):
             rospy.loginfo("%s: %s created" % (self.compname, drivename))
 
     def create_publisher(self):
-        pass
+        # todo, read from ROS param server
+        self.update_rate = 1  # Hz
+        self.rate = rospy.Rate(self.update_rate)
+        # create publishers for topics and send out a test message
+        for key, drive in self.drives.items():
+            drive.create_topics()
+            drive.test_publisher()
 
     def create_service(self):
         pass
@@ -185,6 +217,7 @@ class hal_402_drives_mgr(object):
     def run(self):
         while not rospy.is_shutdown():
             self.inspect_hal_pins()
+            self.rate.sleep()
 
 
 def call_cleanup():
