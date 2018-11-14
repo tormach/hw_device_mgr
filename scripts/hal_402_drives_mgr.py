@@ -30,6 +30,8 @@ class drive_402(object):
         self.parent = parent
         # bitmask and value
         self.drive_name = drive_name
+        self.prev_state = 'unknown'
+        self.curr_state = 'unknown'
         self.states_402 = {
             'NOT READY TO SWITCH ON':   [0x4F, 0x00],
             'SWITCH ON DISABLED':       [0x4F, 0x40],
@@ -144,7 +146,6 @@ class drive_402(object):
     def test_publisher(self):
         # iterate dict and send a test message
         for key, topic in self.topics.items():
-            print(topic)
             message = \
                 'This is a testmessage for the {} channel of {}'.format(
                     key, self.drive_name)
@@ -177,6 +178,8 @@ class hal_402_drives_mgr(object):
     def __init__(self):
         self.compname = 'hal_402_mgr'
         self.drives = dict()
+        self.prev_robot_state = 'unknown'
+        self.curr_robot_state = 'unknown'
 
         # create ROS node
         rospy.init_node(self.compname)
@@ -211,7 +214,7 @@ class hal_402_drives_mgr(object):
 
     def cb_robot_state_service(self, req):
         # the value of the requested state is in req.req_state
-        pass
+        return self.curr_robot_state
 
     def cb_test_service_cb(self, req):
         print(req.req_state)  # show abcd in the terminsal
@@ -220,15 +223,14 @@ class hal_402_drives_mgr(object):
         return "test service return string"
 
     def create_service(self):
-        # $ rosservice call /drives_mgr abcd
+        # $ rosservice call /hal_402_drives_mgr abcd
         # will call the function callback, that will receive the
         # service message as an argument
         # testin routine:
-        # self.service = rospy.Service('drives_mgr',
+        # self.service = rospy.Service('hal_402_drives_mgr',
         #                             srv_robot_state,
         #                             self.cb_test_service)
-        self.service = rospy.Service('/%s/drives_mgr' %
-                                     self.compname,
+        self.service = rospy.Service('hal_402_drives_mgr',
                                      srv_robot_state,
                                      self.cb_robot_state_service)
         rospy.loginfo("%s: service %s created" %
