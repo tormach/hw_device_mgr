@@ -1,0 +1,5 @@
+# request a machine state, ON of OFF
+string req_state
+---
+# reply, can be ON, OFF or ERROR
+string rep_state

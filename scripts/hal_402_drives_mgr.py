@@ -4,6 +4,7 @@
 import rospy
 import hal
 from hal_402_device_mgr.msg import msg_error, msg_status
+from hal_402_device_mgr.srv import srv_robot_state
 
 
 class pin_402(object):
@@ -208,8 +209,31 @@ class hal_402_drives_mgr(object):
             drive.create_topics()
             drive.test_publisher()
 
-    def create_service(self):
+    def cb_robot_state_service(self, req):
+        # the value of the requested state is in req.req_state
         pass
+
+    def cb_test_service_cb(self, req):
+        print(req.req_state)  # show abcd in the terminsal
+        rospy.loginfo("%s: cb_test_service" % hal_402_drives_mgr.compname)
+        # the response that's returned is the return value of the callback
+        return "test service return string"
+
+    def create_service(self):
+        # $ rosservice call /drives_mgr abcd
+        # will call the function callback, that will receive the
+        # service message as an argument
+        # testin routine:
+        # self.service = rospy.Service('drives_mgr',
+        #                             srv_robot_state,
+        #                             self.cb_test_service)
+        self.service = rospy.Service('/%s/drives_mgr' %
+                                     self.compname,
+                                     srv_robot_state,
+                                     self.cb_robot_state_service)
+        rospy.loginfo("%s: service %s created" %
+                      (self.compname,
+                       self.service.resolved_name))
 
     def inspect_hal_pins(self):
         pass
