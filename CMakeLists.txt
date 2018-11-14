@@ -9,6 +9,7 @@ project(hal_402_device_mgr)
 ## is used, also find other catkin packages
 find_package(
     catkin REQUIRED
+    rospy
     std_msgs
     message_generation
 )
@@ -54,11 +55,10 @@ add_message_files(
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+    FILES
+    srv_robot_state.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
