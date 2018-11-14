@@ -15,12 +15,17 @@ class pin_402(object):
         self.type = type
         self.bit_pos = bit_pos
         self.halpin = None
+        self.local_pin_value = None
 
     def set_parent_comp(self, component):
         self.parent_comp = component
 
     def create_halpin(self):
         self.halpin = self.parent_comp.newpin(self.name, self.type, self.dir)
+
+    def set_local_value(self):
+        # put HAL pin value in lacal_pin_value
+        self.local_pin_value = self.halpin.get()
 
 
 class drive_402(object):
@@ -32,6 +37,8 @@ class drive_402(object):
         self.drive_name = drive_name
         self.prev_state = 'unknown'
         self.curr_state = 'unknown'
+        self.prev_status_word = 0
+        self.curr_status_word = 0
         self.states_402 = {
             'NOT READY TO SWITCH ON':   [0x4F, 0x00],
             'SWITCH ON DISABLED':       [0x4F, 0x40],
@@ -154,8 +161,23 @@ class drive_402(object):
             if key == 'status':
                 topic.publish(msg_status(message, 'unknown'))
 
-    def get_halpins():
-        pass
+    def read_halpins(self):
+        # get all the status pins, and save their value locally
+        for key, pin in self.pins_402.items():
+            if pin.dir == hal.HAL_IN:
+                pin.set_local_value()
+
+    def calculate_status_word(self):
+        # traverse dict and for the local values do some
+        # bitwise operation so that these input pins build
+        # up the current status word. The status word will
+        # be used for determining the 402 profile drive state
+        self.prev_status_word = self.curr_status_word
+        self.curr_status_word = 0
+        for key, pin in self.pins_402.items():
+            if pin.dir == hal.HAL_IN:
+                self.curr_status_word = (self.curr_status_word |
+                                         (pin.local_pin_value << pin.bit_pos))
 
     def set_halpins():
         pass
@@ -238,7 +260,13 @@ class hal_402_drives_mgr(object):
                        self.service.resolved_name))
 
     def inspect_hal_pins(self):
-        pass
+        for key, drive in self.drives.items():
+            drive.read_halpins()
+            drive.calculate_status_word()
+            print('{}: {} status_word: {:b}'.format(
+                                                   hal_402_drives_mgr.compname,
+                                                   drive.drive_name,
+                                                   drive.curr_status_word))
 
     def run(self):
         while not rospy.is_shutdown():
