@@ -73,12 +73,19 @@ class hal_402_mgr(object):
         for key, drive in self.drives.items():
             drive.read_halpins()
             drive.calculate_status_word()
-            print('{}: {} status_word: {:b}'.format(
+            drive.calculate_state()
+            print('{}: {} status_word: {:#010b} status: {}'.format(
                                                    self.compname,
                                                    drive.drive_name,
-                                                   drive.curr_status_word))
+                                                   drive.curr_status_word,
+                                                   drive.curr_state))
+
+    def publish_states(self):
+        for key, drive in self.drives.items():
+            drive.publish_state()
 
     def run(self):
         while not rospy.is_shutdown():
             self.inspect_hal_pins()
+            self.publish_states()
             self.rate.sleep()

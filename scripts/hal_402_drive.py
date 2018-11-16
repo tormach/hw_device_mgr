@@ -176,6 +176,26 @@ class drive_402(object):
                 self.curr_status_word = (self.curr_status_word |
                                          (pin.local_pin_value << pin.bit_pos))
 
+    def calculate_state(self):
+        self.prev_state = self.curr_state
+        for key, state in self.states_402.items():
+            # check if the value after applying the bitmask (value[0])
+            # corresponds with the value[1] to determine the current status
+            bitmaskvalue = self.curr_status_word & state[0]
+            print('--- %s' % key)
+            print('{:#010b} '.format(state[0]))
+            print('{:#010b} '.format(state[1]))
+            print('{:#010b} curr_status_word'.format(self.curr_status_word))
+            print('{:#010b} bitmaskvalue'.format(bitmaskvalue))
+            if (bitmaskvalue == state[1]):
+                self.curr_state = key
+            else:
+                self.curr_state = 'unknown'
+
+    def publish_state(self):
+        if self.drive_state_changed():
+            self.topics['status'].publish(self.drive_name, self.curr_state)
+
     def set_halpins():
         pass
 
@@ -185,8 +205,12 @@ class drive_402(object):
     def disable_drive():
         pass
 
-    def publish_drive_status():
-        pass
+    def drive_state_changed(self):
+        # only publish drive status if the status has changed
+        if (self.prev_state != self.curr_state):
+            return True
+        else:
+            return False
 
     def publish_drive_error():
         pass
