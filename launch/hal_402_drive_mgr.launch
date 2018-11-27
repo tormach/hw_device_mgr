@@ -1,6 +1,6 @@
 <launch>
   <node
-      name="hal_402_device_mgr"
+      name="hal_402_drives_mgr"
       pkg="hal_402_device_mgr"
       type="hal_402_drives_mgr.py"
       output="screen"

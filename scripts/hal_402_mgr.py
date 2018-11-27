@@ -104,12 +104,14 @@ class hal_402_mgr(object):
         i = 0
         max_attempts = len(state_402.states_402)
         while ((not self.all_equal_status(all_target_states))
-               or not (i in range(0, max_attempts))):
+               or (i < (max_attempts + 1))):
             for key, drive in self.drives.items():
                 # traverse states for all drives (parallel)
                 # ignore drives which state already is at the target state
                 if not (drive.curr_state == all_target_states):
                     drive.next_transition()
+            # give HAL time to make at least 1 cycle
+            time.sleep(0.002)
             self.inspect_hal_pins()
             self.publish_states()
             i += 1
@@ -148,11 +150,15 @@ class hal_402_mgr(object):
             drive.read_halpins()
             drive.calculate_status_word()
             drive.calculate_state()
-            # print('{}: {} status_word: {:#010b} status: {}'.format(
-            #                                        self.compname,
-            #                                        drive.drive_name,
-            #                                        drive.curr_status_word,
-            #                                        drive.curr_state))
+            # if drive.status_word_changed():
+            #     print('{}: {} status_word: {:#010b} status: {}'.format(
+            #                                         self.compname,
+            #                                         drive.drive_name,
+            #                                         drive.curr_status_word,
+            #                                         drive.curr_state))
+            # else:
+            #     do nothing cause nothing has changed
+            #     pass
 
     def publish_states(self):
         for key, drive in self.drives.items():

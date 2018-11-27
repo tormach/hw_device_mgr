@@ -1,6 +1,6 @@
 import rospy
 import hal
-import time
+
 # import messages from the ROS node
 from hal_402_device_mgr.msg import msg_error, msg_status
 
@@ -78,17 +78,17 @@ class state_machine_402(object):
         # the transition dict contains a list of tuples with bits and value
         # to can be set and reset.
         transitions = {
-            'TRANSITION_2':             [('switch_on', 1)],
-            'TRANSITION_3':             [('enable_voltage', 1),
+            'TRANSITION_2':             [('enable_voltage', 1),
                                          ('quick_stop', 1)],
+            'TRANSITION_3':             [('switch_on', 1)],
             'TRANSITION_4':             [('enable_operation', 1)],
             'TRANSITION_5':             [('enable_operation', 0)],
             'TRANSITION_6':             [('quick_stop', 0),
                                          ('enable_voltage', 0)],
-            'TRANSITION_7':             [('switch_on', 0)],
-            'TRANSITION_8':             [('enable_operation', 0),
+            'TRANSITION_7':             [('enable_operation', 0),
                                          ('quick_stop', 0),
                                          ('enable_voltage', 0)],
+            'TRANSITION_8':             [('switch_on', 0)],
             'TRANSITION_9':             [('enable_operation', 0),
                                          ('quick_stop', 0),
                                          ('enable_voltage', 0),
@@ -191,8 +191,6 @@ class drive_402(object):
             # the next state as if the drive is attached
             if (self.sim is True):
                 self.sim_set_input_status_pins(next_state)
-            # give HAL time to make at least 1 cycle
-            time.sleep(0.002)
 
     def create_pins(self):
         for key, pin in self.pins_402.items():
@@ -243,6 +241,12 @@ class drive_402(object):
                 self.curr_status_word = (self.curr_status_word |
                                          (pin.local_pin_value << pin.bit_pos))
 
+    def status_word_changed(self):
+        if not (self.prev_status_word == self.curr_status_word):
+            return True
+        else:
+            return False
+
     def calculate_state(self):
         self.prev_state = self.curr_state
         for key, state in state_machine_402.states_402.items():
@@ -273,7 +277,7 @@ class drive_402(object):
 
     def drive_state_changed(self):
         # only publish drive status if the status has changed
-        if (self.prev_state != self.curr_state):
+        if not (self.prev_state == self.curr_state):
             return True
         else:
             return False
