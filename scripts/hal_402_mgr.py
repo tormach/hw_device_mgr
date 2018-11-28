@@ -76,7 +76,8 @@ class hal_402_mgr(object):
                     wait_on_pinname = rospy.get_param(
                         '/hal_402_device_mgr/slaves/wait_on_pinname')
                     last_nr = slaves_instances_param[-1]
-                    timeout = 30
+                    timeout = rospy.get_param(
+                        '/hal_402_device_mgr/slaves/wait_timeout')
                     pin_name = slaves_name + '.%s.%s' % (last_nr, wait_on_pinname)
                     while (not (pin_name in hal.pins) and (timeout > 0)):
                         time.sleep(1)
@@ -120,13 +121,19 @@ class hal_402_mgr(object):
 
     def create_publisher(self):
         # todo, read from ROS param server
-        self.update_rate = 1  # Hz
-        self.rate = rospy.Rate(self.update_rate)
-        # create publishers for topics and send out a test message
-        for key, drive in self.drives.items():
-            drive.create_topics()
-            if (drive.sim is True):
-                drive.test_publisher()
+        has_update_rate = rospy.has_param('/hal_402_device_mgr/update_rate')
+        print(has_update_rate)
+        if (has_update_rate):
+            self.update_rate = rospy.get_param('/hal_402_device_mgr/update_rate')
+            self.rate = rospy.Rate(self.update_rate)
+            # create publishers for topics and send out a test message
+            for key, drive in self.drives.items():
+                drive.create_topics()
+                if (drive.sim is True):
+                    drive.test_publisher()
+        else:
+            rospy.logerr("%s: no /hal_402_device_mgr/update_rate param found" %
+                         self.compname)
 
     def all_equal_status(self, status):
         # check if all the drives have the same status
