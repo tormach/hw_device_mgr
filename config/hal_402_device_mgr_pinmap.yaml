@@ -4,3 +4,7 @@ hal_402_device_mgr:
     drives:
         name: "drive"
         instances: [1, 2, 3, 4, 5, 6]
+    slaves:
+        name: "lcec.0"
+        wait_on_pinname: "warning"
+        instances: [0, 1, 2, 3, 4, 5]

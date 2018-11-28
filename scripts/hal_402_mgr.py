@@ -53,32 +53,52 @@ class hal_402_mgr(object):
         has_sim_mode = rospy.has_param('sim_mode')
         if (has_sim and has_sim_mode):
             # parameters exist, get values
-            sim = rospy.get_param('sim')
-            sim_mode = rospy.get_param('sim_mode')
+            sim = rospy.get_param('/sim')
+            sim_mode = rospy.get_param('/sim_mode')
             if (sim or sim_mode):
                 self.sim_set_drivestates('SWITCH ON DISABLED')
                 self.sim_set_drive_sim(True)
                 rospy.loginfo("%s: no hardware setup detected, default to \
                               simulation mode" % self.compname)
             else:
-                rospy.loginfo("%s: hardware setup detected, connecting pins" %
-                              self.compname)
-                timeout = 30
-                while (('lcec.0.5.warning' not in hal.pins) or (timeout > 0)):
-                    time.sleep(1)
-                    timeout -= 1
-                if timeout <= 0:
-                    # we've recognized a pin within the timeout
-                    self.connect_pins_and_signals()
+                rospy.loginfo("%s: hardware setup detected" % self.compname)
+                # check for parameter existence
+                has_slaves_name_param = rospy.has_param(
+                    '/hal_402_device_mgr/slaves/name')
+                has_slaves_instances_param = rospy.has_param(
+                    '/hal_402_device_mgr/slaves/instances')
+                if (has_slaves_name_param and has_slaves_instances_param):
+                    # get parameters
+                    slaves_name = rospy.get_param(
+                        '/hal_402_device_mgr/slaves/name')
+                    slaves_instances_param = rospy.get_param(
+                        '/hal_402_device_mgr/slaves/instances')
+                    wait_on_pinname = rospy.get_param(
+                        '/hal_402_device_mgr/slaves/wait_on_pinname')
+                    last_nr = slaves_instances_param[-1]
+                    timeout = 30
+                    pin_name = slaves_name + '.%s.%s' % (last_nr, wait_on_pinname)
+                    while (not (pin_name in hal.pins) and (timeout > 0)):
+                        time.sleep(1)
+                        timeout -= 1
+                    if timeout <= 0:
+                        # a timeout occured
+                        rospy.logerr("%s: waiting on slave pins timeout" %
+                                     self.compname)
+                    else:
+                        # we've recognized a pin within the timeout
+                        self.connect_pins_and_signals()
+                else:
+                    rospy.logerr("%s: no correct /hal_402_device_mgr/slaves params" %
+                                 self.compname)
         else:
-            # TODO: error when these are missing?
-            pass
+            rospy.logerr("%s: no /sim or /sim_mode parameters" % self.compname)
 
     def connect_pins_and_signals(self):
         # check for parameters
         # for each drive, connect pins to pins
         # for each drive, connect existing signals to pins
-        pass
+        rospy.loginfo("%s: trying to connect pins" % self.compname)
 
     def create_drives(self):
         # check if parameters exist:
@@ -95,9 +115,8 @@ class hal_402_mgr(object):
                 self.drives[drivename] = drive_402(drivename, self)
                 rospy.loginfo("%s: %s created" % (self.compname, drivename))
         else:
-            # TODO: error when these are missing?
-            pass
-
+            rospy.logerr("%s: no correct /hal_402_device_mgr/slaves params" %
+                         self.compname)
 
     def create_publisher(self):
         # todo, read from ROS param server
