@@ -1,6 +1,6 @@
 import rospy
-import hal
 import time
+from machinekit import hal
 # import service messages from the ROS node
 from hal_402_device_mgr.srv import srv_robot_state
 from hal_402_drive import drive_402 as drive_402
@@ -32,19 +32,53 @@ class hal_402_mgr(object):
         rospy.loginfo("%s: Node started" % self.compname)
 
         # create HAL userland component
-        self.halcomp = hal.component(self.compname)
+        self.halcomp = hal.Component(self.compname)
         rospy.loginfo("%s: HAL component created" % self.compname)
 
         # create drives which create pins
         self.create_drives()
         self.halcomp.ready()
 
-        # for testing and debug purpose
-        self.sim_set_drivestates('FAULT')
-        self.sim_set_drive_sim(True)
+        # check if we're running real hardware, and properly
+        # - set up drives
+        # - connect pins and signals
+        self.check_for_real_hardware_setup()
 
         self.create_service()
         self.create_publisher()
+
+    def check_for_real_hardware_setup(self):
+        # check for existence of parameters
+        has_sim = rospy.has_param('sim')
+        has_sim_mode = rospy.has_param('sim_mode')
+        if (has_sim and has_sim_mode):
+            # parameters exist, get values
+            sim = rospy.get_param('sim')
+            sim_mode = rospy.get_param('sim_mode')
+            if (sim or sim_mode):
+                self.sim_set_drivestates('SWITCH ON DISABLED')
+                self.sim_set_drive_sim(True)
+                rospy.loginfo("%s: no hardware setup detected, default to \
+                              simulation mode" % self.compname)
+            else:
+                rospy.loginfo("%s: hardware setup detected, connecting pins" %
+                              self.compname)
+                timeout = 30
+                while (('lcec.0.5.warning' not in hal.pins) or (timeout > 0)):
+                    time.sleep(1)
+                    timeout -= 1
+                if timeout <= 0:
+                    # we've recognized a pin within the timeout
+                    self.connect_pins_and_signals()
+        else:
+            # TODO: error when these are missing?
+            pass
+
+    def connect_pins_and_signals(self):
+        # check for parameters
+        # for each drive, connect pins to pins
+        # for each drive, connect existing signals to pins
+        pass
 
     def create_drives(self):
         for i in range(0, 6):
@@ -103,6 +137,8 @@ class hal_402_mgr(object):
         # OPERATION ENABLED or SWITCH ON DISABLED or max_attempts
         i = 0
         max_attempts = len(state_402.states_402)
+        print(all_target_states)
+        print(not self.all_equal_status(all_target_states))
         while ((not self.all_equal_status(all_target_states))
                or (i < (max_attempts + 1))):
             for key, drive in self.drives.items():
