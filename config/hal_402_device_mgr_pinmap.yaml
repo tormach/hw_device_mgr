@@ -1,0 +1,6 @@
+# Map drives numbers to lcec slaves
+# names will determine the name of the component pins
+hal_402_device_mgr:
+    drives:
+        name: "drive"
+        instances: [1, 2, 3, 4, 5, 6]

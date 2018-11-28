@@ -81,11 +81,23 @@ class hal_402_mgr(object):
         pass
 
     def create_drives(self):
-        for i in range(0, 6):
-            # create 6 drives, later do this from ROS parameters
-            drivename = "drive_%s" % (i + 1)
-            self.drives[drivename] = drive_402(drivename, self)
-            rospy.loginfo("%s: %s created" % (self.compname, drivename))
+        # check if parameters exist:
+        # - /hal_402_device_mgr/drives/name
+        # - /hal_402_device_mgr/drives/instances
+        has_drives_param = rospy.has_param('/hal_402_device_mgr/drives/name')
+        has_instances_param = rospy.has_param('/hal_402_device_mgr/drives/instances')
+        if (has_drives_param and has_instances_param):
+            name = rospy.get_param('/hal_402_device_mgr/drives/name')
+            instances = rospy.get_param('/hal_402_device_mgr/drives/instances')
+            for n in instances:
+                # create n drives from ROS parameters
+                drivename = name + "_%s" % n
+                self.drives[drivename] = drive_402(drivename, self)
+                rospy.loginfo("%s: %s created" % (self.compname, drivename))
+        else:
+            # TODO: error when these are missing?
+            pass
+
 
     def create_publisher(self):
         # todo, read from ROS param server
