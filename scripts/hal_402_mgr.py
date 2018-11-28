@@ -47,11 +47,18 @@ class hal_402_mgr(object):
         self.create_service()
         self.create_publisher()
 
+    def has_parameters(self, list_of_parameters):
+        has_parameters = True
+        for parameter in list_of_parameters:
+            has_parameters = rospy.has_param(parameter)
+            if (has_parameters is False):
+                # exit this list at first missing parameter
+                break
+        return has_parameters
+
     def check_for_real_hardware_setup(self):
         # check for existence of parameters
-        has_sim = rospy.has_param('sim')
-        has_sim_mode = rospy.has_param('sim_mode')
-        if (has_sim and has_sim_mode):
+        if self.has_parameters(['/sim', '/sim_mode']):
             # parameters exist, get values
             sim = rospy.get_param('/sim')
             sim_mode = rospy.get_param('/sim_mode')
@@ -63,11 +70,10 @@ class hal_402_mgr(object):
             else:
                 rospy.loginfo("%s: hardware setup detected" % self.compname)
                 # check for parameter existence
-                has_slaves_name_param = rospy.has_param(
-                    '/hal_402_device_mgr/slaves/name')
-                has_slaves_instances_param = rospy.has_param(
-                    '/hal_402_device_mgr/slaves/instances')
-                if (has_slaves_name_param and has_slaves_instances_param):
+                if self.has_parameters(['/hal_402_device_mgr/slaves/name',
+                                        '/hal_402_device_mgr/slaves/instances',
+                                        '/hal_402_device_mgr/slaves/wait_timeout',
+                                        '/hal_402_device_mgr/slaves/wait_on_pinname']):
                     # get parameters
                     slaves_name = rospy.get_param(
                         '/hal_402_device_mgr/slaves/name')
@@ -103,11 +109,8 @@ class hal_402_mgr(object):
 
     def create_drives(self):
         # check if parameters exist:
-        # - /hal_402_device_mgr/drives/name
-        # - /hal_402_device_mgr/drives/instances
-        has_drives_param = rospy.has_param('/hal_402_device_mgr/drives/name')
-        has_instances_param = rospy.has_param('/hal_402_device_mgr/drives/instances')
-        if (has_drives_param and has_instances_param):
+        if self.has_parameters(['/hal_402_device_mgr/drives/name',
+                                '/hal_402_device_mgr/drives/instances']):
             name = rospy.get_param('/hal_402_device_mgr/drives/name')
             instances = rospy.get_param('/hal_402_device_mgr/drives/instances')
             for n in instances:
@@ -116,7 +119,7 @@ class hal_402_mgr(object):
                 self.drives[drivename] = drive_402(drivename, self)
                 rospy.loginfo("%s: %s created" % (self.compname, drivename))
         else:
-            rospy.logerr("%s: no correct /hal_402_device_mgr/slaves params" %
+            rospy.logerr("%s: no correct /hal_402_device_mgr/drives params" %
                          self.compname)
 
     def create_publisher(self):
