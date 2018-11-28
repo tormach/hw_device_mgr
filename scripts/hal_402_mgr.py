@@ -1,6 +1,7 @@
 import rospy
 import time
-from machinekit import hal
+from machinekit import hal as mk_hal
+import hal
 # import service messages from the ROS node
 from hal_402_device_mgr.srv import srv_robot_state
 from hal_402_drive import drive_402 as drive_402
@@ -32,7 +33,7 @@ class hal_402_mgr(object):
         rospy.loginfo("%s: Node started" % self.compname)
 
         # create HAL userland component
-        self.halcomp = hal.Component(self.compname)
+        self.halcomp = hal.component(self.compname)
         rospy.loginfo("%s: HAL component created" % self.compname)
 
         # create drives which create pins
@@ -60,9 +61,9 @@ class hal_402_mgr(object):
         # check for existence of parameters
         if self.has_parameters(['/sim', '/sim_mode']):
             # parameters exist, get values
-            sim = rospy.get_param('/sim')
-            sim_mode = rospy.get_param('/sim_mode')
-            if (sim or sim_mode):
+            self.sim = rospy.get_param('/sim')
+            self.sim_mode = rospy.get_param('/sim_mode')
+            if (self.sim or self.sim_mode):
                 self.sim_set_drivestates('SWITCH ON DISABLED')
                 self.sim_set_drive_sim(True)
                 rospy.loginfo("%s: no hardware setup detected, default to \
@@ -75,17 +76,18 @@ class hal_402_mgr(object):
                                         '/hal_402_device_mgr/slaves/wait_timeout',
                                         '/hal_402_device_mgr/slaves/wait_on_pinname']):
                     # get parameters
-                    slaves_name = rospy.get_param(
+                    self.slaves_name = rospy.get_param(
                         '/hal_402_device_mgr/slaves/name')
-                    slaves_instances_param = rospy.get_param(
+                    self.slaves_instances = rospy.get_param(
                         '/hal_402_device_mgr/slaves/instances')
-                    wait_on_pinname = rospy.get_param(
+                    self.wait_on_pinname = rospy.get_param(
                         '/hal_402_device_mgr/slaves/wait_on_pinname')
-                    last_nr = slaves_instances_param[-1]
+                    last_nr = self.slaves_instances[-1]
                     timeout = rospy.get_param(
                         '/hal_402_device_mgr/slaves/wait_timeout')
-                    pin_name = slaves_name + '.%s.%s' % (last_nr, wait_on_pinname)
-                    while (not (pin_name in hal.pins) and (timeout > 0)):
+                    pin_name = self.slaves_name + '.%s.%s' % (last_nr,
+                                                              self.wait_on_pinname)
+                    while (not (pin_name in mk_hal.pins) and (timeout > 0)):
                         time.sleep(1)
                         timeout -= 1
                     if timeout <= 0:
@@ -106,18 +108,28 @@ class hal_402_mgr(object):
         # for each drive, connect pins to pins
         # for each drive, connect existing signals to pins
         rospy.loginfo("%s: trying to connect pins" % self.compname)
+        for key, drive in self.drives.items():
+            drive.connect_pins_and_signals()
 
     def create_drives(self):
         # check if parameters exist:
         if self.has_parameters(['/hal_402_device_mgr/drives/name',
-                                '/hal_402_device_mgr/drives/instances']):
+                                '/hal_402_device_mgr/drives/instances',
+                                '/hal_402_device_mgr/slaves/instances']):
             name = rospy.get_param('/hal_402_device_mgr/drives/name')
-            instances = rospy.get_param('/hal_402_device_mgr/drives/instances')
-            for n in instances:
-                # create n drives from ROS parameters
-                drivename = name + "_%s" % n
-                self.drives[drivename] = drive_402(drivename, self)
-                rospy.loginfo("%s: %s created" % (self.compname, drivename))
+            drive_instances = rospy.get_param('/hal_402_device_mgr/drives/instances')
+            slave_instances = rospy.get_param('/hal_402_device_mgr/slaves/instances')
+            # sanity check
+            if (len(slave_instances) != len(drive_instances)):
+                rospy.logerr("%s: nr of drive and slave instances do not match" %
+                             self.compname)
+            else:
+                for i in range(0, len(drive_instances)):
+                    # create n drives from ROS parameters
+                    drivename = name + "_%s" % drive_instances[i]
+                    slave_inst = slave_instances[i]
+                    self.drives[drivename] = drive_402(drivename, self, slave_inst)
+                    rospy.loginfo("%s: %s created" % (self.compname, drivename))
         else:
             rospy.logerr("%s: no correct /hal_402_device_mgr/drives params" %
                          self.compname)
@@ -125,7 +137,6 @@ class hal_402_mgr(object):
     def create_publisher(self):
         # todo, read from ROS param server
         has_update_rate = rospy.has_param('/hal_402_device_mgr/update_rate')
-        print(has_update_rate)
         if (has_update_rate):
             self.update_rate = rospy.get_param('/hal_402_device_mgr/update_rate')
             self.rate = rospy.Rate(self.update_rate)
@@ -178,8 +189,6 @@ class hal_402_mgr(object):
         # OPERATION ENABLED or SWITCH ON DISABLED or max_attempts
         i = 0
         max_attempts = len(state_402.states_402)
-        print(all_target_states)
-        print(not self.all_equal_status(all_target_states))
         while ((not self.all_equal_status(all_target_states))
                or (i < (max_attempts + 1))):
             for key, drive in self.drives.items():
