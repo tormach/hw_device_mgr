@@ -144,7 +144,7 @@ class hal_402_mgr(object):
             for sig in self.additional_signals:
                 # check if a signal already exists on that pin
                 # after waiting to make sure that other scripts have finished
-                time.sleep(5)
+                time.sleep(0.5)
                 rospy.loginfo("%s: checking for signals on pin %s" % (
                             self.compname,
                             sig[0]))
