@@ -6,7 +6,7 @@ import hal
 from hal_402_device_mgr.msg import msg_error, msg_status
 
 
-class pin_402(object):
+class Pin402(object):
 
     def __init__(self, name, dir, type, bit_pos):
         self.name = name
@@ -38,7 +38,7 @@ class pin_402(object):
             self.get_hal_value()
 
 
-class state_machine_402(object):
+class StateMachine402(object):
         states_402 = {
             'NOT READY TO SWITCH ON':   [0x4F, 0x00],
             'SWITCH ON DISABLED':       [0x4F, 0x40],
@@ -105,7 +105,7 @@ class state_machine_402(object):
         }
 
 
-class drive_402(object):
+class Drive402(object):
 
     def __init__(self, drive_name, parent, slave_inst):
         # hal_402_drives_mgr
@@ -122,38 +122,38 @@ class drive_402(object):
         self.pins_402 = {
             # bits 0-3 and 7 and 8 of the controlword, bit 4-6 and
             # 9 - 15 intentionally not implemented yest
-            'switch-on':            pin_402('%s.switch-on' % self.drive_name,
-                                            hal.HAL_OUT, hal.HAL_BIT, 0),
-            'enable-voltage':       pin_402('%s.enable-voltage' % self.drive_name,
-                                            hal.HAL_OUT, hal.HAL_BIT, 1),
-            'quick-stop':           pin_402('%s.quick-stop' % self.drive_name,
-                                            hal.HAL_OUT, hal.HAL_BIT, 2),
-            'enable-operation':     pin_402('%s.enable-operation' % self.drive_name,
-                                            hal.HAL_OUT, hal.HAL_BIT, 3),
-            'fault-reset':          pin_402('%s.fault-reset' % self.drive_name,
-                                            hal.HAL_OUT, hal.HAL_BIT, 7),
-            'halt':                 pin_402('%s.halt' % self.drive_name,
-                                            hal.HAL_OUT, hal.HAL_BIT, 8),
+            'switch-on':            Pin402('%s.switch-on' % self.drive_name,
+                                           hal.HAL_OUT, hal.HAL_BIT, 0),
+            'enable-voltage':       Pin402('%s.enable-voltage' % self.drive_name,
+                                           hal.HAL_OUT, hal.HAL_BIT, 1),
+            'quick-stop':           Pin402('%s.quick-stop' % self.drive_name,
+                                           hal.HAL_OUT, hal.HAL_BIT, 2),
+            'enable-operation':     Pin402('%s.enable-operation' % self.drive_name,
+                                           hal.HAL_OUT, hal.HAL_BIT, 3),
+            'fault-reset':          Pin402('%s.fault-reset' % self.drive_name,
+                                           hal.HAL_OUT, hal.HAL_BIT, 7),
+            'halt':                 Pin402('%s.halt' % self.drive_name,
+                                           hal.HAL_OUT, hal.HAL_BIT, 8),
             # bits in the status word, bit 8 - 15 intentionally
             # not implemented yet
-            'ready-to-switch-on':   pin_402('%s.ready-to-switch-on' % self.drive_name,
-                                            hal.HAL_IN, hal.HAL_BIT, 0),
-            'switched-on':          pin_402('%s.switched-on' % self.drive_name,
-                                            hal.HAL_IN, hal.HAL_BIT, 1),
-            'operation-enabled':    pin_402('%s.operation-enabled' % self.drive_name,
-                                            hal.HAL_IN, hal.HAL_BIT, 2),
-            'fault':                pin_402('%s.fault' % self.drive_name,
-                                            hal.HAL_IN, hal.HAL_BIT, 3),
-            'voltage-enabled':      pin_402('%s.voltage-enabled' % self.drive_name,
-                                            hal.HAL_IN, hal.HAL_BIT, 4),
+            'ready-to-switch-on':   Pin402('%s.ready-to-switch-on' % self.drive_name,
+                                           hal.HAL_IN, hal.HAL_BIT, 0),
+            'switched-on':          Pin402('%s.switched-on' % self.drive_name,
+                                           hal.HAL_IN, hal.HAL_BIT, 1),
+            'operation-enabled':    Pin402('%s.operation-enabled' % self.drive_name,
+                                           hal.HAL_IN, hal.HAL_BIT, 2),
+            'fault':                Pin402('%s.fault' % self.drive_name,
+                                           hal.HAL_IN, hal.HAL_BIT, 3),
+            'voltage-enabled':      Pin402('%s.voltage-enabled' % self.drive_name,
+                                           hal.HAL_IN, hal.HAL_BIT, 4),
             # because of duplicity of pin 'quick_stop' of control word
             # this pin is called quick-stop-fb as the lcec pin
-            'quick-stop-fb':        pin_402('%s.quick-stop-fb' % self.drive_name,
-                                            hal.HAL_IN, hal.HAL_BIT, 5),
-            'switch-on-disabled':   pin_402('%s.switch-on-disabled' % self.drive_name,
-                                            hal.HAL_IN, hal.HAL_BIT, 6),
-            'warning':              pin_402('%s.warning' % self.drive_name,
-                                            hal.HAL_IN, hal.HAL_BIT, 7)
+            'quick-stop-fb':        Pin402('%s.quick-stop-fb' % self.drive_name,
+                                           hal.HAL_IN, hal.HAL_BIT, 5),
+            'switch-on-disabled':   Pin402('%s.switch-on-disabled' % self.drive_name,
+                                           hal.HAL_IN, hal.HAL_BIT, 6),
+            'warning':              Pin402('%s.warning' % self.drive_name,
+                                           hal.HAL_IN, hal.HAL_BIT, 7)
         }
         self.create_pins()
 
@@ -185,10 +185,10 @@ class drive_402(object):
                 mk_hal.Pin(self.parent.compname + '.' + pin.name).link(to_pin)
 
     def sim_set_input_status_pins(self, status):
-        # bitmask = state_machine_402.states_402[status][0]
+        # bitmask = StateMachine402.states_402[status][0]
         # set pins according entire control word value
         # effectively also resetting pins that are not in bitmask
-        statusword = state_machine_402.states_402[status][1]
+        statusword = StateMachine402.states_402[status][1]
         for key, pin in self.pins_402.items():
             if pin.dir == hal.HAL_IN:
                 # get value corresponding with bit index
@@ -212,7 +212,7 @@ class drive_402(object):
             next_state = self.active_transition_table[self.curr_state][0]
         # - look up transition in transition_table
         # - get list with tuples containing pin and value to be set
-        change_pins_list = state_machine_402.transitions[transition]
+        change_pins_list = StateMachine402.transitions[transition]
         # - for each tuple from list, set pin and value
         for pin_change in change_pins_list:
             self.change_halpin(pin_change)
@@ -278,7 +278,7 @@ class drive_402(object):
 
     def calculate_state(self):
         self.prev_state = self.curr_state
-        for key, state in state_machine_402.states_402.items():
+        for key, state in StateMachine402.states_402.items():
             # check if the value after applying the bitmask (value[0])
             # corresponds with the value[1] to determine the current status
             bitmaskvalue = self.curr_status_word & state[0]
@@ -311,5 +311,5 @@ class drive_402(object):
         else:
             return False
 
-    def publish_drive_error():
+    def publish_error():
         pass

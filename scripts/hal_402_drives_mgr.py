@@ -2,7 +2,7 @@
 # coding=utf-8
 
 import rospy
-from hal_402_mgr import hal_402_mgr
+from hal_402_mgr import Hal402Mgr
 
 
 def call_cleanup():
@@ -13,7 +13,7 @@ def call_cleanup():
 
 if __name__ == '__main__':
     # Create and name node
-    hal_402_drives_mgr = hal_402_mgr()
+    hal_402_drives_mgr = Hal402Mgr()
     rospy.on_shutdown(call_cleanup)
 
     try:

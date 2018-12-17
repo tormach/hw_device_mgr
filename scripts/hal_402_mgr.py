@@ -4,11 +4,11 @@ from machinekit import hal as mk_hal
 import hal
 # import service messages from the ROS node
 from hal_402_device_mgr.srv import srv_robot_state
-from hal_402_drive import drive_402 as drive_402
-from hal_402_drive import state_machine_402 as state_402
+from hal_402_drive import Drive402 as Drive402
+from hal_402_drive import StateMachine402 as StateMachine402
 
 
-class hal_402_mgr(object):
+class Hal402Mgr(object):
 
     def __init__(self):
         self.compname = 'hal_402_mgr'
@@ -22,10 +22,14 @@ class hal_402_mgr(object):
         # stopped -> started
         # started -> error
         self.states = {
-            'unknown':  [state_402.path_to_switch_on_disabled, 'SWITCH ON DISABLED'],
-            'started':  [state_402.path_to_operation_enabled, 'OPERATION ENABLED'],
-            'stopped':  [state_402.path_to_switch_on_disabled, 'SWITCH ON DISABLED'],
-            'error':    [state_402.path_to_switch_on_disabled, 'SWITCH ON DISABLED']
+            'unknown':  [StateMachine402.path_to_switch_on_disabled,
+                         'SWITCH ON DISABLED'],
+            'started':  [StateMachine402.path_to_operation_enabled,
+                         'OPERATION ENABLED'],
+            'stopped':  [StateMachine402.path_to_switch_on_disabled,
+                         'SWITCH ON DISABLED'],
+            'error':    [StateMachine402.path_to_switch_on_disabled,
+                         'SWITCH ON DISABLED']
         }
 
         # create ROS node
@@ -177,7 +181,7 @@ class hal_402_mgr(object):
                     # create n drives from ROS parameters
                     drivename = name + "_%s" % drive_instances[i]
                     slave_inst = slave_instances[i]
-                    self.drives[drivename] = drive_402(drivename, self, slave_inst)
+                    self.drives[drivename] = Drive402(drivename, self, slave_inst)
                     rospy.loginfo("%s: %s created" % (self.compname, drivename))
         else:
             rospy.logerr("%s: no correct /hal_402_device_mgr/drives params" %
@@ -237,7 +241,7 @@ class hal_402_mgr(object):
         # the drive returns success if all the drives are :
         # OPERATION ENABLED or SWITCH ON DISABLED or max_attempts
         i = 0
-        max_attempts = len(state_402.states_402)
+        max_attempts = len(StateMachine402.states_402)
         while ((not self.all_equal_status(all_target_states))
                or (i < (max_attempts + 1))):
             for key, drive in self.drives.items():
