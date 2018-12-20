@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 class pin_402(object):
-
     def __init__(self, name, dir, type, bit_pos):
         self.name = name
         self.dir = dir

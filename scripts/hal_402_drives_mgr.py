@@ -19,5 +19,4 @@ if __name__ == '__main__':
     try:
         hal_402_drives_mgr.run()
     except rospy.ROSInterruptException:
-        rospy.loginfo("%s: ROSInterruptException"
-                      % hal_402_drives_mgr.compname)
+        rospy.loginfo("%s: ROSInterruptException" % hal_402_drives_mgr.compname)

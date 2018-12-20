@@ -3,6 +3,7 @@ import rospy
 import time
 from machinekit import hal as mk_hal
 import hal
+
 # import service messages from the ROS node
 from hal_402_device_mgr.srv import srv_robot_state
 from hal_402_drive import Drive402 as Drive402
@@ -10,7 +11,6 @@ from hal_402_drive import StateMachine402 as StateMachine402
 
 
 class Hal402Mgr(object):
-
     def __init__(self):
         self.compname = 'hal_402_mgr'
         self.drives = dict()
@@ -23,14 +23,16 @@ class Hal402Mgr(object):
         # stopped -> started
         # started -> error
         self.states = {
-            'unknown':  [StateMachine402.path_to_switch_on_disabled,
-                         'SWITCH ON DISABLED'],
-            'started':  [StateMachine402.path_to_operation_enabled,
-                         'OPERATION ENABLED'],
-            'stopped':  [StateMachine402.path_to_switch_on_disabled,
-                         'SWITCH ON DISABLED'],
-            'error':    [StateMachine402.path_to_switch_on_disabled,
-                         'SWITCH ON DISABLED']
+            'unknown': [
+                StateMachine402.path_to_switch_on_disabled,
+                'SWITCH ON DISABLED',
+            ],
+            'started': [StateMachine402.path_to_operation_enabled, 'OPERATION ENABLED'],
+            'stopped': [
+                StateMachine402.path_to_switch_on_disabled,
+                'SWITCH ON DISABLED',
+            ],
+            'error': [StateMachine402.path_to_switch_on_disabled, 'SWITCH ON DISABLED'],
         }
 
         # create ROS node
@@ -57,7 +59,7 @@ class Hal402Mgr(object):
         has_parameters = True
         for parameter in list_of_parameters:
             has_parameters = rospy.has_param(parameter)
-            if (has_parameters is False):
+            if has_parameters is False:
                 # exit this list at first missing parameter
                 break
         return has_parameters
@@ -68,61 +70,74 @@ class Hal402Mgr(object):
             # parameters exist, get values
             self.sim = rospy.get_param('/sim')
             self.sim_mode = rospy.get_param('/sim_mode')
-            if (self.sim or self.sim_mode):
+            if self.sim or self.sim_mode:
                 self.sim_set_drivestates('SWITCH ON DISABLED')
                 self.sim_set_drive_sim(True)
-                rospy.loginfo("%s: no hardware setup detected, default to \
-                              simulation mode" % self.compname)
+                rospy.loginfo(
+                    "%s: no hardware setup detected, default to \
+                              simulation mode"
+                    % self.compname
+                )
             else:
                 rospy.loginfo("%s: hardware setup detected" % self.compname)
                 # check for parameter existence
-                if self.has_parameters(['/hal_402_device_mgr/slaves/name',
-                                        '/hal_402_device_mgr/slaves/instances',
-                                        '/hal_402_device_mgr/slaves/wait_timeout',
-                                        '/hal_402_device_mgr/slaves/wait_on_pinname']):
+                if self.has_parameters(
+                    [
+                        '/hal_402_device_mgr/slaves/name',
+                        '/hal_402_device_mgr/slaves/instances',
+                        '/hal_402_device_mgr/slaves/wait_timeout',
+                        '/hal_402_device_mgr/slaves/wait_on_pinname',
+                    ]
+                ):
                     # get parameters
                     self.slaves_name = rospy.get_param(
-                        '/hal_402_device_mgr/slaves/name')
+                        '/hal_402_device_mgr/slaves/name'
+                    )
                     self.slaves_instances = rospy.get_param(
-                        '/hal_402_device_mgr/slaves/instances')
+                        '/hal_402_device_mgr/slaves/instances'
+                    )
                     self.wait_on_pinname = rospy.get_param(
-                        '/hal_402_device_mgr/slaves/wait_on_pinname')
+                        '/hal_402_device_mgr/slaves/wait_on_pinname'
+                    )
                     last_nr = self.slaves_instances[-1]
                     self.timeout = rospy.get_param(
-                        '/hal_402_device_mgr/slaves/wait_timeout')
-                    pin_name = self.slaves_name + '.%s.%s' % (last_nr,
-                                                              self.wait_on_pinname)
+                        '/hal_402_device_mgr/slaves/wait_timeout'
+                    )
+                    pin_name = self.slaves_name + '.%s.%s' % (
+                        last_nr,
+                        self.wait_on_pinname,
+                    )
                     # check for pin, result -1 then timeout, thus no pin
-                    if (self.check_for_pin(pin_name) < 0):
+                    if self.check_for_pin(pin_name) < 0:
                         # pin not found
-                        rospy.logerr("%s: pin %s not available" % (
-                            self.compname,
-                            pin_name))
+                        rospy.logerr(
+                            "%s: pin %s not available" % (self.compname, pin_name)
+                        )
                     else:
                         # we've recognized a pin within the local_timeout
                         self.connect_pins_and_signals()
                 else:
-                    rospy.logerr("%s: no correct /hal_402_device_mgr/slaves params" %
-                                 self.compname)
+                    rospy.logerr(
+                        "%s: no correct /hal_402_device_mgr/slaves params"
+                        % self.compname
+                    )
         else:
             rospy.logerr("%s: no /sim or /sim_mode parameters" % self.compname)
 
     def check_for_pin(self, pin_name):
         local_timeout = self.timeout
-        while (not (pin_name in mk_hal.pins) and (local_timeout > 0)):
+        while not (pin_name in mk_hal.pins) and (local_timeout > 0):
             time.sleep(1)
             local_timeout -= 1
         if local_timeout <= 0:
             # a local_timeout occured
-            rospy.logerr("%s: pin %s not found after %s seconds" % (
-                         self.compname,
-                         pin_name,
-                         self.timeout))
+            rospy.logerr(
+                "%s: pin %s not found after %s seconds"
+                % (self.compname, pin_name, self.timeout)
+            )
             return -1
         else:
-            rospy.loginfo("%s: pin %s exists" % (
-                         self.compname,
-                         pin_name))
+            rospy.loginfo("%s: pin %s exists" % (self.compname, pin_name))
             return 0
 
     def connect_pins_and_signals(self):
@@ -138,28 +153,27 @@ class Hal402Mgr(object):
             # hal can be busy setting up, so wait for all pins to exist
             # plus additional wait time for possible signals to be created
             for sig in self.additional_signals:
-                if ((self.check_for_pin(sig[0]) < 0) or
-                        (self.check_for_pin(sig[1]) < 0)):
-                    rospy.logerr("%s: pin %s or %s not available" % (
-                        self.compname,
-                        sig[0],
-                        sig[1]))
+                if (self.check_for_pin(sig[0]) < 0) or (self.check_for_pin(sig[1]) < 0):
+                    rospy.logerr(
+                        "%s: pin %s or %s not available"
+                        % (self.compname, sig[0], sig[1])
+                    )
                     # exit immediately
                     break
             for sig in self.additional_signals:
                 # check if a signal already exists on that pin
                 # after waiting to make sure that other scripts have finished
                 time.sleep(0.5)
-                rospy.loginfo("%s: checking for signals on pin %s" % (
-                            self.compname,
-                            sig[0]))
-                if (mk_hal.Pin(sig[0]).signal != ''):
+                rospy.loginfo(
+                    "%s: checking for signals on pin %s" % (self.compname, sig[0])
+                )
+                if mk_hal.Pin(sig[0]).signal != '':
                     # no signal exists
                     signal = mk_hal.Pin(sig[0]).signame
-                    rospy.loginfo("%s: exisiting signal %s on pin %s" % (
-                            self.compname,
-                            signal,
-                            sig[0]))
+                    rospy.loginfo(
+                        "%s: exisiting signal %s on pin %s"
+                        % (self.compname, signal, sig[0])
+                    )
                     mk_hal.Signal(signal).link(sig[1])
                 else:
                     # get name and use this signal to link to pin
@@ -167,16 +181,21 @@ class Hal402Mgr(object):
 
     def create_drives(self):
         # check if parameters exist:
-        if self.has_parameters(['/hal_402_device_mgr/drives/name',
-                                '/hal_402_device_mgr/drives/instances',
-                                '/hal_402_device_mgr/slaves/instances']):
+        if self.has_parameters(
+            [
+                '/hal_402_device_mgr/drives/name',
+                '/hal_402_device_mgr/drives/instances',
+                '/hal_402_device_mgr/slaves/instances',
+            ]
+        ):
             name = rospy.get_param('/hal_402_device_mgr/drives/name')
             drive_instances = rospy.get_param('/hal_402_device_mgr/drives/instances')
             slave_instances = rospy.get_param('/hal_402_device_mgr/slaves/instances')
             # sanity check
-            if (len(slave_instances) != len(drive_instances)):
-                rospy.logerr("%s: nr of drive and slave instances do not match" %
-                             self.compname)
+            if len(slave_instances) != len(drive_instances):
+                rospy.logerr(
+                    "%s: nr of drive and slave instances do not match" % self.compname
+                )
             else:
                 for i in range(0, len(drive_instances)):
                     # create n drives from ROS parameters
@@ -185,23 +204,25 @@ class Hal402Mgr(object):
                     self.drives[drivename] = Drive402(drivename, self, slave_inst)
                     rospy.loginfo("%s: %s created" % (self.compname, drivename))
         else:
-            rospy.logerr("%s: no correct /hal_402_device_mgr/drives params" %
-                         self.compname)
+            rospy.logerr(
+                "%s: no correct /hal_402_device_mgr/drives params" % self.compname
+            )
 
     def create_publisher(self):
         # todo, read from ROS param server
         has_update_rate = rospy.has_param('/hal_402_device_mgr/update_rate')
-        if (has_update_rate):
+        if has_update_rate:
             self.update_rate = rospy.get_param('/hal_402_device_mgr/update_rate')
             self.rate = rospy.Rate(self.update_rate)
             # create publishers for topics and send out a test message
             for key, drive in self.drives.items():
                 drive.create_topics()
-                if (drive.sim is True):
+                if drive.sim is True:
                     drive.test_publisher()
         else:
-            rospy.logerr("%s: no /hal_402_device_mgr/update_rate param found" %
-                         self.compname)
+            rospy.logerr(
+                "%s: no /hal_402_device_mgr/update_rate param found" % self.compname
+            )
 
     def all_equal_status(self, status):
         # check if all the drives have the same status
@@ -228,9 +249,10 @@ class Hal402Mgr(object):
         # the return value is the service response (string)
         # check the requested state for validity
         if req.req_state not in self.states:
-            rospy.loginfo("%s: request for state failed, %s not a valid state" %
-                          (self.compname,
-                           req.req_state))
+            rospy.loginfo(
+                "%s: request for state failed, %s not a valid state"
+                % (self.compname, req.req_state)
+            )
             return "request for state %s failed, state not known" % req.req_state
         # pick a transition table for the requested state
         tr_table = self.states[req.req_state][0]
@@ -243,8 +265,9 @@ class Hal402Mgr(object):
         # OPERATION ENABLED or SWITCH ON DISABLED or max_attempts
         i = 0
         max_attempts = len(StateMachine402.states_402)
-        while ((not self.all_equal_status(all_target_states))
-               or (i < (max_attempts + 1))):
+        while (not self.all_equal_status(all_target_states)) or (
+            i < (max_attempts + 1)
+        ):
             for key, drive in self.drives.items():
                 # traverse states for all drives (parallel)
                 # ignore drives which state already is at the target state
@@ -278,12 +301,12 @@ class Hal402Mgr(object):
         # self.service = rospy.Service('hal_402_drives_mgr',
         #                             srv_robot_state,
         #                             self.cb_test_service)
-        self.service = rospy.Service('hal_402_drives_mgr',
-                                     srv_robot_state,
-                                     self.cb_robot_state_service)
-        rospy.loginfo("%s: service %s created" %
-                      (self.compname,
-                       self.service.resolved_name))
+        self.service = rospy.Service(
+            'hal_402_drives_mgr', srv_robot_state, self.cb_robot_state_service
+        )
+        rospy.loginfo(
+            "%s: service %s created" % (self.compname, self.service.resolved_name)
+        )
 
     def inspect_hal_pins(self):
         for key, drive in self.drives.items():
