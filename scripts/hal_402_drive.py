@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import rospy
 from machinekit import hal as mk_hal
 import hal
