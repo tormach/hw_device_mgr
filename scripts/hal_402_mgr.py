@@ -3,6 +3,7 @@ import rospy
 import time
 from machinekit import hal as mk_hal
 import hal
+import os
 
 # import service messages from the ROS node
 from hal_402_device_mgr.srv import srv_robot_state
@@ -91,65 +92,58 @@ class Hal402Mgr(object):
         return has_parameters
 
     def check_for_real_hardware_setup(self):
-        # check for existence of parameters
-        if self.has_parameters(['/sim', '/sim_mode']):
-            # parameters exist, get values
-            self.sim = rospy.get_param('/sim')
-            self.sim_mode = rospy.get_param('/sim_mode')
-            if self.sim or self.sim_mode:
-                self.sim_set_drivestates('SWITCH ON DISABLED')
-                self.sim_set_drive_sim(True)
-                rospy.loginfo(
-                    "%s: no hardware setup detected, default to \
-                              simulation mode"
-                    % self.compname
-                )
-            else:
-                rospy.loginfo("%s: hardware setup detected" % self.compname)
-                # check for parameter existence
-                if self.has_parameters(
-                    [
-                        '/hal_402_device_mgr/slaves/name',
-                        '/hal_402_device_mgr/slaves/instances',
-                        '/hal_402_device_mgr/slaves/wait_timeout',
-                        '/hal_402_device_mgr/slaves/wait_on_pinname',
-                    ]
-                ):
-                    # get parameters
-                    self.slaves_name = rospy.get_param(
-                        '/hal_402_device_mgr/slaves/name'
-                    )
-                    self.slaves_instances = rospy.get_param(
-                        '/hal_402_device_mgr/slaves/instances'
-                    )
-                    self.wait_on_pinname = rospy.get_param(
-                        '/hal_402_device_mgr/slaves/wait_on_pinname'
-                    )
-                    last_nr = self.slaves_instances[-1]
-                    self.timeout = rospy.get_param(
-                        '/hal_402_device_mgr/slaves/wait_timeout'
-                    )
-                    pin_name = self.slaves_name + '.%s.%s' % (
-                        last_nr,
-                        self.wait_on_pinname,
-                    )
-                    # check for pin, result -1 then timeout, thus no pin
-                    if self.check_for_pin(pin_name) < 0:
-                        # pin not found
-                        rospy.logerr(
-                            "%s: pin %s not available"
-                            % (self.compname, pin_name)
-                        )
-                    else:
-                        # we've recognized a pin within the local_timeout
-                        self.connect_pins_and_signals()
-                else:
-                    rospy.logerr(
-                        "%s: no correct /hal_402_device_mgr/slaves params"
-                        % self.compname
-                    )
+        # Configure sim mode if SIM environment variable is set
+        self.sim = os.environ.get("SIM", "false").lower() != "false"
+        if self.sim:
+            self.sim_set_drivestates('SWITCH ON DISABLED')
+            self.sim_set_drive_sim(True)
+            rospy.loginfo(
+                "%s: no hardware setup detected, default to"
+                "simulation mode" % self.compname
+            )
+            return
+
+        # Configure real hardware mode
+        rospy.loginfo("%s: hardware setup detected" % self.compname)
+        # check for parameter existence
+        if not self.has_parameters(
+            [
+                '/hal_402_device_mgr/slaves/name',
+                '/hal_402_device_mgr/slaves/instances',
+                '/hal_402_device_mgr/slaves/wait_timeout',
+                '/hal_402_device_mgr/slaves/wait_on_pinname',
+            ]
+        ):
+            rospy.logerr(
+                "%s: no correct /hal_402_device_mgr/slaves params"
+                % self.compname
+            )
+            return
+
+        # get parameters
+        self.slaves_name = rospy.get_param('/hal_402_device_mgr/slaves/name')
+        self.slaves_instances = rospy.get_param(
+            '/hal_402_device_mgr/slaves/instances'
+        )
+        self.wait_on_pinname = rospy.get_param(
+            '/hal_402_device_mgr/slaves/wait_on_pinname'
+        )
+        last_nr = self.slaves_instances[-1]
+        self.timeout = rospy.get_param(
+            '/hal_402_device_mgr/slaves/wait_timeout'
+        )
+        pin_name = '%s.%s.%s' % (
+            self.slaves_name,
+            last_nr,
+            self.wait_on_pinname,
+        )
+        # check for pin, result -1 then timeout, thus no pin
+        if self.check_for_pin(pin_name) < 0:
+            # pin not found
+            rospy.logerr("%s: pin %s not available" % (self.compname, pin_name))
         else:
-            rospy.logerr("%s: no /sim or /sim_mode parameters" % self.compname)
+            # we've recognized a pin within the local_timeout
+            self.connect_pins_and_signals()
 
     def check_for_pin(self, pin_name):
         local_timeout = self.timeout
