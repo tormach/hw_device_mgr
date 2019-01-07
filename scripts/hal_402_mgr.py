@@ -353,8 +353,13 @@ class Hal402Mgr(object):
         for key, drive in self.drives.items():
             drive.publish_state()
 
+    def publish_errors(self):
+        for key, drive in self.drives.items():
+            drive.publish_error()
+
     def run(self):
         while not rospy.is_shutdown():
             self.inspect_hal_pins()
+            self.publish_errors()
             self.publish_states()
             self.rate.sleep()

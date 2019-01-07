@@ -7,12 +7,11 @@ import hal
 from hal_402_device_mgr.msg import msg_error, msg_status
 
 
-class Pin402(object):
-    def __init__(self, name, dir, type, bit_pos):
+class GenericHalPin(object):
+    def __init__(self, name, dir, type):
         self.name = name
         self.dir = dir
         self.type = type
-        self.bit_pos = bit_pos
         self.halpin = None
         self.local_pin_value = None
 
@@ -36,6 +35,12 @@ class Pin402(object):
             self.set_hal_value()
         else:
             self.get_hal_value()
+
+
+class Pin402(GenericHalPin):
+    def __init__(self, name, dir, type, bit_pos):
+        super(Pin402, self).__init__(name, dir, type)
+        self.bit_pos = bit_pos
 
 
 class StateMachine402(object):
@@ -123,6 +128,8 @@ class Drive402(object):
         self.curr_state = 'unknown'
         self.prev_status_word = 0
         self.curr_status_word = 0
+        self.prev_error = 0
+        self.curr_error = 0
         self.active_transition_table = None
         self.pins_402 = {
             # bits 0-3 and 7 and 8 of the controlword, bit 4-6 and
@@ -192,6 +199,17 @@ class Drive402(object):
                 '%s.warning' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 7
             ),
         }
+        self.pins_generic = {
+            # Pins used by this component
+            # 9 - 15 intentionally not implemented yest
+            'error-code': GenericHalPin('%s.error-code' % self.drive_name,
+                                        hal.HAL_IN, hal.HAL_U32)
+        }
+        self.all_pins = {
+            # create dict holding the 2 different classes of pins
+            'pins_402': self.pins_402,
+            'pins_generic': self.pins_generic
+        }
         self.create_pins()
 
     def connect_pins_and_signals(self):
@@ -216,6 +234,19 @@ class Drive402(object):
                     self.parent.slaves_name, self.slave_inst, key
                 )
                 mk_hal.Pin(self.parent.compname + '.' + pin.name).link(to_pin)
+        # connect the error-code pin
+        # get the pin
+        drive_n_error_pin = self.pins_generic['error-code']
+        error_from_pin = "{}.{}.{}".format(
+                         self.parent.slaves_name,
+                         self.slave_inst,
+                         'error-code')
+        error_to_pin = "{}.{}".format(
+                       self.parent.compname,
+                       drive_n_error_pin.name)
+        print(error_from_pin)
+        print(error_to_pin)
+        mk_hal.Pin(error_from_pin).link(error_to_pin)
 
     def sim_set_input_status_pins(self, status):
         # bitmask = StateMachine402.states_402[status][0]
@@ -255,9 +286,10 @@ class Drive402(object):
                 self.sim_set_input_status_pins(next_state)
 
     def create_pins(self):
-        for key, pin in self.pins_402.items():
-            pin.set_parent_comp(self.parent.halcomp)
-            pin.create_halpin()
+        for k, pin_dict in self.all_pins.items():
+            for key, pin in pin_dict.items():
+                pin.set_parent_comp(self.parent.halcomp)
+                pin.create_halpin()
 
     def create_topics(self):
         # for each drive, an error and status topic are created
@@ -290,9 +322,12 @@ class Drive402(object):
 
     def read_halpins(self):
         # get all the status pins, and save their value locally
-        for key, pin in self.pins_402.items():
-            if pin.dir == hal.HAL_IN:
-                pin.sync_hal()
+        self.prev_error = self.curr_error
+        for k, pin_dict in self.all_pins.items():
+            for key, pin in pin_dict.items():
+                if pin.dir == hal.HAL_IN:
+                    pin.sync_hal()
+        self.curr_error = self.pins_generic['error-code'].local_pin_value
 
     def calculate_status_word(self):
         # traverse dict and for the local values do some bitwise operation so
@@ -347,5 +382,22 @@ class Drive402(object):
         else:
             return False
 
-    def publish_error():
-        pass
+    def drive_error_changed(self):
+        # only publish drive status if the error has changed
+        if not (self.prev_error == self.curr_error):
+            return True
+        else:
+            return False
+
+    def publish_error(self):
+        if self.drive_error_changed():
+            self.topics['error'].publish(self.drive_name, self.curr_error)
+            if (self.curr_error == 0):
+                rospy.loginfo("%s: %s no error" % (
+                              self.parent.compname,
+                              self.drive_name))
+            else:
+                rospy.logerr("%s: %s error %s" % (
+                             self.parent.compname,
+                             self.drive_name,
+                             self.curr_error))
