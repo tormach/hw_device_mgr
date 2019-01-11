@@ -96,7 +96,7 @@ class Hal402Mgr(object):
 
     def check_for_real_hardware_setup(self):
         if self.sim:
-            self.sim_set_drivestates('SWITCH ON DISABLED')
+            self.sim_set_drives_status('SWITCH ON DISABLED')
             rospy.loginfo(
                 "%s: no hardware setup detected, default to "
                 "simulation mode" % self.compname
@@ -286,12 +286,9 @@ class Hal402Mgr(object):
                 return False
         return True
 
-    def sim_set_drivestates(self, status):
+    def sim_set_drives_status(self, status):
         for key, drive in self.drives.items():
-            drive.sim_set_input_status_pins(status)
-        # give HAL at least 1 cycle to process
-        time.sleep(0.002)
-        self.update_drive_states()
+            drive.sim_set_status(status)
 
     def cb_robot_state_service(self, req):
         # The service callback

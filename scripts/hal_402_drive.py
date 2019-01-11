@@ -2,6 +2,7 @@
 import rospy
 from machinekit import hal as mk_hal
 import hal
+import time
 
 # import messages from the ROS node
 from hal_402_device_mgr.msg import msg_error, msg_status
@@ -245,7 +246,7 @@ class Drive402(object):
         )
         mk_hal.Pin(error_from_pin).link(error_to_pin)
 
-    def sim_set_input_status_pins(self, status):
+    def sim_set_status(self, status):
         # bitmask = StateMachine402.states_402[status][0]
         # set pins according entire control word value
         # effectively also resetting pins that are not in bitmask
@@ -259,6 +260,9 @@ class Drive402(object):
                 # for simulation purpose when no drive available
                 pin.set_local_value(bit_val)
                 pin.set_hal_value()
+        # give HAL at least 1 cycle to process
+        time.sleep(0.002)
+        self.update_state()
 
     def set_transition_table(self, transition_table):
         self.active_transition_table = transition_table
@@ -291,7 +295,7 @@ class Drive402(object):
                 # for simulation purpose, set input pins manually according to
                 # the next state as if the drive is attached
                 if self.sim is True:
-                    self.sim_set_input_status_pins(next_state)
+                    self.sim_set_status(next_state)
             return True
         else:
             return False
