@@ -377,6 +377,20 @@ class Drive402(object):
             else:
                 self.curr_state = 'unknown'
 
+    def update_state(self):
+        self.read_halpins()
+        self.calculate_status_word()
+        self.calculate_state()
+        # if self.status_word_changed():
+        #     print('{}: {} status_word: {:#010b} status: {}'.format(
+        #                                         self.parent.compname,
+        #                                         self.self_name,
+        #                                         self.curr_status_word,
+        #                                         self.curr_state))
+        # else:
+        #     do nothing cause nothing has changed
+        #     pass
+
     def publish_state(self):
         if self.drive_state_changed():
             self.topics['status'].publish(self.drive_name, self.curr_state)

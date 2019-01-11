@@ -291,7 +291,7 @@ class Hal402Mgr(object):
             drive.sim_set_input_status_pins(status)
         # give HAL at least 1 cycle to process
         time.sleep(0.002)
-        self.inspect_hal_pins()
+        self.update_drive_states()
 
     def cb_robot_state_service(self, req):
         # The service callback
@@ -340,7 +340,7 @@ class Hal402Mgr(object):
                         # to wait for the drive to get to a valid state
                         #
                         time.sleep(0.05)
-                        self.inspect_hal_pins()
+                        self.update_drive_states()
                         retries -= 1
                     if retries < max_retries_unreacheable_state:
                         rospy.loginfo(
@@ -355,7 +355,7 @@ class Hal402Mgr(object):
 
             # give HAL time to make at least 1 cycle
             time.sleep(0.002)
-            self.inspect_hal_pins()
+            self.update_drive_states()
             self.publish_states()
             i += 1
 
@@ -395,20 +395,9 @@ class Hal402Mgr(object):
             % (self.compname, self.service.resolved_name)
         )
 
-    def inspect_hal_pins(self):
+    def update_drive_states(self):
         for key, drive in self.drives.items():
-            drive.read_halpins()
-            drive.calculate_status_word()
-            drive.calculate_state()
-            # if drive.status_word_changed():
-            #     print('{}: {} status_word: {:#010b} status: {}'.format(
-            #                                         self.compname,
-            #                                         drive.drive_name,
-            #                                         drive.curr_status_word,
-            #                                         drive.curr_state))
-            # else:
-            #     do nothing cause nothing has changed
-            #     pass
+            drive.update_state()
 
         # get the status pins, and save their value locally
         self.prev_hal_state_cmd = self.curr_hal_state_cmd
@@ -450,7 +439,7 @@ class Hal402Mgr(object):
 
     def run(self):
         while not rospy.is_shutdown():
-            self.inspect_hal_pins()
+            self.update_drive_states()
             self.check_for_state_cmd_change()
             self.publish_errors()
             self.publish_states()
