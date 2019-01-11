@@ -7,9 +7,9 @@ import os
 
 # import service messages from the ROS node
 from hal_402_device_mgr.srv import srv_robot_state
-from hal_402_drive import Drive402 as Drive402
-from hal_402_drive import GenericHalPin as GenericHalPin
-from hal_402_drive import StateMachine402 as StateMachine402
+from hal_402_drive import Drive402
+from hal_402_drive import GenericHalPin
+from hal_402_drive import StateMachine402
 
 
 class Hal402Mgr(object):
