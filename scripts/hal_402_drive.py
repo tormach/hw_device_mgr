@@ -202,13 +202,14 @@ class Drive402(object):
         self.pins_generic = {
             # Pins used by this component
             # 9 - 15 intentionally not implemented yest
-            'error-code': GenericHalPin('%s.error-code' % self.drive_name,
-                                        hal.HAL_IN, hal.HAL_U32)
+            'error-code': GenericHalPin(
+                '%s.error-code' % self.drive_name, hal.HAL_IN, hal.HAL_U32
+            )
         }
         self.all_pins = {
             # create dict holding the 2 different classes of pins
             'pins_402': self.pins_402,
-            'pins_generic': self.pins_generic
+            'pins_generic': self.pins_generic,
         }
         self.create_pins()
 
@@ -238,12 +239,9 @@ class Drive402(object):
         # get the pin
         drive_n_error_pin = self.pins_generic['error-code']
         error_from_pin = "{}.{}.{}".format(
-                         self.parent.slaves_name,
-                         self.slave_inst,
-                         'error-code')
-        error_to_pin = "{}.{}".format(
-                       self.parent.compname,
-                       drive_n_error_pin.name)
+            self.parent.slaves_name, self.slave_inst, 'error-code'
+        )
+        error_to_pin = "{}.{}".format(self.parent.compname, drive_n_error_pin.name)
         print(error_from_pin)
         print(error_to_pin)
         mk_hal.Pin(error_from_pin).link(error_to_pin)
@@ -392,12 +390,12 @@ class Drive402(object):
     def publish_error(self):
         if self.drive_error_changed():
             self.topics['error'].publish(self.drive_name, self.curr_error)
-            if (self.curr_error == 0):
-                rospy.loginfo("%s: %s no error" % (
-                              self.parent.compname,
-                              self.drive_name))
+            if self.curr_error == 0:
+                rospy.loginfo(
+                    "%s: %s no error" % (self.parent.compname, self.drive_name)
+                )
             else:
-                rospy.logerr("%s: %s error %s" % (
-                             self.parent.compname,
-                             self.drive_name,
-                             self.curr_error))
+                rospy.logerr(
+                    "%s: %s error %s"
+                    % (self.parent.compname, self.drive_name, self.curr_error)
+                )
