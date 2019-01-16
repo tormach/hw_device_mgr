@@ -96,7 +96,11 @@ class StateMachine402(object):
             ('enable-voltage', 0),
             ('switch-on', 0),
         ],
-        'TRANSITION_10': [('quick-stop', 0), ('enable-voltage', 0), ('switch-on', 0)],
+        'TRANSITION_10': [
+            ('quick-stop', 0),
+            ('enable-voltage', 0),
+            ('switch-on', 0),
+        ],
         'TRANSITION_15': [
             ('enable-operation', 0),
             ('quick-stop', 0),
@@ -127,32 +131,51 @@ class Drive402(object):
                 '%s.switch-on' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 0
             ),
             'enable-voltage': Pin402(
-                '%s.enable-voltage' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 1
+                '%s.enable-voltage' % self.drive_name,
+                hal.HAL_OUT,
+                hal.HAL_BIT,
+                1,
             ),
             'quick-stop': Pin402(
                 '%s.quick-stop' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 2
             ),
             'enable-operation': Pin402(
-                '%s.enable-operation' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 3
+                '%s.enable-operation' % self.drive_name,
+                hal.HAL_OUT,
+                hal.HAL_BIT,
+                3,
             ),
             'fault-reset': Pin402(
                 '%s.fault-reset' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 7
             ),
-            'halt': Pin402('%s.halt' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 8),
+            'halt': Pin402(
+                '%s.halt' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 8
+            ),
             # bits in the status word, bit 8 - 15 intentionally
             # not implemented yet
             'ready-to-switch-on': Pin402(
-                '%s.ready-to-switch-on' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 0
+                '%s.ready-to-switch-on' % self.drive_name,
+                hal.HAL_IN,
+                hal.HAL_BIT,
+                0,
             ),
             'switched-on': Pin402(
                 '%s.switched-on' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 1
             ),
             'operation-enabled': Pin402(
-                '%s.operation-enabled' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 2
+                '%s.operation-enabled' % self.drive_name,
+                hal.HAL_IN,
+                hal.HAL_BIT,
+                2,
             ),
-            'fault': Pin402('%s.fault' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 3),
+            'fault': Pin402(
+                '%s.fault' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 3
+            ),
             'voltage-enabled': Pin402(
-                '%s.voltage-enabled' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 4
+                '%s.voltage-enabled' % self.drive_name,
+                hal.HAL_IN,
+                hal.HAL_BIT,
+                4,
             ),
             # because of duplicity of pin 'quick_stop' of control word
             # this pin is called quick-stop-fb as the lcec pin
@@ -160,7 +183,10 @@ class Drive402(object):
                 '%s.quick-stop-fb' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 5
             ),
             'switch-on-disabled': Pin402(
-                '%s.switch-on-disabled' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 6
+                '%s.switch-on-disabled' % self.drive_name,
+                hal.HAL_IN,
+                hal.HAL_BIT,
+                6,
             ),
             'warning': Pin402(
                 '%s.warning' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 7
