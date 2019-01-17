@@ -61,7 +61,7 @@ class StateMachine402(object):
     # Available" because transition happens automatically by the device.
     # These are kept around for keeping the complete picture.
     path_to_operation_enabled = {
-        'NOT_READY_TO_SWITCH_ON': ['SWITCH ON DISABLED', 'NA'],
+        'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'NA'],
         'FAULT REACTION ACTIVE': ['FAULT', 'NA'],
         'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
         'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'NA'],
@@ -76,7 +76,7 @@ class StateMachine402(object):
     path_to_switch_on_disabled = {
         'FAULT REACTION ACTIVE': ['FAULT', 'NA'],
         'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
-        'NOT_READY_TO_SWITCH_ON': ['SWITCH ON DISABLED', 'NA'],
+        'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'NA'],
         'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'NA'],
         'OPERATION ENABLED': ['SWITCH ON DISABLED', 'TRANSITION_9'],
     }
@@ -201,7 +201,6 @@ class Drive402(object):
         }
         self.pins_generic = {
             # Pins used by this component
-            # 9 - 15 intentionally not implemented yest
             'error-code': GenericHalPin(
                 '%s.error-code' % self.drive_name, hal.HAL_IN, hal.HAL_U32
             )
@@ -265,23 +264,37 @@ class Drive402(object):
         self.active_transition_table = transition_table
 
     def next_transition(self):
+        # firstly, we need to wait on a state which has a valid
+        # next transition. For example, when a drive is starting up
+        # it can be in 'NOT READY TO SWITCH ON' state, from where we
+        # need to wait until the drive itself has gotten out of this
+        # state.
+        #
+        # so grab the list containing the next state and next transition
+        # if the transition equals 'NA' we can't do anything but wait.
+        # so return a False to the calling function
+
         # when called:
         # - look up the self.active_transition_table[self.curr_state]
         # - get transition list[1]
         transition = self.active_transition_table[self.curr_state][1]
-        # - in sim mode, get the the next state to mimic input pin changes
-        if self.sim is True:
-            next_state = self.active_transition_table[self.curr_state][0]
-        # - look up transition in transition_table
-        # - get list with tuples containing pin and value to be set
-        change_pins_list = StateMachine402.transitions[transition]
-        # - for each tuple from list, set pin and value
-        for pin_change in change_pins_list:
-            self.change_halpin(pin_change)
-            # for simulation purpose, set input pins manually according to
-            # the next state as if the drive is attached
+        if transition != 'NA':
+            # - in sim mode, get the the next state to mimic input pin changes
             if self.sim is True:
-                self.sim_set_input_status_pins(next_state)
+                next_state = self.active_transition_table[self.curr_state][0]
+            # - look up transition in transition_table
+            # - get list with tuples containing pin and value to be set
+            change_pins_list = StateMachine402.transitions[transition]
+            # - for each tuple from list, set pin and value
+            for pin_change in change_pins_list:
+                self.change_halpin(pin_change)
+                # for simulation purpose, set input pins manually according to
+                # the next state as if the drive is attached
+                if self.sim is True:
+                    self.sim_set_input_status_pins(next_state)
+            return True
+        else:
+            return False
 
     def create_pins(self):
         for k, pin_dict in self.all_pins.items():

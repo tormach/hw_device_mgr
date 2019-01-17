@@ -7,6 +7,7 @@ import hal
 # import service messages from the ROS node
 from hal_402_device_mgr.srv import srv_robot_state
 from hal_402_drive import Drive402 as Drive402
+from hal_402_drive import GenericHalPin as GenericHalPin
 from hal_402_drive import StateMachine402 as StateMachine402
 
 
@@ -16,6 +17,8 @@ class Hal402Mgr(object):
         self.drives = dict()
         self.prev_robot_state = 'unknown'
         self.curr_robot_state = 'unknown'
+        self.prev_hal_state_cmd = 0
+        self.curr_hal_state_cmd = 0
         # very simple transitions for now
         # unknown -> stopped
         # error -> stopped
@@ -40,7 +43,21 @@ class Hal402Mgr(object):
                 'SWITCH ON DISABLED',
             ],
         }
-
+        self.pins = {
+            # Pins used by this component to call the service callbacks
+            'state-cmd': GenericHalPin(
+                '%s.state-cmd' % self.compname, hal.HAL_IN, hal.HAL_U32
+            ),
+            'state-fb': GenericHalPin(
+                '%s.state-fb' % self.compname, hal.HAL_IN, hal.HAL_S32
+            ),
+        }
+        self.conv_value_to_state = {
+            '-2': 'unknown',
+            '-1': 'error',
+            '0': 'stopped',
+            '1': 'started',
+        }
         # create ROS node
         rospy.init_node(self.compname)
         rospy.loginfo("%s: Node started" % self.compname)
@@ -51,6 +68,9 @@ class Hal402Mgr(object):
 
         # create drives which create pins
         self.create_drives()
+        # create pins for calling service callback
+        self.create_pins()
+        # done
         self.halcomp.ready()
 
         # check if we're running real hardware, and properly
@@ -228,6 +248,11 @@ class Hal402Mgr(object):
                 % self.compname
             )
 
+    def create_pins(self):
+        for key, pin in self.pins.items():
+            pin.set_parent_comp(self.halcomp)
+            pin.create_halpin()
+
     def create_publisher(self):
         # todo, read from ROS param server
         has_update_rate = rospy.has_param('/hal_402_device_mgr/update_rate')
@@ -279,9 +304,14 @@ class Hal402Mgr(object):
             return (
                 "request for state %s failed, state not known" % req.req_state
             )
+        else:
+            self.process_service(req.req_state)
+            return self.curr_robot_state
+
+    def process_service(self, requested_state):
         # pick a transition table for the requested state
-        tr_table = self.states[req.req_state][0]
-        all_target_states = self.states[req.req_state][1]
+        tr_table = self.states[requested_state][0]
+        all_target_states = self.states[requested_state][1]
         # set "active" transition table for the drive
         for key, drive in self.drives.items():
             drive.set_transition_table(tr_table)
@@ -289,6 +319,7 @@ class Hal402Mgr(object):
         # the drive returns success if all the drives are :
         # OPERATION ENABLED or SWITCH ON DISABLED or max_attempts
         i = 0
+        max_retries_unreacheable_state = 5000
         max_attempts = len(StateMachine402.states_402)
         while (not self.all_equal_status(all_target_states)) or (
             i < (max_attempts + 1)
@@ -297,7 +328,28 @@ class Hal402Mgr(object):
                 # traverse states for all drives (parallel)
                 # ignore drives which state already is at the target state
                 if not (drive.curr_state == all_target_states):
-                    drive.next_transition()
+                    retries = max_retries_unreacheable_state
+                    # set a timeout for waiting on a drive to have a state
+                    # from which _we_ can find a valid transition
+                    while (not drive.next_transition()) and (retries > 0):
+                        # transition is not possible !
+                        # the drive is in a state we cannot solve and need
+                        # to wait for the drive to get to a valid state
+                        #
+                        time.sleep(0.05)
+                        self.inspect_hal_pins()
+                        retries -= 1
+                    if retries < max_retries_unreacheable_state:
+                        rospy.loginfo(
+                            "%s: %s needed %i retries from state %s"
+                            % (
+                                self.compname,
+                                drive.drive_name,
+                                (max_retries_unreacheable_state - retries),
+                                drive.curr_state,
+                            )
+                        )
+
             # give HAL time to make at least 1 cycle
             time.sleep(0.002)
             self.inspect_hal_pins()
@@ -308,10 +360,16 @@ class Hal402Mgr(object):
         # when all statuses have been reached, success
         # otherwise num_states has overflowed
         if self.all_equal_status(all_target_states):
-            self.curr_robot_state = req.req_state
+            self.curr_robot_state = requested_state
         else:
             self.curr_robot_state = 'error'
-        return self.curr_robot_state
+        # make sure we mirror the state in the halpin
+        # convert state to number
+        for key, val in self.conv_value_to_state.items():
+            if val == self.curr_robot_state:
+                state_nr = int(key)
+                self.pins['state-fb'].set_local_value(state_nr)
+                self.pins['state-fb'].set_hal_value()
 
     def cb_test_service_cb(self, req):
         rospy.loginfo("%s: cb_test_service" % self.compname)
@@ -349,6 +407,31 @@ class Hal402Mgr(object):
             #     do nothing cause nothing has changed
             #     pass
 
+        # get the status pins, and save their value locally
+        self.prev_hal_state_cmd = self.curr_hal_state_cmd
+        for key, pin in self.pins.items():
+            if pin.dir == hal.HAL_IN:
+                pin.sync_hal()
+        self.curr_hal_state_cmd = self.pins['state-cmd'].local_pin_value
+
+    def check_for_state_cmd_change(self):
+        if self.state_cmd_changed() or not self.state_cmd_pin_eq_service():
+            # convert value to string
+            requested_state = self.conv_value_to_state[str(self.curr_hal_state_cmd)]
+            self.process_service(requested_state)
+
+    def state_cmd_changed(self):
+        if not (self.prev_hal_state_cmd == self.curr_hal_state_cmd):
+            return True
+        else:
+            return False
+
+    def state_cmd_pin_eq_service(self):
+        if self.curr_hal_state_cmd == self.curr_robot_state:
+            return True
+        else:
+            return False
+
     def publish_states(self):
         for key, drive in self.drives.items():
             drive.publish_state()
@@ -360,6 +443,7 @@ class Hal402Mgr(object):
     def run(self):
         while not rospy.is_shutdown():
             self.inspect_hal_pins()
+            self.check_for_state_cmd_change()
             self.publish_errors()
             self.publish_states()
             self.rate.sleep()
