@@ -137,28 +137,35 @@ class Hal402Mgr(object):
             self.wait_on_pinname,
         )
         # check for pin, result -1 then timeout, thus no pin
-        if not self.sim and (self.check_for_pin(pin_name) < 0):
+        if not self.sim and not self.check_hal(pin=pin_name):
             # pin not found
             rospy.logerr("%s: pin %s not available" % (self.compname, pin_name))
         else:
             # we've recognized a pin within the local_timeout
             self.connect_pins_and_signals()
 
-    def check_for_pin(self, pin_name):
+    def check_hal(self, pin=None, signal=None):
         local_timeout = self.timeout
-        while not (pin_name in mk_hal.pins) and (local_timeout > 0):
-            time.sleep(1)
-            local_timeout -= 1
+        time_incr = 0.25  # seconds
+        if pin is not None:
+            (obj_name, hal_objs, obj_type) = (pin, mk_hal.pins, 'pin')
+        else:
+            (obj_name, hal_objs, obj_type) = (signal, mk_hal.signals, 'signal')
+        while obj_name not in hal_objs and local_timeout > 0:
+            time.sleep(time_incr)
+            local_timeout -= time_incr
         if local_timeout <= 0:
             # a local_timeout occured
             rospy.logerr(
-                "%s: pin %s not found after %s seconds"
-                % (self.compname, pin_name, self.timeout)
+                "%s: %s %s not found after %s seconds"
+                % (self.compname, obj_type, obj_name, self.timeout)
             )
-            return -1
+            return False
         else:
-            rospy.loginfo("%s: pin %s exists" % (self.compname, pin_name))
-            return 0
+            rospy.loginfo(
+                "%s: %s %s exists" % (self.compname, obj_type, obj_name)
+            )
+            return True
 
     def connect_pins_and_signals(self):
         # check for parameters
@@ -173,50 +180,18 @@ class Hal402Mgr(object):
             '/hal_402_device_mgr/signals', []
         )
 
-        # hal can be busy setting up, so wait for all pins to exist
-        # plus additional wait time for possible signals to be created
-        for sig in self.additional_signals:
-            if (self.check_for_pin(sig[0]) < 0) or (
-                self.check_for_pin(sig[1]) < 0
-            ):
-                rospy.logerr(
-                    "%s: pin %s or %s not available"
-                    % (self.compname, sig[0], sig[1])
-                )
-                # exit immediately
-                break
-        time.sleep(0.5)
-        for sig in self.additional_signals:
-            # check if a signal already exists on that pin
-            # after waiting to make sure that other scripts have finished
+        # hal can be busy setting up, so allow up to self.timeout for
+        # all pins and signals to be created, then bomb out
+        for pin, signal in self.additional_signals:
+            if not self.check_hal(pin=pin) or not self.check_hal(signal=signal):
+                raise RuntimeError("Error:  HAL object failed to appear")
+
+        for pin, signal in self.additional_signals:
+            # Connect signals to pins
             rospy.loginfo(
-                "%s: checking for signals on pin %s" % (self.compname, sig[0])
+                "%s: connecting signal %s to pin %s", self.compname, signal, pin
             )
-            if mk_hal.Pin(sig[0]).signal:
-                # no signal exists
-                signal = mk_hal.Pin(sig[0]).signame
-                rospy.loginfo(
-                    "%s: linking existing signal %s on pin %s to %s"
-                    % (self.compname, signal, sig[0], sig[1])
-                )
-                mk_hal.Signal(signal).link(sig[1])
-            elif mk_hal.Pin(sig[0]).signal is None:
-                signame = sig[0].replace('.', '-')
-                rospy.loginfo(
-                    "%s: linking pin %s to pin %s with signal %s"
-                    % (self.compname, sig[0], sig[1], signame)
-                )
-                signal = mk_hal.newsig(signame, mk_hal.Pin(sig[0]).type)
-                mk_hal.Signal(signame).link(sig[0])
-                signal.link(sig[0])
-                signal.link(sig[1])
-            else:
-                rospy.loginfo(
-                    "%s: linking pin %s to pin %s"
-                    % (self.compname, sig[0], sig[1])
-                )
-                # get name and use this signal to link to pin
-                mk_hal.Pin(sig[0]).link(sig[1])
+            mk_hal.Signal(signal).link(mk_hal.Pin(pin))
 
     def create_drives(self):
         # check if parameters exist:

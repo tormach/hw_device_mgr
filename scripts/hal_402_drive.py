@@ -400,8 +400,9 @@ class Drive402(object):
             self.topics['status'].publish(self.drive_name, self.curr_state)
 
     def change_halpin(self, pin_change):
-        pin = self.pins_402[pin_change[0]]  # pick the pin from the list
-        pin.set_local_value(pin_change[1])  # and set local value accordingly
+        name, val = pin_change
+        pin = self.pins_402[name]  # pick the pin from the list
+        pin.set_local_value(val)  # and set local value accordingly
         pin.sync_hal()  # then sync the pin local value with HAL
 
     def drive_state_changed(self):
