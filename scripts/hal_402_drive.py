@@ -217,24 +217,20 @@ class Drive402(object):
         # each drive instance iterates thru the pins
         for key, pin in self.pins_402.items():
             # for reading the status word
-            if pin.dir == hal.HAL_IN:
-                # check if there is already a signal from the lcec pins
-                from_pin = "{}.{}.{}".format(
-                    self.parent.slaves_name, self.slave_inst, key
-                )
-                from_pin_signal = from_pin.replace('.', '-')
-                to_pin = "{}.{}".format(self.parent.compname, pin.name)
-                if from_pin_signal in mk_hal.signals:
-                    # connect this signal to the 402_mgr component
-                    mk_hal.Signal(from_pin_signal).link(to_pin)
-                else:
-                    mk_hal.Pin(from_pin).link(to_pin)
-            # for setting the control word
+            lcec_pin = mk_hal.Pin(
+                "{}.{}.{}".format(self.parent.slaves_name, self.slave_inst, key)
+            )
+            h402m_pin = mk_hal.Pin(
+                "{}.{}".format(self.parent.compname, pin.name)
+            )
+            # - check if there is already a signal from the lcec pins
+            if lcec_pin.signal:
+                # connect this signal to the 402_mgr component
+                lcec_pin.signal.link(h402m_pin)
+            elif pin.dir == hal.HAL_IN:
+                lcec_pin.link(h402m_pin)
             else:
-                to_pin = "{}.{}.{}".format(
-                    self.parent.slaves_name, self.slave_inst, key
-                )
-                mk_hal.Pin(self.parent.compname + '.' + pin.name).link(to_pin)
+                h402m_pin.link(lcec_pin)
         # connect the error-code pin
         # get the pin
         drive_n_error_pin = self.pins_generic['error-code']
