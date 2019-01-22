@@ -305,7 +305,8 @@ class Hal402Mgr(object):
                 "request for state %s failed, state not known" % req.req_state
             )
         else:
-            self.process_service(req.req_state)
+            if req.req_state != self.curr_robot_state:
+                self.process_service(req.req_state)
             return self.curr_robot_state
 
     def process_service(self, requested_state):
@@ -417,7 +418,9 @@ class Hal402Mgr(object):
     def check_for_state_cmd_change(self):
         if self.state_cmd_changed() or not self.state_cmd_pin_eq_service():
             # convert value to string
-            requested_state = self.conv_value_to_state[str(self.curr_hal_state_cmd)]
+            requested_state = self.conv_value_to_state[
+                str(self.curr_hal_state_cmd)
+            ]
             self.process_service(requested_state)
 
     def state_cmd_changed(self):
