@@ -416,7 +416,10 @@ class Hal402Mgr(object):
         self.curr_hal_state_cmd = self.pins['state-cmd'].local_pin_value
 
     def check_for_state_cmd_change(self):
-        if self.state_cmd_changed() or not self.state_cmd_pin_eq_service():
+        if self.state_cmd_changed() and not self.state_cmd_pin_eq_service():
+            # state-cmd pin needs to be changed, and the requested state needs
+            # to be unequal to the current state.
+            #
             # convert value to string
             requested_state = self.conv_value_to_state[
                 str(self.curr_hal_state_cmd)
