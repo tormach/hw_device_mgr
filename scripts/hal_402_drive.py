@@ -117,10 +117,10 @@ class StateMachine402(object):
 
 
 class Drive402(object):
-    def __init__(self, drive_name, parent, slave_inst):
+    def __init__(self, drive_name, parent, slave_inst, sim):
         # hal_402_drives_mgr
         self.slave_inst = slave_inst
-        self.sim = False
+        self.sim = sim
         self.parent = parent
         self.drive_name = drive_name
         # bitmask and value

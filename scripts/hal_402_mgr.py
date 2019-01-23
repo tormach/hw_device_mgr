@@ -14,6 +14,9 @@ from hal_402_drive import StateMachine402 as StateMachine402
 
 class Hal402Mgr(object):
     def __init__(self):
+        # Configure sim mode if SIM environment variable is set
+        self.sim = os.environ.get("SIM", "false").lower() != "false"
+
         self.compname = 'hal_402_mgr'
         self.drives = dict()
         self.prev_robot_state = 'unknown'
@@ -92,11 +95,8 @@ class Hal402Mgr(object):
         return has_parameters
 
     def check_for_real_hardware_setup(self):
-        # Configure sim mode if SIM environment variable is set
-        self.sim = os.environ.get("SIM", "false").lower() != "false"
         if self.sim:
             self.sim_set_drivestates('SWITCH ON DISABLED')
-            self.sim_set_drive_sim(True)
             rospy.loginfo(
                 "%s: no hardware setup detected, default to "
                 "simulation mode" % self.compname
@@ -246,7 +246,7 @@ class Hal402Mgr(object):
                     drivename = name + "_%s" % drive_instances[i]
                     slave_inst = slave_instances[i]
                     self.drives[drivename] = Drive402(
-                        drivename, self, slave_inst
+                        drivename, self, slave_inst, self.sim
                     )
                     rospy.loginfo("%s: %s created" % (self.compname, drivename))
         else:
@@ -285,11 +285,6 @@ class Hal402Mgr(object):
             if not (drive.curr_state == status):
                 return False
         return True
-
-    def sim_set_drive_sim(self, status):
-        # set simulation attribute to mimic hanging statusword
-        for key, drive in self.drives.items():
-            drive.sim = True
 
     def sim_set_drivestates(self, status):
         for key, drive in self.drives.items():
