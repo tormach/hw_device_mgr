@@ -11,3 +11,11 @@ hal_402_device_mgr:
         wait_on_pinname: "warning"
         wait_timeout: 20
         instances: [0, 1, 2, 3, 4, 5]
+    # additional signals can be connected: ['pin', 'signal']
+    signals:
+        - ["hal_402_mgr.drive_1.enable-operation", "joint1_operation_enabled_402"]
+        - ["hal_402_mgr.drive_2.enable-operation", "joint2_operation_enabled_402"]
+        - ["hal_402_mgr.drive_3.enable-operation", "joint3_operation_enabled_402"]
+        - ["hal_402_mgr.drive_4.enable-operation", "joint4_operation_enabled_402"]
+        - ["hal_402_mgr.drive_5.enable-operation", "joint5_operation_enabled_402"]
+        - ["hal_402_mgr.drive_6.enable-operation", "joint6_operation_enabled_402"]
