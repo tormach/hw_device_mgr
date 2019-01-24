@@ -240,7 +240,9 @@ class Drive402(object):
         error_from_pin = "{}.{}.{}".format(
             self.parent.slaves_name, self.slave_inst, 'error-code'
         )
-        error_to_pin = "{}.{}".format(self.parent.compname, drive_n_error_pin.name)
+        error_to_pin = "{}.{}".format(
+            self.parent.compname, drive_n_error_pin.name
+        )
         print(error_from_pin)
         print(error_to_pin)
         mk_hal.Pin(error_from_pin).link(error_to_pin)
