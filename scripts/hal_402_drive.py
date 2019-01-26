@@ -243,8 +243,6 @@ class Drive402(object):
         error_to_pin = "{}.{}".format(
             self.parent.compname, drive_n_error_pin.name
         )
-        print(error_from_pin)
-        print(error_to_pin)
         mk_hal.Pin(error_from_pin).link(error_to_pin)
 
     def sim_set_input_status_pins(self, status):
