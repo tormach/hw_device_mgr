@@ -53,7 +53,7 @@ class Hal402Mgr(object):
                 '%s.state-cmd' % self.compname, hal.HAL_IN, hal.HAL_U32
             ),
             'state-fb': GenericHalPin(
-                '%s.state-fb' % self.compname, hal.HAL_IN, hal.HAL_S32
+                '%s.state-fb' % self.compname, hal.HAL_OUT, hal.HAL_S32
             ),
         }
         self.conv_value_to_state = {
