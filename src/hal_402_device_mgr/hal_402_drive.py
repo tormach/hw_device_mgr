@@ -117,6 +117,32 @@ class StateMachine402(object):
 
 
 class Drive402(object):
+    pins_402_spec = [
+        # Pin tuple format:
+        #   (name, hal_dir, hal_type, bit_num)
+        #
+        # bits 0-3 and 7 and 8 of the controlword, bit 4-6 and
+        # 9 - 15 intentionally not implemented yest
+        ('switch-on', hal.HAL_OUT, hal.HAL_BIT, 0),
+        ('enable-voltage', hal.HAL_OUT, hal.HAL_BIT, 1),
+        ('quick-stop', hal.HAL_OUT, hal.HAL_BIT, 2),
+        ('enable-operation', hal.HAL_OUT, hal.HAL_BIT, 3),
+        ('fault-reset', hal.HAL_OUT, hal.HAL_BIT, 7),
+        ('halt', hal.HAL_OUT, hal.HAL_BIT, 8),
+        # bits in the status word, bit 8 - 15 intentionally
+        # not implemented yet
+        ('ready-to-switch-on', hal.HAL_IN, hal.HAL_BIT, 0),
+        ('switched-on', hal.HAL_IN, hal.HAL_BIT, 1),
+        ('operation-enabled', hal.HAL_IN, hal.HAL_BIT, 2),
+        ('fault', hal.HAL_IN, hal.HAL_BIT, 3),
+        ('voltage-enabled', hal.HAL_IN, hal.HAL_BIT, 4),
+        # because of duplicate pin name 'quick_stop' of control word
+        # this pin is called quick-stop-fb as the lcec pin
+        ('quick-stop-fb', hal.HAL_IN, hal.HAL_BIT, 5),
+        ('switch-on-disabled', hal.HAL_IN, hal.HAL_BIT, 6),
+        ('warning', hal.HAL_IN, hal.HAL_BIT, 7),
+    ]
+
     def __init__(self, drive_name, parent, slave_inst):
         # hal_402_drives_mgr
         self.slave_inst = slave_inst
@@ -131,74 +157,11 @@ class Drive402(object):
         self.prev_error = 0
         self.curr_error = 0
         self.active_transition_table = None
-        self.pins_402 = {
-            # bits 0-3 and 7 and 8 of the controlword, bit 4-6 and
-            # 9 - 15 intentionally not implemented yest
-            'switch-on': Pin402(
-                '%s.switch-on' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 0
-            ),
-            'enable-voltage': Pin402(
-                '%s.enable-voltage' % self.drive_name,
-                hal.HAL_OUT,
-                hal.HAL_BIT,
-                1,
-            ),
-            'quick-stop': Pin402(
-                '%s.quick-stop' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 2
-            ),
-            'enable-operation': Pin402(
-                '%s.enable-operation' % self.drive_name,
-                hal.HAL_OUT,
-                hal.HAL_BIT,
-                3,
-            ),
-            'fault-reset': Pin402(
-                '%s.fault-reset' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 7
-            ),
-            'halt': Pin402(
-                '%s.halt' % self.drive_name, hal.HAL_OUT, hal.HAL_BIT, 8
-            ),
-            # bits in the status word, bit 8 - 15 intentionally
-            # not implemented yet
-            'ready-to-switch-on': Pin402(
-                '%s.ready-to-switch-on' % self.drive_name,
-                hal.HAL_IN,
-                hal.HAL_BIT,
-                0,
-            ),
-            'switched-on': Pin402(
-                '%s.switched-on' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 1
-            ),
-            'operation-enabled': Pin402(
-                '%s.operation-enabled' % self.drive_name,
-                hal.HAL_IN,
-                hal.HAL_BIT,
-                2,
-            ),
-            'fault': Pin402(
-                '%s.fault' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 3
-            ),
-            'voltage-enabled': Pin402(
-                '%s.voltage-enabled' % self.drive_name,
-                hal.HAL_IN,
-                hal.HAL_BIT,
-                4,
-            ),
-            # because of duplicity of pin 'quick_stop' of control word
-            # this pin is called quick-stop-fb as the lcec pin
-            'quick-stop-fb': Pin402(
-                '%s.quick-stop-fb' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 5
-            ),
-            'switch-on-disabled': Pin402(
-                '%s.switch-on-disabled' % self.drive_name,
-                hal.HAL_IN,
-                hal.HAL_BIT,
-                6,
-            ),
-            'warning': Pin402(
-                '%s.warning' % self.drive_name, hal.HAL_IN, hal.HAL_BIT, 7
-            ),
-        }
+        self.pins_402 = dict()
+        for pname, pdir, ptype, ppos in self.pins_402_spec:
+            self.pins_402[pname] = Pin402(
+                '{}.{}'.format(self.drive_name, pname), pdir, ptype, ppos
+            )
         self.pins_generic = {
             # Pins used by this component
             'error-code': GenericHalPin(
