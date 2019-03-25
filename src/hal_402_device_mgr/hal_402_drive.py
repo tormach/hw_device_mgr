@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import rospy
-from machinekit import hal as mk_hal
 import hal
 import time
 
@@ -118,10 +117,10 @@ class StateMachine402(object):
 
 
 class Drive402(object):
-    def __init__(self, drive_name, parent, slave_inst, sim):
+    def __init__(self, drive_name, parent, slave_inst):
         # hal_402_drives_mgr
         self.slave_inst = slave_inst
-        self.sim = sim
+        self.sim = rospy.get_param("/sim_mode", True)
         self.parent = parent
         self.drive_name = drive_name
         # bitmask and value
@@ -212,35 +211,6 @@ class Drive402(object):
             'pins_generic': self.pins_generic,
         }
         self.create_pins()
-
-    def connect_pins_and_signals(self):
-        # each drive instance iterates thru the pins
-        for key, pin in self.pins_402.items():
-            # for reading the status word
-            lcec_pin = mk_hal.Pin(
-                "{}.{}.{}".format(self.parent.slaves_name, self.slave_inst, key)
-            )
-            h402m_pin = mk_hal.Pin(
-                "{}.{}".format(self.parent.compname, pin.name)
-            )
-            # - check if there is already a signal from the lcec pins
-            if lcec_pin.signal:
-                # connect this signal to the 402_mgr component
-                lcec_pin.signal.link(h402m_pin)
-            elif pin.dir == hal.HAL_IN:
-                lcec_pin.link(h402m_pin)
-            else:
-                h402m_pin.link(lcec_pin)
-        # connect the error-code pin
-        # get the pin
-        drive_n_error_pin = self.pins_generic['error-code']
-        error_from_pin = "{}.{}.{}".format(
-            self.parent.slaves_name, self.slave_inst, 'error-code'
-        )
-        error_to_pin = "{}.{}".format(
-            self.parent.compname, drive_n_error_pin.name
-        )
-        mk_hal.Pin(error_from_pin).link(error_to_pin)
 
     def sim_set_status(self, status):
         # bitmask = StateMachine402.states_402[status][0]
