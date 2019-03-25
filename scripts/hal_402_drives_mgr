@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from hal_402_mgr import Hal402Mgr
+from hal_402_device_mgr.hal_402_mgr import Hal402Mgr
 import time
 
 
