@@ -68,6 +68,7 @@ class StateMachine402(object):
         'SWITCH ON DISABLED': ['READY TO SWITCH ON', 'TRANSITION_2'],
         'READY TO SWITCH ON': ['SWITCHED ON', 'TRANSITION_3'],
         'SWITCHED ON': ['OPERATION ENABLED', 'TRANSITION_4'],
+        'OPERATION ENABLED': ['OPERATION ENABLED', 'NA'],
     }
     # these transitions take longer from OPERATION ENABLED -> SWITCH ON DISABLED
     # 'OPERATION ENABLED':        ['SWITCHED ON', 'TRANSITION_5'],
@@ -79,6 +80,7 @@ class StateMachine402(object):
         'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'NA'],
         'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'NA'],
         'OPERATION ENABLED': ['SWITCH ON DISABLED', 'TRANSITION_9'],
+        'SWITCH ON DISABLED': ['SWITCH ON DISABLED', 'NA'],
     }
 
     # the transition dict contains a list of tuples with bits and value
@@ -196,6 +198,17 @@ class Drive402(object):
     def set_transition_table(self, transition_table):
         self.active_transition_table = transition_table
 
+    def print_debuginfo(self):
+        rospy.logwarn(
+            "%s: %s encountered statusword: \'%s\', with value: %s"
+            % (
+                self.parent.compname,
+                self.drive_name,
+                self.curr_state,
+                self.curr_status_word,
+            )
+        )
+
     def next_transition(self):
         # firstly, we need to wait on a state which has a valid
         # next transition. For example, when a drive is starting up
@@ -210,23 +223,40 @@ class Drive402(object):
         # when called:
         # - look up the self.active_transition_table[self.curr_state]
         # - get transition list[1]
-        transition = self.active_transition_table[self.curr_state][1]
-        if transition != 'NA':
-            # - in sim mode, get the the next state to mimic input pin changes
-            if self.sim is True:
-                next_state = self.active_transition_table[self.curr_state][0]
-            # - look up transition in transition_table
-            # - get list with tuples containing pin and value to be set
-            change_pins_list = StateMachine402.transitions[transition]
-            # - for each tuple from list, set pin and value
-            for pin_change in change_pins_list:
-                self.change_halpin(pin_change)
-                # for simulation purpose, set input pins manually according to
-                # the next state as if the drive is attached
+        try:
+            transition = self.active_transition_table[self.curr_state][1]
+            if transition != 'NA':
+                # - in sim mode, get the the next state to mimic input pin changes
                 if self.sim is True:
-                    self.sim_set_status(next_state)
-            return True
-        else:
+                    next_state = self.active_transition_table[self.curr_state][
+                        0
+                    ]
+                # - look up transition in transition_table
+                # - get list with tuples containing pin and value to be set
+                change_pins_list = StateMachine402.transitions[transition]
+                # - for each tuple from list, set pin and value
+                for pin_change in change_pins_list:
+                    self.change_halpin(pin_change)
+                    # for simulation purpose, set input pins manually according to
+                    # the next state as if the drive is attached
+                    if self.sim is True:
+                        self.sim_set_status(next_state)
+                return True
+            # sometimes (as proposed by zultron) we seem to have a race condition where
+            # after a read of the state bits, the state is 'unknown' and then the next
+            # read will provide a correct status word. If that status word is the
+            # target we try to reach, the elif below will return a true so the while
+            # loop in hal_402_mgr.py, line 221 can sucessfully exit
+            elif (
+                self.curr_state
+                == self.active_transition_table[self.curr_state][0]
+            ):
+                # current state equals the target state, mimic succesful transition
+                return True
+            else:
+                return False
+        except KeyError:
+            self.print_debuginfo()
             return False
 
     def create_pins(self):
