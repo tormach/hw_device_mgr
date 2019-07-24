@@ -206,7 +206,7 @@ class Hal402Mgr(object):
         # the drive returns success if all the drives are :
         # OPERATION ENABLED or SWITCH ON DISABLED or max_attempts
         i = 0
-        max_retries_unreacheable_state = 5000
+        max_retries_unreacheable_state = 5
         max_attempts = len(StateMachine402.states_402)
         while (not self.all_equal_status(all_target_states)) or (
             i < (max_attempts + 1)
