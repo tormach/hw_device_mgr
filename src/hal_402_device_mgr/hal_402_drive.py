@@ -168,7 +168,10 @@ class Drive402(object):
             # Pins used by this component
             'error-code': GenericHalPin(
                 '%s.error-code' % self.drive_name, hal.HAL_IN, hal.HAL_U32
-            )
+            ),
+            'status-word': GenericHalPin(
+                '%s.status-word' % self.drive_name, hal.HAL_IN, hal.HAL_U32
+            ),
         }
         self.all_pins = {
             # create dict holding the 2 different classes of pins
@@ -308,12 +311,7 @@ class Drive402(object):
         # that these input pins build up the current status word. The status
         # word will be used for determining the 402 profile drive state.
         self.prev_status_word = self.curr_status_word
-        self.curr_status_word = 0
-        for key, pin in self.pins_402.items():
-            if pin.dir == hal.HAL_IN:
-                self.curr_status_word = self.curr_status_word | (
-                    pin.local_pin_value << pin.bit_pos
-                )
+        self.curr_status_word = self.pins_generic['status-word'].local_pin_value
 
     def status_word_changed(self):
         if not (self.prev_status_word == self.curr_status_word):
