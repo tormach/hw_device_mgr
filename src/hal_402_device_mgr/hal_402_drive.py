@@ -131,18 +131,7 @@ class Drive402(object):
         ('enable-operation', hal.HAL_OUT, hal.HAL_BIT, 3),
         ('fault-reset', hal.HAL_OUT, hal.HAL_BIT, 7),
         ('halt', hal.HAL_OUT, hal.HAL_BIT, 8),
-        # bits in the status word, bit 8 - 15 intentionally
-        # not implemented yet
-        ('ready-to-switch-on', hal.HAL_IN, hal.HAL_BIT, 0),
-        ('switched-on', hal.HAL_IN, hal.HAL_BIT, 1),
-        ('operation-enabled', hal.HAL_IN, hal.HAL_BIT, 2),
-        ('fault', hal.HAL_IN, hal.HAL_BIT, 3),
-        ('voltage-enabled', hal.HAL_IN, hal.HAL_BIT, 4),
-        # because of duplicate pin name 'quick_stop' of control word
-        # this pin is called quick-stop-fb as the lcec pin
-        ('quick-stop-fb', hal.HAL_IN, hal.HAL_BIT, 5),
-        ('switch-on-disabled', hal.HAL_IN, hal.HAL_BIT, 6),
-        ('warning', hal.HAL_IN, hal.HAL_BIT, 7),
+        # the status word pins are not connected anymore
     ]
 
     def __init__(self, drive_name, parent, slave_inst):
