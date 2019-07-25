@@ -174,15 +174,8 @@ class Drive402(object):
         # set pins according entire control word value
         # effectively also resetting pins that are not in bitmask
         statusword = StateMachine402.states_402[status][1]
-        for key, pin in self.pins_402.items():
-            if pin.dir == hal.HAL_IN:
-                # get value corresponding with bit index
-                # returns 1,2,4,8 depending on bit val == 1
-                # comparing a non-zero return gives a true or false (0 or 1)
-                bit_val = (statusword & (1 << pin.bit_pos)) != 0
-                # for simulation purpose when no drive available
-                pin.set_local_value(bit_val)
-                pin.set_hal_value()
+        self.pins_generic['status-word'].set_local_value(statusword)
+        self.pins_generic['status-word'].set_hal_value()
         # give HAL at least 1 cycle to process
         time.sleep(0.002)
         self.update_state()
