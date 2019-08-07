@@ -86,7 +86,12 @@ class StateMachine402(object):
     # the transition dict contains a list of tuples with bits and value
     # to can be set and reset.
     transitions = {
-        'TRANSITION_2': [('enable-voltage', 1), ('quick-stop', 1)],
+        'TRANSITION_2': [
+            ('switch-on', 0),
+            ('enable-voltage', 1),
+            ('quick-stop', 1),
+            ('enable-operation', 0),
+        ],
         'TRANSITION_3': [('switch-on', 1)],
         'TRANSITION_4': [('enable-operation', 1)],
         'TRANSITION_5': [('enable-operation', 0)],
@@ -210,38 +215,38 @@ class Drive402(object):
         # - get transition list[1]
         try:
             transition = self.active_transition_table[self.curr_state][1]
-            if transition != 'NA':
-                # - in sim mode, get the the next state to mimic input pin changes
-                if self.sim is True:
-                    next_state = self.active_transition_table[self.curr_state][
-                        0
-                    ]
-                # - look up transition in transition_table
-                # - get list with tuples containing pin and value to be set
-                change_pins_list = StateMachine402.transitions[transition]
-                # - for each tuple from list, set pin and value
-                for pin_change in change_pins_list:
-                    self.change_halpin(pin_change)
-                    # for simulation purpose, set input pins manually according to
-                    # the next state as if the drive is attached
-                    if self.sim is True:
-                        self.sim_set_status(next_state)
-                return True
-            # sometimes (as proposed by zultron) we seem to have a race condition where
-            # after a read of the state bits, the state is 'unknown' and then the next
-            # read will provide a correct status word. If that status word is the
-            # target we try to reach, the elif below will return a true so the while
-            # loop in hal_402_mgr.py, line 221 can sucessfully exit
-            elif (
-                self.curr_state
-                == self.active_transition_table[self.curr_state][0]
-            ):
-                # current state equals the target state, mimic succesful transition
-                return True
-            else:
-                return False
+            return self.do_transition(transition)
         except KeyError:
             self.print_debuginfo()
+            return False
+
+    def do_transition(self, transition):
+        if transition != 'NA':
+            # - in sim mode, get the the next state to mimic input pin changes
+            if self.sim is True:
+                next_state = self.active_transition_table[self.curr_state][0]
+            # - look up transition in transition_table
+            # - get list with tuples containing pin and value to be set
+            change_pins_list = StateMachine402.transitions[transition]
+            # - for each tuple from list, set pin and value
+            for pin_change in change_pins_list:
+                self.change_halpin(pin_change)
+                # for simulation purpose, set input pins manually according to
+                # the next state as if the drive is attached
+                if self.sim is True:
+                    self.sim_set_status(next_state)
+            return True
+        # sometimes (as proposed by zultron) we seem to have a race condition where
+        # after a read of the state bits, the state is 'unknown' and then the next
+        # read will provide a correct status word. If that status word is the
+        # target we try to reach, the elif below will return a true so the while
+        # loop in hal_402_mgr.py, line 221 can sucessfully exit
+        elif (
+            self.curr_state == self.active_transition_table[self.curr_state][0]
+        ):
+            # current state equals the target state, mimic succesful transition
+            return True
+        else:
             return False
 
     def create_pins(self):
