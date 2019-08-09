@@ -2,6 +2,8 @@
 import rospy
 import time
 import hal
+import attr
+from fysom import Fysom, FysomError
 
 # import service messages from the ROS node
 from hal_402_device_mgr.srv import srv_robot_state
@@ -12,40 +14,69 @@ from hal_402_device_mgr.hal_402_drive import (
 )
 
 
+@attr.s
+class transition_obj(object):
+    name = attr.ib()
+    target_path = attr.ib()
+    target_name = attr.ib()
+    transition = attr.ib()
+
+
 class Hal402Mgr(object):
     def __init__(self):
         # Configure sim mode if SIM environment variable is set
         self.sim = rospy.get_param("/sim_mode", True)
-
         self.compname = 'hal_402_mgr'
         self.drives = dict()
-        self.prev_robot_state = 'unknown'
-        self.curr_robot_state = 'unknown'
-        self.prev_hal_state_cmd = 0
-        self.curr_hal_state_cmd = 0
-        # very simple transitions for now
-        # unknown -> stopped
-        # error -> stopped
-        # stopped -> error
-        # stopped -> started
-        # started -> error
-        self.states = {
-            'unknown': [
-                StateMachine402.path_to_switch_on_disabled,
-                'SWITCH ON DISABLED',
-            ],
-            'started': [
-                StateMachine402.path_to_operation_enabled,
-                'OPERATION ENABLED',
-            ],
-            'stopped': [
-                StateMachine402.path_to_switch_on_disabled,
-                'SWITCH ON DISABLED',
-            ],
-            'error': [
-                StateMachine402.path_to_switch_on_disabled,
-                'SWITCH ON DISABLED',
-            ],
+        self.fsm = Fysom(
+            {
+                'initial': {'state': 'initial', 'event': 'init', 'defer': True},
+                'events': [
+                    {
+                        'name': 'stop',
+                        'src': ['initial', 'started', 'fault'],
+                        'dst': 'stopped',
+                    },
+                    {'name': 'start', 'src': 'stopped', 'dst': 'started'},
+                    {
+                        'name': 'error',
+                        'src': ['initial', 'started', 'stopped'],
+                        'dst': 'fault',
+                    },
+                ],
+                'callbacks': {
+                    'oninitial': self.fsm_in_initial,
+                    'onstopped': self.fsm_in_stopped,
+                    'onstarted': self.fsm_in_started,
+                    'onfault': self.fsm_in_fault,
+                    'onstop': self.fsm_on_stop,
+                    'onstart': self.fsm_on_start,
+                    'onerror': self.fsm_on_error,
+                },
+            }
+        )
+        self.prev_hal_transition_cmd = -2
+        self.curr_hal_transition_cmd = -2
+
+        self.transitions = {
+            'start': transition_obj(
+                name='start',
+                target_path=StateMachine402.path_to_operation_enabled,
+                target_name='OPERATION ENABLED',
+                transition=self.fsm.start,
+            ),
+            'stop': transition_obj(
+                name='stop',
+                target_path=StateMachine402.path_to_switch_on_disabled,
+                target_name='SWITCH ON DISABLED',
+                transition=self.fsm.stop,
+            ),
+            'error': transition_obj(
+                name='error',
+                target_path=StateMachine402.path_to_switch_on_disabled,
+                target_name='SWITCH ON DISABLED',
+                transition=self.fsm.error,
+            ),
         }
         self.pins = {
             # Pins used by this component to call the service callbacks
@@ -56,11 +87,12 @@ class Hal402Mgr(object):
                 '%s.state-fb' % self.compname, hal.HAL_OUT, hal.HAL_S32
             ),
         }
+        self.conv_value_to_transition = {2: 'error', 0: 'stop', 1: 'start'}
         self.conv_value_to_state = {
-            '-2': 'unknown',
-            '-1': 'error',
-            '0': 'stopped',
-            '1': 'started',
+            3: 'initial',
+            2: 'fault',
+            0: 'stopped',
+            1: 'started',
         }
         # create ROS node
         rospy.init_node(self.compname)
@@ -84,6 +116,7 @@ class Hal402Mgr(object):
 
         # done
         self.halcomp.ready()
+        self.fsm.init()
 
     def has_parameters(self, list_of_parameters):
         has_parameters = True
@@ -179,26 +212,82 @@ class Hal402Mgr(object):
 
     def cb_robot_state_service(self, req):
         # The service callback
-        # the value of the requested state is in req.req_state (string)
-        # the return value is the service response (string)
+        # the requested transition is in req.req_transition (string)
+        # the return value for the service response (string) is a message
         # check the requested state for validity
-        if req.req_state not in self.states:
+        if req.req_transition not in self.transitions:
             rospy.loginfo(
-                "%s: request for state failed, %s not a valid state"
-                % (self.compname, req.req_state)
+                "%s: request failed, %s not a valid transition"
+                % (self.compname, req.req_transition)
             )
-            return (
-                "request for state %s failed, state not known" % req.req_state
+            return "%s: request failed, %s not a valid transition" % (
+                self.compname,
+                req.req_transition,
             )
         else:
-            if req.req_state != self.curr_robot_state:
-                self.process_service(req.req_state)
-            return self.curr_robot_state
+            return self.execute_transition(req.req_transition)
 
-    def process_service(self, requested_state):
+    def execute_transition(self, transition):
+        try:
+            f = self.transitions[transition].transition
+            f(msg=transition)
+            rospy.loginfo(
+                "%s: Transition properly executed, current state \'%s\'"
+                % (self.compname, self.fsm.current)
+            )
+            return (
+                "Transition properly executed, current state \'%s\'"
+                % self.fsm.current
+            )
+        except FysomError:
+            rospy.logwarn(
+                "%s: Transition not possible from state \'%s\', with value %s"
+                % (self.compname, self.fsm.current, transition)
+            )
+            return (
+                "Transition not possible from state \'%s\'" % self.fsm.current
+            )
+
+    # transition callbacks
+    def fsm_on_stop(self, e=None):
+        self.process_drive_transitions(e.msg)
+
+    def fsm_on_start(self, e=None):
+        self.process_drive_transitions(e.msg)
+
+    def fsm_on_error(self, e=None):
+        self.process_drive_transitions(e.msg)
+
+    # enter state callbacks
+    def fsm_in_initial(self, e=None):
+        # print('in_initial')
+        self.update_hal_state_fb()
+
+    def fsm_in_stopped(self, e=None):
+        # print('in_stopped')
+        self.update_hal_state_fb()
+
+    def fsm_in_started(self, e=None):
+        # print('in_started')
+        self.update_hal_state_fb()
+
+    def fsm_in_fault(self, e=None):
+        # print('in_fault')
+        self.update_hal_state_fb()
+
+    # make sure we mirror the state in the halpin
+    # convert state to number
+    def update_hal_state_fb(self):
+        for key, val in self.conv_value_to_state.items():
+            if val == self.fsm.current:
+                state_nr = key
+                self.pins['state-fb'].set_local_value(state_nr)
+                self.pins['state-fb'].set_hal_value()
+
+    def process_drive_transitions(self, transition):
         # pick a transition table for the requested state
-        tr_table = self.states[requested_state][0]
-        all_target_states = self.states[requested_state][1]
+        tr_table = self.transitions[transition].target_path
+        target_states = self.transitions[transition].target_name
         # set "active" transition table for the drive
         for key, drive in self.drives.items():
             drive.set_transition_table(tr_table)
@@ -208,13 +297,13 @@ class Hal402Mgr(object):
         i = 0
         max_retries_unreacheable_state = 5
         max_attempts = len(StateMachine402.states_402)
-        while (not self.all_equal_status(all_target_states)) or (
+        while (not self.all_equal_status(target_states)) or (
             i < (max_attempts + 1)
         ):
             for key, drive in self.drives.items():
                 # traverse states for all drives (parallel)
                 # ignore drives which state already is at the target state
-                if not (drive.curr_state == all_target_states):
+                if not (drive.curr_state == target_states):
                     retries = max_retries_unreacheable_state
                     # set a timeout for waiting on a drive to have a state
                     # from which _we_ can find a valid transition
@@ -243,20 +332,9 @@ class Hal402Mgr(object):
             self.publish_states()
             i += 1
 
-        # when states are successfully reached, update overall state
-        # when all statuses have been reached, success
-        # otherwise num_states has overflowed
-        if self.all_equal_status(all_target_states):
-            self.curr_robot_state = requested_state
-        else:
-            self.curr_robot_state = 'error'
-        # make sure we mirror the state in the halpin
-        # convert state to number
-        for key, val in self.conv_value_to_state.items():
-            if val == self.curr_robot_state:
-                state_nr = int(key)
-                self.pins['state-fb'].set_local_value(state_nr)
-                self.pins['state-fb'].set_hal_value()
+        # when not all statuses have been reached, we generate an error event
+        if not self.all_equal_status(target_states):
+            self.fsm.error()
 
     def cb_test_service_cb(self, req):
         rospy.loginfo("%s: cb_test_service" % self.compname)
@@ -284,34 +362,40 @@ class Hal402Mgr(object):
             drive.update_state()
 
         # get the status pins, and save their value locally
-        self.prev_hal_state_cmd = self.curr_hal_state_cmd
+        self.prev_hal_transition_cmd = self.curr_hal_transition_cmd
         for key, pin in self.pins.items():
             if pin.dir == hal.HAL_IN:
                 pin.sync_hal()
-        self.curr_hal_state_cmd = self.pins['state-cmd'].local_pin_value
+        self.curr_hal_transition_cmd = self.pins['state-cmd'].local_pin_value
 
-    def check_for_state_cmd_change(self):
-        if self.state_cmd_changed() and not self.state_cmd_pin_eq_service():
-            # state-cmd pin needs to be changed, and the requested state needs
-            # to be unequal to the current state.
-            #
-            # convert value to string
-            requested_state = self.conv_value_to_state[
-                str(self.curr_hal_state_cmd)
-            ]
-            self.process_service(requested_state)
+    def hal_transition_cmd(self):
+        if self.transition_cmd_changed():
+            if (
+                self.curr_hal_transition_cmd
+                not in self.conv_value_to_transition
+            ):
+                rospy.loginfo(
+                    "%s: HAL request failed, %s not a valid transition"
+                    % (self.compname, self.curr_hal_transition_cmd)
+                )
+                return "%s: HAL request failed, %s not a valid transition" % (
+                    self.compname,
+                    self.curr_hal_transition_cmd,
+                )
+            else:
+                transition = self.conv_value_to_transition[
+                    self.curr_hal_transition_cmd
+                ]
+                self.execute_transition(transition)
 
-    def state_cmd_changed(self):
-        if not (self.prev_hal_state_cmd == self.curr_hal_state_cmd):
+    def transition_cmd_changed(self):
+        if not (self.prev_hal_transition_cmd == self.curr_hal_transition_cmd):
             return True
         else:
             return False
 
-    def state_cmd_pin_eq_service(self):
-        if self.curr_hal_state_cmd == self.curr_robot_state:
-            return True
-        else:
-            return False
+    def check_for_errors(self):
+        pass
 
     def publish_states(self):
         for key, drive in self.drives.items():
@@ -324,7 +408,8 @@ class Hal402Mgr(object):
     def run(self):
         while not rospy.is_shutdown():
             self.update_drive_states()
-            self.check_for_state_cmd_change()
+            self.check_for_errors()
+            self.hal_transition_cmd()
             self.publish_errors()
             self.publish_states()
             self.rate.sleep()
