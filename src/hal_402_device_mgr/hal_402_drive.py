@@ -183,7 +183,6 @@ class Drive402(object):
         self.pins_generic['status-word'].set_hal_value()
         # give HAL at least 1 cycle to process
         time.sleep(0.002)
-        self.update_state()
 
     def set_transition_table(self, transition_table):
         self.active_transition_table = transition_table
