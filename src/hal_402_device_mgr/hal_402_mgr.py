@@ -199,12 +199,19 @@ class Hal402Mgr(object):
                 % self.compname
             )
 
-    def all_equal_status(self, status):
+    def all_drives_have_status(self, status):
         # check if all the drives have the same status
         for key, drive in self.drives.items():
             if not (drive.curr_state == status):
                 return False
         return True
+
+    def one_drive_has_status(self, status):
+        # check if all the drives have the same status
+        for key, drive in self.drives.items():
+            if drive.curr_state == status:
+                return True
+        return False
 
     def sim_set_drives_status(self, status):
         for key, drive in self.drives.items():
@@ -272,7 +279,7 @@ class Hal402Mgr(object):
         self.update_hal_state_fb()
 
     def fsm_in_fault(self, e=None):
-        # print('in_fault')
+        rospy.logerr("%s: The machine entered \'fault\' state" % self.compname)
         self.update_hal_state_fb()
 
     # make sure we mirror the state in the halpin
@@ -297,7 +304,7 @@ class Hal402Mgr(object):
         i = 0
         max_retries_unreacheable_state = 5
         max_attempts = len(StateMachine402.states_402)
-        while (not self.all_equal_status(target_states)) or (
+        while (not self.all_drives_have_status(target_states)) or (
             i < (max_attempts + 1)
         ):
             for key, drive in self.drives.items():
@@ -333,7 +340,7 @@ class Hal402Mgr(object):
             i += 1
 
         # when not all statuses have been reached, we generate an error event
-        if not self.all_equal_status(target_states):
+        if not self.all_drives_have_status(target_states):
             self.fsm.error()
 
     def cb_test_service_cb(self, req):
@@ -395,7 +402,12 @@ class Hal402Mgr(object):
             return False
 
     def check_for_errors(self):
-        pass
+        # when in a certain state, we need to check things so we can initiate
+        # a transition to an error state for example
+        one_drive_faulted = self.one_drive_has_status('FAULT')
+        if self.fsm.current != 'fault':
+            if one_drive_faulted:
+                self.execute_transition('error')
 
     def publish_states(self):
         for key, drive in self.drives.items():
@@ -410,6 +422,4 @@ class Hal402Mgr(object):
             self.update_drive_states()
             self.check_for_errors()
             self.hal_transition_cmd()
-            self.publish_errors()
-            self.publish_states()
             self.rate.sleep()

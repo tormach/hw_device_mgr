@@ -286,6 +286,7 @@ class Drive402(object):
     def read_halpins(self):
         # get all the status pins, and save their value locally
         self.prev_error = self.curr_error
+        self.prev_state = self.curr_state
         for k, pin_dict in self.all_pins.items():
             for key, pin in pin_dict.items():
                 if pin.dir == hal.HAL_IN:
@@ -306,7 +307,6 @@ class Drive402(object):
             return False
 
     def calculate_state(self):
-        self.prev_state = self.curr_state
         for key, state in StateMachine402.states_402.items():
             # check if the value after applying the bitmask (value[0])
             # corresponds with the value[1] to determine the current status
@@ -328,15 +328,9 @@ class Drive402(object):
         self.read_halpins()
         self.calculate_status_word()
         self.calculate_state()
-        # if self.status_word_changed():
-        #     print('{}: {} status_word: {:#010b} status: {}'.format(
-        #                                         self.parent.compname,
-        #                                         self.self_name,
-        #                                         self.curr_status_word,
-        #                                         self.curr_state))
-        # else:
-        #     do nothing cause nothing has changed
-        #     pass
+        self.publish_state()
+        self.publish_fault_state()
+        self.publish_error()
 
     def publish_state(self):
         if self.drive_state_changed():
@@ -374,3 +368,10 @@ class Drive402(object):
                     "%s: %s error %s"
                     % (self.parent.compname, self.drive_name, self.curr_error)
                 )
+
+    def publish_fault_state(self):
+        if (self.curr_state == 'FAULT') and self.drive_state_changed():
+            rospy.logerr(
+                "%s: %s entered \'FAULT\' state"
+                % (self.parent.compname, self.drive_name)
+            )
