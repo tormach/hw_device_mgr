@@ -1,5 +1,6 @@
-# request a machine state, ON of OFF
+# request a machine transition
+# should be start, stop or error
 string req_transition
 ---
-# reply, can be ON, OFF or ERROR
+# reply, can be started, stopped or fault
 string rep_state

@@ -198,6 +198,13 @@ class Drive402(object):
             )
         )
 
+    def is_transitionable(self, transition):
+        transition = self.active_transition_table[self.curr_state][1]
+        if transition == 'NA':
+            return False
+        else:
+            return True
+
     def next_transition(self):
         # firstly, we need to wait on a state which has a valid
         # next transition. For example, when a drive is starting up
@@ -220,7 +227,7 @@ class Drive402(object):
             return False
 
     def do_transition(self, transition):
-        if transition != 'NA':
+        if self.is_transitionable(transition):
             # - in sim mode, get the the next state to mimic input pin changes
             if self.sim is True:
                 next_state = self.active_transition_table[self.curr_state][0]
