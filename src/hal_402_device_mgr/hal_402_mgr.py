@@ -63,6 +63,8 @@ class Hal402Mgr(object):
         )
         self.prev_hal_transition_cmd = -2
         self.curr_hal_transition_cmd = -2
+        self.curr_hal_reset_pin = 0
+        self.curr_hal_reset_pin = 0
 
         self.transitions = {
             'stop': transition_obj(
@@ -88,6 +90,9 @@ class Hal402Mgr(object):
             ),
             'state-fb': GenericHalPin(
                 '%s.state-fb' % self.compname, hal.HAL_OUT, hal.HAL_S32
+            ),
+            'reset': GenericHalPin(
+                '%s.reset' % self.compname, hal.HAL_IN, hal.HAL_BIT
             ),
         }
         self.conv_value_to_state = {
@@ -271,11 +276,18 @@ class Hal402Mgr(object):
     def fsm_in_disabled(self, e=None):
         self.update_hal_state_fb()
 
+    def change_drives(self, target_path, target_name):
+        self.update_hal_state_fb()
+        if self.process_drive_transitions(target_path, target_name):
+            return True
+        else:
+            return False
+
     def fsm_in_stopping(self, e=None):
         target_path = StateMachine402.path_to_switch_on_disabled
         target_name = 'SWITCH ON DISABLED'
         self.update_hal_state_fb()
-        if self.process_drive_transitions(target_path, target_name):
+        if self.change_drives(target_path, target_name):
             self.execute_transition('stopped')
         else:
             self.execute_transition('error')
@@ -284,16 +296,21 @@ class Hal402Mgr(object):
         target_path = StateMachine402.path_to_operation_enabled
         target_name = 'OPERATION ENABLED'
         self.update_hal_state_fb()
-        if self.process_drive_transitions(target_path, target_name):
+        if self.change_drives(target_path, target_name):
             self.execute_transition('started')
         else:
             self.execute_transition('error')
 
     def fsm_in_enabled(self, e=None):
-        # print('in_started')
         self.update_hal_state_fb()
 
     def fsm_in_fault(self, e=None):
+        # first try to shut down all the drives, if they are not already off
+        # thru the HAL plumbing (quick-stop bit should be low at the moment
+        # one of the drive faults).
+        target_path = StateMachine402.path_to_switch_on_disabled
+        target_name = 'SWITCH ON DISABLED'
+        self.change_drives(target_path, target_name)
         rospy.logerr(
             "%s: The machine entered \'fault\' state, previous state was \'%s\'"
             % (self.compname, e.src)
@@ -362,19 +379,11 @@ class Hal402Mgr(object):
             self.publish_states()
         return no_error
 
-    def cb_test_service_cb(self, req):
-        rospy.loginfo("%s: cb_test_service" % self.compname)
-        # the response that's returned is the return value of the callback
-        return "test service return string"
-
     def create_service(self):
-        # $ rosservice call /hal_402_drives_mgr abcd
-        # will call the function callback, that will receive the
-        # service message as an argument
-        # testin routine:
-        # self.service = rospy.Service('hal_402_drives_mgr',
-        #                             srv_robot_state,
-        #                             self.cb_test_service)
+        # $ rosservice call rosservice call /hal_402_drives_mgr "req_transition: ''"
+        # will call the function callback, that will receive the service message
+        # as an argument. The transition should be added between the single quotes.
+
         self.service = rospy.Service(
             'hal_402_drives_mgr', srv_robot_state, self.cb_robot_state_service
         )
@@ -389,34 +398,53 @@ class Hal402Mgr(object):
 
         # get the status pins, and save their value locally
         self.prev_hal_transition_cmd = self.curr_hal_transition_cmd
+        self.prev_hal_reset_pin = self.curr_hal_reset_pin
         for key, pin in self.pins.items():
             if pin.dir == hal.HAL_IN:
                 pin.sync_hal()
         self.curr_hal_transition_cmd = self.pins['state-cmd'].local_pin_value
+        self.curr_hal_reset_pin = self.pins['reset'].local_pin_value
 
-    def hal_transition_cmd(self):
+    def transition_from_hal(self):
+        # get check if the HAL number is one of the transition numbers
+        nr_known = False
+        for key, transition in self.transitions.items():
+            if transition.value == self.curr_hal_transition_cmd:
+                nr_known = True
+                transition_name = key
+                break
+        if not nr_known:
+            rospy.loginfo(
+                "%s: HAL request failed, %s not a valid transition"
+                % (self.compname, self.curr_hal_transition_cmd)
+            )
+            return "%s: HAL request failed, %s not a valid transition" % (
+                self.compname,
+                self.curr_hal_transition_cmd,
+            )
+        else:
+            self.execute_transition(transition_name)
+
+    def hal_UI_cmd(self):
         if self.transition_cmd_changed():
-            # get check if the HAL number is one of the transition numbers
-            nr_known = False
-            for key, transition in self.transitions.items():
-                if transition.value == self.curr_hal_transition_cmd:
-                    nr_known = True
-                    transition_name = key
-                    break
-            if not nr_known:
-                rospy.loginfo(
-                    "%s: HAL request failed, %s not a valid transition"
-                    % (self.compname, self.curr_hal_transition_cmd)
-                )
-                return "%s: HAL request failed, %s not a valid transition" % (
-                    self.compname,
-                    self.curr_hal_transition_cmd,
-                )
-            else:
-                self.execute_transition(transition_name)
+            self.transition_from_hal()
+        if self.reset_pin_changed():
+            # check if we're in disabled state, and if the reset button has
+            # rising edge, invoke transition to current transition cmd
+            # prevent acting on reset button change from all other states.
+            if (self.curr_hal_reset_pin is True) and (
+                self.fsm.current == 'disabled'
+            ):
+                self.transition_from_hal()
 
     def transition_cmd_changed(self):
         if not (self.prev_hal_transition_cmd == self.curr_hal_transition_cmd):
+            return True
+        else:
+            return False
+
+    def reset_pin_changed(self):
+        if not (self.prev_hal_reset_pin == self.curr_hal_reset_pin):
             return True
         else:
             return False
@@ -426,7 +454,6 @@ class Hal402Mgr(object):
         # a transition to an error state for example
         one_drive_faulted = self.one_drive_has_status('FAULT')
         all_drives_operational = self.all_drives_are_status('OPERATION ENABLED')
-        no_drive_is_fault = self.all_drives_are_not_status('FAULT')
         if self.fsm.current != 'fault':
             if one_drive_faulted:
                 self.execute_transition('error')
@@ -434,8 +461,8 @@ class Hal402Mgr(object):
             if not all_drives_operational:
                 self.execute_transition('error')
         if self.fsm.current == 'fault':
-            if no_drive_is_fault:
-                # this will get us in the stopped state again, ready for reset
+            if self.reset_pin_changed() and (self.curr_hal_reset_pin is False):
+                # this will get us in the disabled state again, ready for enabling
                 self.execute_transition('stop')
 
     def publish_states(self):
@@ -450,5 +477,5 @@ class Hal402Mgr(object):
         while not rospy.is_shutdown():
             self.update_drive_states()
             self.manage_errors()
-            self.hal_transition_cmd()
+            self.hal_UI_cmd()
             self.rate.sleep()
