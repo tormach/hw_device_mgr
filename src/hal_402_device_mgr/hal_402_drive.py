@@ -298,7 +298,9 @@ class Drive402(object):
             for key, pin in pin_dict.items():
                 if pin.dir == hal.HAL_IN:
                     pin.sync_hal()
-        self.curr_error = self.pins_generic['error-code'].local_pin_value
+        self.curr_error = "0x{:04x}".format(
+            self.pins_generic['error-code'].local_pin_value
+        )
 
     def calculate_status_word(self):
         # traverse dict and for the local values do some bitwise operation so

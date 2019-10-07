@@ -120,6 +120,7 @@ class Hal402Mgr(object):
         # applicable
         self.check_for_real_hardware_setup()
 
+        self.get_update_rate()
         self.create_service()
         self.create_publisher()
 
@@ -189,19 +190,20 @@ class Hal402Mgr(object):
             pin.set_parent_comp(self.halcomp)
             pin.create_halpin()
 
-    def create_publisher(self):
-        # todo, read from ROS param server
+    def get_update_rate(self):
         has_update_rate = rospy.has_param('/hal_402_device_mgr/update_rate')
         if has_update_rate:
             self.update_rate = rospy.get_param(
                 '/hal_402_device_mgr/update_rate'
             )
             self.rate = rospy.Rate(self.update_rate)
-            # create publishers for topics and send out a test message
-            for key, drive in self.drives.items():
-                drive.create_topics()
-                if drive.sim is True:
-                    drive.test_publisher()
+
+    def create_publisher(self):
+        # create publishers for topics and send out a test message
+        for key, drive in self.drives.items():
+            drive.create_topics()
+            if drive.sim is True:
+                drive.test_publisher()
         else:
             rospy.logerr(
                 "%s: no /hal_402_device_mgr/update_rate param found"
