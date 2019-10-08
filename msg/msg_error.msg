@@ -1,2 +1,5 @@
 string drivename
-uint32 errorcode
+string drivetype
+string errorcode
+string description
+string solution

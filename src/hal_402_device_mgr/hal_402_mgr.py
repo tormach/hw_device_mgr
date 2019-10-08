@@ -111,6 +111,8 @@ class Hal402Mgr(object):
         self.halcomp = hal.component(self.compname)
         rospy.loginfo("%s: HAL component created" % self.compname)
 
+        # read in the error list from parameters
+        self.read_device_error_list()
         # create drives which create pins
         self.create_drives()
         # create pins for calling service callback
@@ -148,12 +150,21 @@ class Hal402Mgr(object):
             # Configure real hardware mode
             rospy.loginfo("%s: hardware setup detected" % self.compname)
 
+    def read_device_error_list(self):
+        if self.has_parameters(['/device_error_code_list']):
+            self.devices_error_list = rospy.get_param('/device_error_code_list')
+            print(self.devices_error_list)
+        else:
+            rospy.logerr(
+                "%s: no /device_error_code_list params" % self.compname
+            )
+
     def create_drives(self):
-        # check if parameters exist:
         if self.has_parameters(
             [
                 '/hal_402_device_mgr/drives/name',
                 '/hal_402_device_mgr/drives/instances',
+                '/hal_402_device_mgr/drives/types',
                 '/hal_402_device_mgr/slaves/instances',
             ]
         ):
@@ -164,21 +175,30 @@ class Hal402Mgr(object):
             slave_instances = rospy.get_param(
                 '/hal_402_device_mgr/slaves/instances'
             )
+            drive_types = rospy.get_param('/hal_402_device_mgr/drives/types')
             # sanity check
-            if len(slave_instances) != len(drive_instances):
+            if (len(slave_instances) != len(drive_instances)) or (
+                len(drive_types) != len(drive_instances)
+            ):
                 rospy.logerr(
-                    "%s: nr of drive and slave instances do not match"
+                    "%s: nr of drive and slave instances or drive types do not match"
                     % self.compname
                 )
             else:
                 for i in range(0, len(drive_instances)):
                     # create n drives from ROS parameters
-                    drivename = name + "_%s" % drive_instances[i]
+                    drive_name = name + "_%s" % drive_instances[i]
                     slave_inst = slave_instances[i]
-                    self.drives[drivename] = Drive402(
-                        drivename, self, slave_inst
+                    drive_type = drive_types[i]
+                    self.drives[drive_name] = Drive402(
+                        drive_name=drive_name,
+                        drive_type=drive_type,
+                        parent=self,
+                        slave_inst=slave_inst,
                     )
-                    rospy.loginfo("%s: %s created" % (self.compname, drivename))
+                    rospy.loginfo(
+                        "%s: %s created" % (self.compname, drive_name)
+                    )
         else:
             rospy.logerr(
                 "%s: no correct /hal_402_device_mgr/drives params"
@@ -197,6 +217,23 @@ class Hal402Mgr(object):
                 '/hal_402_device_mgr/update_rate'
             )
             self.rate = rospy.Rate(self.update_rate)
+        else:
+            rospy.logerr(
+                "%s: no /hal_402_device_mgr/update_rate param found"
+                % self.compname
+            )
+
+    def get_error_info(self, devicetype, error_code):
+        try:
+            device_errors = self.devices_error_list[devicetype]['errors']
+            info = device_errors[error_code]
+            return info
+        except KeyError:
+            # return a dict
+            return {
+                'description': 'This error is an unknown error.',
+                'solution': 'Please contact your hardware support department.',
+            }
 
     def create_publisher(self):
         # create publishers for topics and send out a test message
@@ -204,11 +241,6 @@ class Hal402Mgr(object):
             drive.create_topics()
             if drive.sim is True:
                 drive.test_publisher()
-        else:
-            rospy.logerr(
-                "%s: no /hal_402_device_mgr/update_rate param found"
-                % self.compname
-            )
 
     def all_drives_are_status(self, status):
         # check if all the drives have the same status

@@ -139,12 +139,13 @@ class Drive402(object):
         # the status word pins are not connected anymore
     ]
 
-    def __init__(self, drive_name, parent, slave_inst):
+    def __init__(self, drive_name, drive_type, parent, slave_inst):
         # hal_402_drives_mgr
         self.slave_inst = slave_inst
         self.sim = rospy.get_param("/sim_mode", True)
         self.parent = parent
         self.drive_name = drive_name
+        self.drive_type = drive_type
         # bitmask and value
         self.prev_state = 'unknown'
         self.curr_state = 'unknown'
@@ -286,7 +287,15 @@ class Drive402(object):
                 key, self.drive_name
             )
             if key == 'error':
-                topic.publish(msg_error(message, 0))
+                topic.publish(
+                    msg_error(
+                        self.drive_name,
+                        self.drive_type,
+                        'test: no code',
+                        'test: no description',
+                        'test: no solution',
+                    )
+                )
             if key == 'status':
                 topic.publish(msg_status(message, 'unknown'))
 
@@ -367,15 +376,29 @@ class Drive402(object):
 
     def publish_error(self):
         if self.drive_error_changed():
-            self.topics['error'].publish(self.drive_name, self.curr_error)
-            if self.curr_error == 0:
+            error_info = self.parent.get_error_info(
+                self.drive_type, self.curr_error
+            )
+            self.topics['error'].publish(
+                self.drive_name,
+                self.drive_type,
+                self.curr_error,
+                error_info['description'],
+                error_info['solution'],
+            )
+            if self.curr_error == '0x0000':
                 rospy.loginfo(
                     "%s: %s no error" % (self.parent.compname, self.drive_name)
                 )
             else:
                 rospy.logerr(
-                    "%s: %s error %s"
-                    % (self.parent.compname, self.drive_name, self.curr_error)
+                    '{}: {}, error number: {}, description: {}, solution: {}'.format(
+                        self.parent.compname,
+                        self.drive_name,
+                        self.curr_error,
+                        error_info['description'],
+                        error_info['solution'],
+                    )
                 )
 
     def publish_fault_state(self):
