@@ -153,7 +153,6 @@ class Hal402Mgr(object):
     def read_device_error_list(self):
         if self.has_parameters(['/device_error_code_list']):
             self.devices_error_list = rospy.get_param('/device_error_code_list')
-            print(self.devices_error_list)
         else:
             rospy.logerr(
                 "%s: no /device_error_code_list params" % self.compname
