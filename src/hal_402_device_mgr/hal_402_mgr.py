@@ -15,7 +15,7 @@ from hal_402_device_mgr.hal_402_drive import (
 
 
 @attr.s
-class transition_obj(object):
+class TransitionItem(object):
     name = attr.ib()
     value = attr.ib()
     transition_cb = attr.ib()
@@ -67,19 +67,19 @@ class Hal402Mgr(object):
         self.curr_hal_reset_pin = 0
 
         self.transitions = {
-            'stop': transition_obj(
+            'stop': TransitionItem(
                 name='stop', value=0, transition_cb=self.fsm.stop
             ),
-            'start': transition_obj(
+            'start': TransitionItem(
                 name='start', value=1, transition_cb=self.fsm.start
             ),
-            'error': transition_obj(
+            'error': TransitionItem(
                 name='error', value=2, transition_cb=self.fsm.error
             ),
-            'started': transition_obj(
+            'started': TransitionItem(
                 name='started', value=3, transition_cb=self.fsm.started
             ),
-            'stopped': transition_obj(
+            'stopped': TransitionItem(
                 name='stopped', value=4, transition_cb=self.fsm.stopped
             ),
         }
