@@ -39,6 +39,3 @@ catkin_install_python(PROGRAMS
                       scripts/hal_402_mgr
                       DESTINATION
                       ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-# Install other files
-install(DIRECTORY config DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
