@@ -35,7 +35,5 @@ catkin_package(CATKIN_DEPENDS message_runtime rospy)
 #************
 
 # Install python executables
-catkin_install_python(PROGRAMS
-                      scripts/hal_402_mgr
-                      DESTINATION
+catkin_install_python(PROGRAMS scripts/hal_402_mgr DESTINATION
                       ${CATKIN_PACKAGE_BIN_DESTINATION})
