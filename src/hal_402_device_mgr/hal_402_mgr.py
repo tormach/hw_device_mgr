@@ -22,10 +22,19 @@ class TransitionItem(object):
 
 
 class Hal402Mgr(object):
+    compname = 'hal_402_mgr'
+
     def __init__(self):
+        # create ROS node
+        rospy.init_node(self.compname)
+        rospy.loginfo("%s: Node started" % self.compname)
+
+        # create HAL userland component
+        self.halcomp = hal.component(self.compname)
+        rospy.loginfo("%s: HAL component created" % self.compname)
+
         # Configure sim mode if SIM environment variable is set
         self.sim = rospy.get_param("/sim_mode", True)
-        self.compname = 'hal_402_mgr'
         self.drives = dict()
         self.fsm = Fysom(
             {
@@ -103,13 +112,6 @@ class Hal402Mgr(object):
             4: 'stopping',
             5: 'starting',
         }
-        # create ROS node
-        rospy.init_node(self.compname)
-        rospy.loginfo("%s: Node started" % self.compname)
-
-        # create HAL userland component
-        self.halcomp = hal.component(self.compname)
-        rospy.loginfo("%s: HAL component created" % self.compname)
 
         # read in the error list from parameters
         self.read_device_error_list()
@@ -129,6 +131,8 @@ class Hal402Mgr(object):
         # done
         self.halcomp.ready()
         self.fsm.init()
+
+        rospy.loginfo("%s: HAL component ready" % self.compname)
 
     def has_parameters(self, list_of_parameters):
         has_parameters = True
@@ -506,9 +510,18 @@ class Hal402Mgr(object):
         for key, drive in self.drives.items():
             drive.publish_error()
 
+    def call_cleanup(self):
+        # need to unload the userland component here?
+        rospy.loginfo("%s: Stopping ..." % self.compname)
+        rospy.loginfo("%s: Stopped" % self.compname)
+
     def run(self):
-        while not rospy.is_shutdown():
-            self.update_drive_states()
-            self.manage_errors()
-            self.hal_UI_cmd()
-            self.rate.sleep()
+        rospy.on_shutdown(self.call_cleanup)
+        try:
+            while not rospy.is_shutdown():
+                self.update_drive_states()
+                self.manage_errors()
+                self.hal_UI_cmd()
+                self.rate.sleep()
+        except rospy.ROSInterruptException:
+            rospy.loginfo("%s: ROSInterruptException" % self.compname)
