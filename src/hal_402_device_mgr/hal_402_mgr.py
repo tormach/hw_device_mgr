@@ -288,22 +288,27 @@ class Hal402Mgr(object):
             return self.execute_transition(req.req_transition)
 
     def execute_transition(self, transition):
+        msg = "Starting transition '%s' from state '%s'" % (
+            transition,
+            self.fsm.current,
+        )
+        rospy.loginfo('%s:  %s' % (self.compname, msg))
         try:
             f = self.transitions[transition].transition_cb
             f()
-            return (
-                "Transition properly executed, current state \'%s\'"
-                % self.fsm.current
+            msg = "Completed transition '%s' to state '%s'" % (
+                transition,
+                self.fsm.current,
             )
+            rospy.loginfo('%s:  %s' % (self.compname, msg))
+            return msg
         except FysomError:
-            rospy.logwarn(
-                "%s: Transition not possible from state \'%s\', with transition \'%s\'"
-                % (self.compname, self.fsm.current, transition)
+            msg = "Transition '%s' not possible from state '%s'" % (
+                transition,
+                self.fsm.current,
             )
-            return (
-                "Transition not possible from state \'%s\', with transition \'%s\'"
-                % (self.fsm.current, transition)
-            )
+            rospy.logerr("%s:  %s" % (self.compname, msg))
+            return msg
 
     # enter state callbacks
     def fsm_in_initial(self, e=None):
