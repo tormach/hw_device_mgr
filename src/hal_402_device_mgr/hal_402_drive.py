@@ -81,6 +81,8 @@ class StateMachine402(object):
         'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'NA'],
         'OPERATION ENABLED': ['SWITCH ON DISABLED', 'TRANSITION_9'],
         'SWITCH ON DISABLED': ['SWITCH ON DISABLED', 'NA'],
+        'READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_7'],
+        'SWITCHED ON': ['SWITCH ON DISABLED', 'TRANSITION_10'],
     }
 
     # the transition dict contains a list of tuples with bits and value
