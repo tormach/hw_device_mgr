@@ -44,8 +44,8 @@ class Hal402Mgr:
                         'src': ['initial', 'fault', 'enabled'],
                         'dst': 'stopping',
                     },
-                    {'name': 'started', 'src': 'starting', 'dst': 'enabled'},
                     {'name': 'start', 'src': 'disabled', 'dst': 'starting'},
+                    {'name': 'enable', 'src': 'starting', 'dst': 'enabled'},
                     {'name': 'stopped', 'src': 'stopping', 'dst': 'disabled'},
                     {
                         'name': 'error',
@@ -84,8 +84,8 @@ class Hal402Mgr:
             'error': TransitionItem(
                 name='error', value=2, transition_cb=self.fsm.error
             ),
-            'started': TransitionItem(
-                name='started', value=3, transition_cb=self.fsm.started
+            'enable': TransitionItem(
+                name='enable', value=3, transition_cb=self.fsm.enable
             ),
             'stopped': TransitionItem(
                 name='stopped', value=4, transition_cb=self.fsm.stopped
@@ -336,7 +336,7 @@ class Hal402Mgr:
         target_name = 'OPERATION ENABLED'
         self.update_hal_state_fb()
         if self.change_drives(target_path, target_name):
-            self.execute_transition('started')
+            self.execute_transition('enable')
         else:
             self.execute_transition('error')
 
