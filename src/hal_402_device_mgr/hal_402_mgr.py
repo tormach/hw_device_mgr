@@ -46,7 +46,7 @@ class Hal402Mgr:
                     },
                     {'name': 'start', 'src': 'disabled', 'dst': 'starting'},
                     {'name': 'enable', 'src': 'starting', 'dst': 'enabled'},
-                    {'name': 'stopped', 'src': 'stopping', 'dst': 'disabled'},
+                    {'name': 'disable', 'src': 'stopping', 'dst': 'disabled'},
                     {
                         'name': 'error',
                         'src': [
@@ -87,8 +87,8 @@ class Hal402Mgr:
             'enable': TransitionItem(
                 name='enable', value=3, transition_cb=self.fsm.enable
             ),
-            'stopped': TransitionItem(
-                name='stopped', value=4, transition_cb=self.fsm.stopped
+            'disable': TransitionItem(
+                name='disable', value=4, transition_cb=self.fsm.disable
             ),
         }
         self.pins = {
@@ -327,7 +327,7 @@ class Hal402Mgr:
         target_name = 'SWITCH ON DISABLED'
         self.update_hal_state_fb()
         if self.change_drives(target_path, target_name):
-            self.execute_transition('stopped')
+            self.execute_transition('disable')
         else:
             self.execute_transition('error')
 
