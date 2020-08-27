@@ -376,7 +376,7 @@ class Hal402Mgr:
                 while (not drive.is_transitionable(target_states)) and (
                     retries < max_retries
                 ):
-                    rospy.logdebug(
+                    rospy.loginfo(
                         "%s: %s, try %i: in state %s, %02x"
                         % (
                             self.compname,
@@ -413,7 +413,7 @@ class Hal402Mgr:
                         # no success, retry please
                         retries += 1
                     self.update_drive_states()
-                    rospy.logdebug(
+                    rospy.loginfo(
                         "%s: %s, try %i: in state %s, %02x"
                         % (
                             self.compname,
