@@ -66,7 +66,7 @@ class StateMachine402:
         'SWITCH ON DISABLED': ['READY TO SWITCH ON', 'TRANSITION_2'],
         'READY TO SWITCH ON': ['SWITCHED ON', 'TRANSITION_3'],
         'SWITCHED ON': ['OPERATION ENABLED', 'TRANSITION_4'],
-        'OPERATION ENABLED': ['OPERATION ENABLED', ''],
+        'OPERATION ENABLED': ['OPERATION ENABLED', ''],  # End state
         'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
         'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
         'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
@@ -78,11 +78,22 @@ class StateMachine402:
     # Note that almost all cases are single-step except for the fault cases
     path_to_switch_on_disabled = {
         'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'WAIT'],
-        'SWITCH ON DISABLED': ['SWITCH ON DISABLED', ''],
+        'SWITCH ON DISABLED': ['SWITCH ON DISABLED', ''],  # End State
         'READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_7'],
         'SWITCHED ON': ['SWITCH ON DISABLED', 'TRANSITION_10'],
         'OPERATION ENABLED': ['SWITCH ON DISABLED', 'TRANSITION_9'],
         'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
+        'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
+        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
+    }
+
+    path_on_fault = {
+        'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'WAIT'],
+        'SWITCH ON DISABLED': ['SWITCH ON DISABLED', ''],  # End state
+        'READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_7'],
+        'SWITCHED ON': ['SWITCH ON DISABLED', 'TRANSITION_10'],
+        'OPERATION ENABLED': ['SWITCH ON DISABLED', 'TRANSITION_9'],
+        'FAULT': ['FAULT', ''],  # End state
         'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
         'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
     }

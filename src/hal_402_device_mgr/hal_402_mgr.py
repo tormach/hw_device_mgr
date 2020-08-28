@@ -349,8 +349,8 @@ class Hal402Mgr:
         # first try to shut down all the drives, if they are not already off
         # thru the HAL plumbing (quick-stop bit should be low at the moment
         # one of the drive faults).
-        target_path = StateMachine402.path_to_switch_on_disabled
-        target_name = 'SWITCH ON DISABLED'
+        target_path = StateMachine402.path_on_fault
+        target_name = ('SWITCH ON DISABLED', 'FAULT')
         self.change_drives(target_path, target_name)
         rospy.logerr(
             "%s: The machine entered \'fault\' state, previous state was \'%s\'"
@@ -368,8 +368,11 @@ class Hal402Mgr:
                 self.pins['state-fb'].set_hal_value()
 
     def process_drive_transitions(self, transition_table, target_states):
+        # Allow singular target state or multiple
+        if isinstance(target_states, str):
+            target_states = (target_states,)
         no_error = True
-        timeout = 12.0  # seconds to attempt to transition a single drive
+        timeout = 8.0  # seconds to attempt to transition a single drive
         for drive in self.drives:
             # pick a transition table for the requested state
             drive.set_transition_table(transition_table)
@@ -379,7 +382,7 @@ class Hal402Mgr:
                 retries += 1
                 drive.update_state()
                 rospy.loginfo(
-                    "%s: %s, try %i: in state %s, %02x"
+                    "%s: %s, try %i: in state %s, 0x%03x"
                     % (
                         self.compname,
                         drive.drive_name,
@@ -388,7 +391,7 @@ class Hal402Mgr:
                         drive.curr_status_word,
                     )
                 )
-                if drive.curr_state == target_states:
+                if drive.curr_state in target_states:
                     break
 
                 if not drive.is_transitionable():
@@ -398,9 +401,8 @@ class Hal402Mgr:
                     if not drive.next_transition():
                         # If we can't transition then the drive state machine is stuck, so bail out
                         break
-                    time.sleep(0.05)
 
-            if drive.curr_state != target_states:
+            if drive.curr_state not in target_states:
                 rospy.loginfo(
                     "%s: %s did not reach target state after %i retries and %f seconds from state %s"
                     % (
@@ -412,6 +414,8 @@ class Hal402Mgr:
                     )
                 )
                 no_error = False
+                # But continue trying other drives
+
         self.update_drive_states()
         self.publish_states()
         return no_error
