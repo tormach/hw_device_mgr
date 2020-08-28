@@ -255,6 +255,10 @@ class Drive402:
         elif (
             self.curr_state == self.active_transition_table[self.curr_state][0]
         ):
+            rospy.loginfo(
+                "%s: transition %s apparently reached state %s"
+                % (self.drive_name, transition, self.curr_state,)
+            )
             # current state equals the target state, mimic succesful transition
             return True
         else:
