@@ -34,7 +34,7 @@ class Hal402Mgr:
 
         # Configure sim mode if SIM environment variable is set
         self.sim = rospy.get_param("/sim_mode", True)
-        self.drives = dict()
+        self.drives = []
         self.fsm = Fysom(
             {
                 'initial': {'state': 'initial', 'event': 'init', 'defer': True},
@@ -192,11 +192,13 @@ class Hal402Mgr:
                     drive_name = name + "_%s" % drive_instances[i]
                     slave_inst = slave_instances[i]
                     drive_type = drive_types[i]
-                    self.drives[drive_name] = Drive402(
-                        drive_name=drive_name,
-                        drive_type=drive_type,
-                        parent=self,
-                        slave_inst=slave_inst,
+                    self.drives.append(
+                        Drive402(
+                            drive_name=drive_name,
+                            drive_type=drive_type,
+                            parent=self,
+                            slave_inst=slave_inst,
+                        )
                     )
                     rospy.loginfo(f"{self.compname}: {drive_name} created")
         else:
@@ -237,34 +239,34 @@ class Hal402Mgr:
 
     def create_publisher(self):
         # create publishers for topics and send out a test message
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             drive.create_topics()
             if drive.sim is True:
                 drive.test_publisher()
 
     def all_drives_are_status(self, status):
         # check if all the drives have the same status
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             if not (drive.curr_state == status):
                 return False
         return True
 
     def all_drives_are_not_status(self, status):
         # check if all the drives have a status other than 'status' argument
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             if drive.curr_state == status:
                 return False
         return True
 
     def one_drive_has_status(self, status):
         # check if all the drives have the same status
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             if drive.curr_state == status:
                 return True
         return False
 
     def sim_set_drives_status(self, status):
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             drive.sim_set_status(status)
 
     def cb_robot_state_service(self, req):
@@ -369,7 +371,7 @@ class Hal402Mgr:
         max_retries = 15
         retries = 0
         no_error = True
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             # pick a transition table for the requested state
             drive.set_transition_table(transition_table)
             if drive.curr_state != target_states:
@@ -452,7 +454,7 @@ class Hal402Mgr:
         )
 
     def update_drive_states(self):
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             drive.update_state()
 
         # get the status pins, and save their value locally
@@ -525,11 +527,11 @@ class Hal402Mgr:
                 self.execute_transition('stop')
 
     def publish_states(self):
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             drive.publish_state()
 
     def publish_errors(self):
-        for key, drive in self.drives.items():
+        for drive in self.drives:
             drive.publish_error()
 
     def call_cleanup(self):
