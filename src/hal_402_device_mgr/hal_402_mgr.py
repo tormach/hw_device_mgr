@@ -395,8 +395,10 @@ class Hal402Mgr:
                     # if a drive needs to transition itself
                     time.sleep(0.25)
                 else:
-                    drive.next_transition()
-                    time.sleep(0.001)
+                    if not drive.next_transition():
+                        # If we can't transition then the drive state machine is stuck, so bail out
+                        break
+                    time.sleep(0.05)
 
             if drive.curr_state != target_states:
                 rospy.loginfo(

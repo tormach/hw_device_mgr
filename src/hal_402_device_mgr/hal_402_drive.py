@@ -228,7 +228,14 @@ class Drive402:
         # - look up the self.active_transition_table[self.curr_state]
         # - get transition list[1]
         try:
-            transition = self.active_transition_table[self.curr_state][1]
+            next_state = self.active_transition_table.get(self.curr_state, None)
+            if next_state is None or len(next_state) < 2:
+                rospy.logwarn(
+                    "No transition registered for state %s in current transition table"
+                    % (self.curr_state,)
+                )
+                return False
+            transition = next_state[1]
             return self.do_transition(transition)
         except KeyError:
             self.print_debuginfo()
