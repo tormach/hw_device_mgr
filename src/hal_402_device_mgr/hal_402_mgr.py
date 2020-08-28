@@ -368,76 +368,50 @@ class Hal402Mgr:
                 self.pins['state-fb'].set_hal_value()
 
     def process_drive_transitions(self, transition_table, target_states):
-        max_retries = 15
-        retries = 0
         no_error = True
+        timeout = 12.0  # seconds to attempt to transition a single drive
         for drive in self.drives:
             # pick a transition table for the requested state
             drive.set_transition_table(transition_table)
-            if drive.curr_state != target_states:
-                while (not drive.waiting_on_transition()) and (
-                    retries < max_retries
-                ):
-                    rospy.loginfo(
-                        "%s: %s, try %i: in state %s, %02x"
-                        % (
-                            self.compname,
-                            drive.drive_name,
-                            retries,
-                            drive.curr_state,
-                            drive.curr_status_word,
-                        )
+            retries = 0
+            t0 = time.time()
+            while (time.time() - t0) < timeout:
+                retries += 1
+                drive.update_state()
+                rospy.loginfo(
+                    "%s: %s, try %i: in state %s, %02x"
+                    % (
+                        self.compname,
+                        drive.drive_name,
+                        retries,
+                        drive.curr_state,
+                        drive.curr_status_word,
                     )
-                    # if a drive is not ready (startup) wait a bit
-                    time.sleep(0.5)
-                    self.update_drive_states()
-                    retries += 1
-                if retries == max_retries:
-                    rospy.logerr(
-                        "%s: %s needed %i retries, did not get out of state %s"
-                        % (
-                            self.compname,
-                            drive.drive_name,
-                            retries,
-                            drive.curr_state,
-                        )
-                    )
-                    # this drive has a glitch, continue to next drive
-                    no_error = False
+                )
+                if drive.curr_state == target_states:
                     break
-                # no problems so far, so transition until finished
-                # max out just in case
-                retries = 0
-                while (retries < max_retries) and (
-                    drive.curr_state != target_states
-                ):
-                    if not drive.next_transition():
-                        # no success, retry please
-                        retries += 1
-                    self.update_drive_states()
-                    rospy.loginfo(
-                        "%s: %s, try %i: in state %s, %02x"
-                        % (
-                            self.compname,
-                            drive.drive_name,
-                            retries,
-                            drive.curr_state,
-                            drive.curr_status_word,
-                        )
+
+                if not drive.is_transitionable():
+                    # if a drive needs to transition itself
+                    time.sleep(0.25)
+                else:
+                    drive.next_transition()
+                    time.sleep(0.001)
+
+            if drive.curr_state != target_states:
+                rospy.loginfo(
+                    "%s: %s did not reach target state after %i retries and %f seconds from state %s"
+                    % (
+                        self.compname,
+                        drive.drive_name,
+                        retries,
+                        time.time() - t0,
+                        drive.curr_state,
                     )
-                if drive.curr_state != target_states:
-                    rospy.loginfo(
-                        "%s: %s did not reach target state after %i retries from state %s"
-                        % (
-                            self.compname,
-                            drive.drive_name,
-                            retries,
-                            drive.curr_state,
-                        )
-                    )
-                    no_error = False
-            self.update_drive_states()
-            self.publish_states()
+                )
+                no_error = False
+        self.update_drive_states()
+        self.publish_states()
         return no_error
 
     def create_service(self):

@@ -59,29 +59,32 @@ class StateMachine402:
     # next state, as well as the transition key. NA means "Not
     # Available" because transition happens automatically by the device.
     # These are kept around for keeping the complete picture.
+    #
+    # NOTE: the "path_to_xxx" dicts must have an entry for every possible drive state.
     path_to_operation_enabled = {
         'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'WAIT'],
-        'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
-        'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
-        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
         'SWITCH ON DISABLED': ['READY TO SWITCH ON', 'TRANSITION_2'],
         'READY TO SWITCH ON': ['SWITCHED ON', 'TRANSITION_3'],
         'SWITCHED ON': ['OPERATION ENABLED', 'TRANSITION_4'],
         'OPERATION ENABLED': ['OPERATION ENABLED', ''],
+        'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
+        'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
+        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
     }
     # these transitions take longer from OPERATION ENABLED -> SWITCH ON DISABLED
     # 'OPERATION ENABLED':        ['SWITCHED ON', 'TRANSITION_5'],
     # 'SWITCHED ON':              ['READY TO SWITCH ON', 'TRANSITION_6'],
     # 'READY TO SWITCH ON':       ['SWITCH ON DISABLED', 'TRANSITION_7']
+    # Note that almost all cases are single-step except for the fault cases
     path_to_switch_on_disabled = {
-        'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
-        'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
         'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'WAIT'],
-        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
-        'OPERATION ENABLED': ['SWITCH ON DISABLED', 'TRANSITION_9'],
         'SWITCH ON DISABLED': ['SWITCH ON DISABLED', ''],
         'READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_7'],
         'SWITCHED ON': ['SWITCH ON DISABLED', 'TRANSITION_10'],
+        'OPERATION ENABLED': ['SWITCH ON DISABLED', 'TRANSITION_9'],
+        'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
+        'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
+        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
     }
 
     # the transition dict contains a list of tuples with bits and value
@@ -121,6 +124,7 @@ class StateMachine402:
             ('switch-on', 0),
             ('fault-reset', 0),
         ],
+        'WAIT': [],
     }
 
 
@@ -200,7 +204,7 @@ class Drive402:
             )
         )
 
-    def waiting_on_transition(self, transition=None):
+    def is_transitionable(self, transition=None):
         transition = (
             transition or self.active_transition_table[self.curr_state][1]
         )
@@ -231,7 +235,7 @@ class Drive402:
             return False
 
     def do_transition(self, transition):
-        if self.waiting_on_transition(transition):
+        if self.is_transitionable(transition):
             # - in sim mode, get the the next state to mimic input pin changes
             next_state = self.active_transition_table[self.curr_state][0]
             rospy.loginfo(
