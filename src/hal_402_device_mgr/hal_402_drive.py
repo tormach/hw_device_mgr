@@ -133,6 +133,8 @@ class StateMachine402:
             ('quick-stop', 0),
             ('enable-voltage', 0),
             ('switch-on', 0),
+            ('fault-reset', 1),
+            ('wait', 0.01),
             ('fault-reset', 0),
         ],
         'WAIT': [],
@@ -265,6 +267,11 @@ class Drive402:
             change_pins_list = StateMachine402.transitions[transition]
             # - for each tuple from list, set pin and value
             for pin_change in change_pins_list:
+                # KLUDGE super-secret hal pin for timing
+                if pin_change[0] == 'wait':
+                    time.sleep(pin_change[1])
+                    continue
+
                 self.change_halpin(pin_change)
                 # for simulation purpose, set input pins manually according to
                 # the next state as if the drive is attached
