@@ -60,26 +60,26 @@ class StateMachine402:
     # Available" because transition happens automatically by the device.
     # These are kept around for keeping the complete picture.
     path_to_operation_enabled = {
-        'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'NA'],
-        'FAULT REACTION ACTIVE': ['FAULT', 'NA'],
+        'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'WAIT'],
+        'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
         'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
-        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'NA'],
+        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
         'SWITCH ON DISABLED': ['READY TO SWITCH ON', 'TRANSITION_2'],
         'READY TO SWITCH ON': ['SWITCHED ON', 'TRANSITION_3'],
         'SWITCHED ON': ['OPERATION ENABLED', 'TRANSITION_4'],
-        'OPERATION ENABLED': ['OPERATION ENABLED', 'NA'],
+        'OPERATION ENABLED': ['OPERATION ENABLED', 'WAIT'],
     }
     # these transitions take longer from OPERATION ENABLED -> SWITCH ON DISABLED
     # 'OPERATION ENABLED':        ['SWITCHED ON', 'TRANSITION_5'],
     # 'SWITCHED ON':              ['READY TO SWITCH ON', 'TRANSITION_6'],
     # 'READY TO SWITCH ON':       ['SWITCH ON DISABLED', 'TRANSITION_7']
     path_to_switch_on_disabled = {
-        'FAULT REACTION ACTIVE': ['FAULT', 'NA'],
+        'FAULT REACTION ACTIVE': ['FAULT', 'WAIT'],
         'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
-        'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'NA'],
-        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'NA'],
+        'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'WAIT'],
+        'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'WAIT'],
         'OPERATION ENABLED': ['SWITCH ON DISABLED', 'TRANSITION_9'],
-        'SWITCH ON DISABLED': ['SWITCH ON DISABLED', 'NA'],
+        'SWITCH ON DISABLED': ['SWITCH ON DISABLED', 'WAIT'],
         'READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_7'],
         'SWITCHED ON': ['SWITCH ON DISABLED', 'TRANSITION_10'],
     }
@@ -200,9 +200,11 @@ class Drive402:
             )
         )
 
-    def is_transitionable(self, transition):
-        transition = self.active_transition_table[self.curr_state][1]
-        if transition == 'NA':
+    def waiting_on_transition(self, transition=None):
+        transition = (
+            transition or self.active_transition_table[self.curr_state][1]
+        )
+        if transition == 'WAIT':
             return False
         else:
             return True
@@ -215,7 +217,7 @@ class Drive402:
         # state.
         #
         # so grab the list containing the next state and next transition
-        # if the transition equals 'NA' we can't do anything but wait.
+        # if the transition equals 'WAIT' we can't do anything but wait.
         # so return a False to the calling function
 
         # when called:
@@ -229,7 +231,7 @@ class Drive402:
             return False
 
     def do_transition(self, transition):
-        if self.is_transitionable(transition):
+        if self.waiting_on_transition(transition):
             # - in sim mode, get the the next state to mimic input pin changes
             next_state = self.active_transition_table[self.curr_state][0]
             rospy.loginfo(

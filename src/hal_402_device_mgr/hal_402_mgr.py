@@ -375,7 +375,7 @@ class Hal402Mgr:
             # pick a transition table for the requested state
             drive.set_transition_table(transition_table)
             if drive.curr_state != target_states:
-                while (not drive.is_transitionable(target_states)) and (
+                while (not drive.waiting_on_transition()) and (
                     retries < max_retries
                 ):
                     rospy.loginfo(
