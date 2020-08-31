@@ -404,9 +404,8 @@ class Hal402Mgr:
 
             if drive.curr_state not in target_states:
                 rospy.loginfo(
-                    "%s: %s did not reach target state after %i retries and %f seconds from state %s"
+                    "%s did not reach target state after %i retries and %f seconds from state %s"
                     % (
-                        self.compname,
                         drive.drive_name,
                         retries,
                         time.time() - t0,
