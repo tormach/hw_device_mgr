@@ -170,7 +170,7 @@ class Drive402:
         self.prev_status_word = 0
         self.curr_status_word = 0
         self.prev_error = 0
-        self.curr_error = 0
+        self.curr_error_code = 0
         self.active_transition_table = None
         self.pins_402 = dict()
         for pname, pdir, ptype, ppos in self.pins_402_spec:
@@ -340,15 +340,14 @@ class Drive402:
 
     def read_halpins(self):
         # get all the status pins, and save their value locally
-        self.prev_error = self.curr_error
+        self.prev_error = self.curr_error_code
         self.prev_state = self.curr_state
         for k, pin_dict in self.all_pins.items():
             for key, pin in pin_dict.items():
                 if pin.dir == hal.HAL_IN:
                     pin.sync_hal()
-        self.curr_error = "0x{:04x}".format(
-            self.pins_generic['error-code'].local_pin_value
-        )
+        # Hex value reported from drive
+        self.curr_error_code = self.pins_generic['error-code'].local_pin_value
 
     def calculate_status_word(self):
         # traverse dict and for the local values do some bitwise operation so
@@ -408,24 +407,29 @@ class Drive402:
 
     def drive_error_changed(self):
         # only publish drive status if the error has changed
-        if not (self.prev_error == self.curr_error):
+        if not (self.prev_error == self.curr_error_code):
             return True
         else:
             return False
 
+    def current_error_code_str(self):
+        return "0x{:04x}".format(
+            self.curr_error_code
+        ) if self.curr_error_code else ''
+
     def publish_error(self):
         if self.drive_error_changed():
             error_info = self.parent.get_error_info(
-                self.drive_type, self.curr_error
+                self.drive_type, self.curr_error_code
             )
             self.topics['error'].publish(
                 self.drive_name,
                 self.drive_type,
-                self.curr_error,
+                self.current_error_code_str(),
                 error_info['description'],
                 error_info['solution'],
             )
-            if self.curr_error == '0x0000':
+            if not self.curr_error_code:
                 rospy.loginfo(
                     f"{self.parent.compname}: {self.drive_name} no error"
                 )
@@ -434,7 +438,7 @@ class Drive402:
                     '{}: {}, error number: {}, description: {}, solution: {}'.format(
                         self.parent.compname,
                         self.drive_name,
-                        self.curr_error,
+                        self.current_error_code_str(),
                         error_info['description'],
                         error_info['solution'],
                     )

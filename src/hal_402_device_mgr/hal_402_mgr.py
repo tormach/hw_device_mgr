@@ -113,7 +113,7 @@ class Hal402Mgr:
         }
 
         # read in the error list from parameters
-        self.read_device_error_list()
+        self.devices_error_list = self.read_device_error_list()
         # create drives which create pins
         self.create_drives()
         # create pins for calling service callback
@@ -154,12 +154,14 @@ class Hal402Mgr:
             rospy.loginfo("%s: hardware setup detected" % self.compname)
 
     def read_device_error_list(self):
+        # TODO look up the particular drive model based on 402 config
         if self.has_parameters(['/device_error_code_list']):
-            self.devices_error_list = rospy.get_param('/device_error_code_list')
+            return rospy.get_param('/device_error_code_list')
         else:
             rospy.logerr(
                 "%s: no /device_error_code_list params" % self.compname
             )
+            return {}
 
     def create_drives(self):
         if self.has_parameters(
@@ -226,8 +228,9 @@ class Hal402Mgr:
             )
 
     def get_error_info(self, devicetype, error_code):
+
         try:
-            device_errors = self.devices_error_list[devicetype]['errors']
+            device_errors = self.devices_error_list[devicetype]
             info = device_errors[error_code]
             return info
         except KeyError:
