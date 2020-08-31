@@ -142,6 +142,8 @@ class StateMachine402:
 
 
 class Drive402:
+    GENERIC_ERROR_DESCRIPTION = 'This is an unknown error'
+    GENERIC_ERROR_SOLUTION = 'Please consult the troubleshooting section of your hardware manual'
     pins_402_spec = [
         # Pin tuple format:
         #   (name, hal_dir, hal_type, bit_num)
@@ -426,8 +428,8 @@ class Drive402:
                 self.drive_name,
                 self.drive_type,
                 self.current_error_code_str(),
-                error_info['description'],
-                error_info['solution'],
+                error_info.get('description', Drive402.GENERIC_ERROR_DESCRIPTION),
+                error_info.get('solution', Drive402.GENERIC_ERROR_SOLUTION),
             )
             if not self.curr_error_code:
                 rospy.loginfo(
@@ -439,8 +441,8 @@ class Drive402:
                         self.parent.compname,
                         self.drive_name,
                         self.current_error_code_str(),
-                        error_info['description'],
-                        error_info['solution'],
+                        error_info.get('description', self.GENERIC_ERROR_DESCRIPTION),
+                        error_info.get('solution', self.GENERIC_ERROR_SOLUTION),
                     )
                 )
 

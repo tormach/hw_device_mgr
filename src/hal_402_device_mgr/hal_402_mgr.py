@@ -236,8 +236,8 @@ class Hal402Mgr:
         except KeyError:
             # return a dict
             return {
-                'description': 'This error is an unknown error.',
-                'solution': 'Please contact your hardware support department.',
+                'description': Drive402.GENERIC_ERROR_DESCRIPTION,
+                'solution': Drive402.GENERIC_ERROR_SOLUTION,
             }
 
     def create_publisher(self):
