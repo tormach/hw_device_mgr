@@ -143,7 +143,9 @@ class StateMachine402:
 
 class Drive402:
     GENERIC_ERROR_DESCRIPTION = 'This is an unknown error'
-    GENERIC_ERROR_SOLUTION = 'Please consult the troubleshooting section of your hardware manual'
+    GENERIC_ERROR_SOLUTION = (
+        'Please consult the troubleshooting section of your hardware manual'
+    )
     pins_402_spec = [
         # Pin tuple format:
         #   (name, hal_dir, hal_type, bit_num)
@@ -414,21 +416,24 @@ class Drive402:
         else:
             return False
 
+    @staticmethod
+    def error_code_as_str(error_code):
+        return "0x{:04x}".format(error_code) if error_code else ''
+
     def current_error_code_str(self):
-        return "0x{:04x}".format(
-            self.curr_error_code
-        ) if self.curr_error_code else ''
+        return self.error_code_as_str(self.curr_error_code)
 
     def publish_error(self):
         if self.drive_error_changed():
-            error_info = self.parent.get_error_info(
-                self.drive_type, self.curr_error_code
-            )
+            err_str = self.current_error_code_str()
+            error_info = self.parent.get_error_info(self.drive_type, err_str)
             self.topics['error'].publish(
                 self.drive_name,
                 self.drive_type,
-                self.current_error_code_str(),
-                error_info.get('description', Drive402.GENERIC_ERROR_DESCRIPTION),
+                err_str,
+                error_info.get(
+                    'description', Drive402.GENERIC_ERROR_DESCRIPTION
+                ),
                 error_info.get('solution', Drive402.GENERIC_ERROR_SOLUTION),
             )
             if not self.curr_error_code:
@@ -440,8 +445,10 @@ class Drive402:
                     '{}: {}, error number: {}, description: {}, solution: {}'.format(
                         self.parent.compname,
                         self.drive_name,
-                        self.current_error_code_str(),
-                        error_info.get('description', self.GENERIC_ERROR_DESCRIPTION),
+                        err_str,
+                        error_info.get(
+                            'description', self.GENERIC_ERROR_DESCRIPTION
+                        ),
                         error_info.get('solution', self.GENERIC_ERROR_SOLUTION),
                     )
                 )
