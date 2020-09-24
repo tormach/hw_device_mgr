@@ -426,7 +426,9 @@ class Drive402:
     def publish_error(self):
         if self.drive_error_changed():
             err_str = self.current_error_code_str()
-            error_info = self.parent.get_error_info(self.drive_type, err_str)
+            error_info = self.parent.get_error_info(
+                self.drive_type, self.curr_error_code
+            )
             self.topics['error'].publish(
                 self.drive_name,
                 self.drive_type,

@@ -230,11 +230,15 @@ class Hal402Mgr:
     def get_error_info(self, devicetype, error_code):
 
         try:
-            device_errors = self.devices_error_list[devicetype]
-            info = device_errors[error_code]
-            return info
+            # FIXME search the hard way because error code is not unique
+            for err_id, err_info in self.devices_error_list.get(
+                devicetype, {}
+            ).items():
+                if err_info.get('error_code', None) == error_code:
+                    return err_info
         except KeyError:
-            # return a dict
+            pass
+        finally:
             return {
                 'description': Drive402.GENERIC_ERROR_DESCRIPTION,
                 'solution': Drive402.GENERIC_ERROR_SOLUTION,
