@@ -155,7 +155,8 @@ class Hal402Mgr:
 
     def read_device_error_list(self):
         if self.has_parameters(['/device_fault_code_list']):
-            return rospy.get_param('/device_fault_code_list')
+            device_err_list = rospy.get_param('/device_fault_code_list')
+            return device_err_list
         else:
             rospy.logerr(
                 "%s: no /device_fault_code_list params" % self.compname
@@ -226,22 +227,25 @@ class Hal402Mgr:
                 % self.compname
             )
 
-    def get_error_info(self, devicetype, error_code):
+    def get_error_info(self, devicetype, error_code_pair):
+        rospy.loginfo(
+            "Looking up error code {} for device type {}".format(
+                error_code_pair, devicetype
+            )
+        )
+        error_code_list = self.devices_error_list.get(devicetype, {})
 
-        try:
-            # FIXME search the hard way because error code is not unique
-            for err_id, err_info in self.devices_error_list.get(
-                devicetype, {}
-            ).items():
-                if err_info.get('error_code', None) == error_code:
-                    return err_info
-        except KeyError:
-            pass
-        finally:
-            return {
-                'description': Drive402.GENERIC_ERROR_DESCRIPTION,
-                'solution': Drive402.GENERIC_ERROR_SOLUTION,
-            }
+        if error_code_pair and len(error_code_pair) >= 2:
+            err_key = "0x{:04x}".format(error_code_pair[1] & 0xFFFF)
+            err_info = error_code_list.get(err_key, None)
+
+            if err_info is not None:
+                return err_info
+
+        return {
+            'description': Drive402.GENERIC_ERROR_DESCRIPTION,
+            'solution': Drive402.GENERIC_ERROR_SOLUTION,
+        }
 
     def create_publisher(self):
         # create publishers for topics and send out a test message

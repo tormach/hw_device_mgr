@@ -173,8 +173,8 @@ class Drive402:
         self.curr_state = 'unknown'
         self.prev_status_word = 0
         self.curr_status_word = 0
-        self.prev_error = 0
-        self.curr_error_code = 0
+        self.prev_error_code = (0, 0)
+        self.curr_error_code = (0, 0)
         self.active_transition_table = None
         self.pins_402 = dict()
         for pname, pdir, ptype, ppos in self.pins_402_spec:
@@ -185,6 +185,9 @@ class Drive402:
             # Pins used by this component
             'error-code': GenericHalPin(
                 '%s.error-code' % self.drive_name, hal.HAL_IN, hal.HAL_U32
+            ),
+            'aux-error-code': GenericHalPin(
+                '%s.aux-error-code' % self.drive_name, hal.HAL_IN, hal.HAL_U32
             ),
             'status-word': GenericHalPin(
                 '%s.status-word' % self.drive_name, hal.HAL_IN, hal.HAL_U32
@@ -344,14 +347,17 @@ class Drive402:
 
     def read_halpins(self):
         # get all the status pins, and save their value locally
-        self.prev_error = self.curr_error_code
+        self.prev_error_code = self.curr_error_code
         self.prev_state = self.curr_state
         for k, pin_dict in self.all_pins.items():
             for key, pin in pin_dict.items():
                 if pin.dir == hal.HAL_IN:
                     pin.sync_hal()
-        # Hex value reported from drive
-        self.curr_error_code = self.pins_generic['error-code'].local_pin_value
+
+        self.curr_error_code = (
+            self.pins_generic['error-code'].local_pin_value,
+            self.pins_generic['aux-error-code'].local_pin_value,
+        )
 
     def calculate_status_word(self):
         # traverse dict and for the local values do some bitwise operation so
@@ -411,14 +417,18 @@ class Drive402:
 
     def drive_error_changed(self):
         # only publish drive status if the error has changed
-        if not (self.prev_error == self.curr_error_code):
+        if not (self.prev_error_code == self.curr_error_code):
             return True
         else:
             return False
 
     @staticmethod
     def error_code_as_str(error_code):
-        return "0x{:04x}".format(error_code) if error_code else ''
+        return (
+            "0x{:04x} (0x{:04x})".format(error_code[0], error_code[1])
+            if error_code and error_code[0]
+            else ''
+        )
 
     def current_error_code_str(self):
         return self.error_code_as_str(self.curr_error_code)
@@ -438,13 +448,13 @@ class Drive402:
                 ),
                 error_info.get('solution', Drive402.GENERIC_ERROR_SOLUTION),
             )
-            if not self.curr_error_code:
+            if not self.curr_error_code or not self.curr_error_code[0]:
                 rospy.loginfo(
                     f"{self.parent.compname}: {self.drive_name} no error"
                 )
             else:
                 rospy.logerr(
-                    '{}: {}, error number: {}, description: {}, solution: {}'.format(
+                    '{}: {}, error: {}, description: {}, solution: {}'.format(
                         self.parent.compname,
                         self.drive_name,
                         err_str,
