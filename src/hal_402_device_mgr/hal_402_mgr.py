@@ -154,12 +154,11 @@ class Hal402Mgr:
             rospy.loginfo("%s: hardware setup detected" % self.compname)
 
     def read_device_error_list(self):
-        # TODO look up the particular drive model based on 402 config
-        if self.has_parameters(['/device_error_code_list']):
-            return rospy.get_param('/device_error_code_list')
+        if self.has_parameters(['/device_fault_code_list']):
+            return rospy.get_param('/device_fault_code_list')
         else:
             rospy.logerr(
-                "%s: no /device_error_code_list params" % self.compname
+                "%s: no /device_fault_code_list params" % self.compname
             )
             return {}
 
