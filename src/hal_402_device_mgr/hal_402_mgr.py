@@ -387,7 +387,7 @@ class Hal402Mgr:
             while (time.time() - t0) < timeout:
                 retries += 1
                 drive.update_state()
-                rospy.loginfo(
+                rospy.logdebug(
                     "%s: %s, try %i: in state %s, 0x%03x"
                     % (
                         self.compname,

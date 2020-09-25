@@ -262,7 +262,7 @@ class Drive402:
         if self.is_transitionable(transition):
             # - in sim mode, get the the next state to mimic input pin changes
             next_state = self.active_transition_table[self.curr_state][0]
-            rospy.loginfo(
+            rospy.logdebug(
                 "%s, attempting transition %s to state %s"
                 % (self.drive_name, transition, next_state,)
             )
