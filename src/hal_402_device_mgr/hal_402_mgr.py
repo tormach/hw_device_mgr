@@ -236,8 +236,10 @@ class Hal402Mgr:
         error_code_list = self.devices_error_list.get(devicetype, {})
 
         if error_code_pair and len(error_code_pair) >= 2:
-            err_key = "0x{:04x}".format(error_code_pair[1] & 0xFFFF)
-            err_info = error_code_list.get(err_key, None)
+            err_key_num = error_code_pair[1] & 0xFFFF
+            err_key_lower = "0x{:04x}".format(err_key_num)
+            err_key_upper = "0x{:04X}".format(err_key_num)
+            err_info = error_code_list.get(err_key_lower, error_code_list.get(err_key_upper, None))
 
             if err_info is not None:
                 return err_info
