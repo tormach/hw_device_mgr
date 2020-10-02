@@ -225,6 +225,9 @@ class Drive402:
         )
 
     def is_transitionable(self, transition=None):
+        if not self.curr_state or self.curr_state.lower() == 'unknown':
+            # Can't transition from an unknown state
+            return False
         transition = (
             transition or self.active_transition_table[self.curr_state][1]
         )
