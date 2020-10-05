@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import rospy
 import time
 import hal
@@ -15,13 +14,13 @@ from hal_402_device_mgr.hal_402_drive import (
 
 
 @attr.s
-class TransitionItem(object):
+class TransitionItem:
     name = attr.ib()
     value = attr.ib()
     transition_cb = attr.ib()
 
 
-class Hal402Mgr(object):
+class Hal402Mgr:
     compname = 'hal_402_mgr'
 
     def __init__(self):
@@ -199,9 +198,7 @@ class Hal402Mgr(object):
                         parent=self,
                         slave_inst=slave_inst,
                     )
-                    rospy.loginfo(
-                        "%s: %s created" % (self.compname, drive_name)
-                    )
+                    rospy.loginfo(f"{self.compname}: {drive_name} created")
         else:
             rospy.logerr(
                 "%s: no correct /hal_402_device_mgr/drives params"
@@ -280,7 +277,7 @@ class Hal402Mgr(object):
                 "%s: request failed, %s not a valid transition"
                 % (self.compname, req.req_transition)
             )
-            return "%s: request failed, %s not a valid transition" % (
+            return "{}: request failed, {} not a valid transition".format(
                 self.compname,
                 req.req_transition,
             )
@@ -288,26 +285,26 @@ class Hal402Mgr(object):
             return self.execute_transition(req.req_transition)
 
     def execute_transition(self, transition):
-        msg = "Starting transition '%s' from state '%s'" % (
+        msg = "Starting transition '{}' from state '{}'".format(
             transition,
             self.fsm.current,
         )
-        rospy.loginfo('%s:  %s' % (self.compname, msg))
+        rospy.loginfo(f'{self.compname}:  {msg}')
         try:
             f = self.transitions[transition].transition_cb
             f()
-            msg = "Completed transition '%s' to state '%s'" % (
+            msg = "Completed transition '{}' to state '{}'".format(
                 transition,
                 self.fsm.current,
             )
-            rospy.loginfo('%s:  %s' % (self.compname, msg))
+            rospy.loginfo(f'{self.compname}:  {msg}')
             return msg
         except FysomError:
-            msg = "Transition '%s' not possible from state '%s'" % (
+            msg = "Transition '{}' not possible from state '{}'".format(
                 transition,
                 self.fsm.current,
             )
-            rospy.logerr("%s:  %s" % (self.compname, msg))
+            rospy.logerr(f"{self.compname}:  {msg}")
             return msg
 
     # enter state callbacks
@@ -460,7 +457,7 @@ class Hal402Mgr(object):
                 "%s: HAL request failed, %s not a valid transition"
                 % (self.compname, self.curr_hal_transition_cmd)
             )
-            return "%s: HAL request failed, %s not a valid transition" % (
+            return "{}: HAL request failed, {} not a valid transition".format(
                 self.compname,
                 self.curr_hal_transition_cmd,
             )

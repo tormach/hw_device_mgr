@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 from hal_402_device_mgr.hal_402_mgr import Hal402Mgr
 import time

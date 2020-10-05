@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import rospy
 import hal
 import time
@@ -7,7 +6,7 @@ import time
 from hal_402_device_mgr.msg import msg_error, msg_status
 
 
-class GenericHalPin(object):
+class GenericHalPin:
     def __init__(self, name, dir, type):
         self.name = name
         self.dir = dir
@@ -39,11 +38,11 @@ class GenericHalPin(object):
 
 class Pin402(GenericHalPin):
     def __init__(self, name, dir, type, bit_pos):
-        super(Pin402, self).__init__(name, dir, type)
+        super().__init__(name, dir, type)
         self.bit_pos = bit_pos
 
 
-class StateMachine402(object):
+class StateMachine402:
     states_402 = {
         'NOT READY TO SWITCH ON': [0x4F, 0x00],
         'SWITCH ON DISABLED': [0x4F, 0x40],
@@ -125,7 +124,7 @@ class StateMachine402(object):
     }
 
 
-class Drive402(object):
+class Drive402:
     pins_402_spec = [
         # Pin tuple format:
         #   (name, hal_dir, hal_type, bit_num)
@@ -159,7 +158,7 @@ class Drive402(object):
         self.pins_402 = dict()
         for pname, pdir, ptype, ppos in self.pins_402_spec:
             self.pins_402[pname] = Pin402(
-                '{}.{}'.format(self.drive_name, pname), pdir, ptype, ppos
+                f'{self.drive_name}.{pname}', pdir, ptype, ppos
             )
         self.pins_generic = {
             # Pins used by this component
@@ -269,13 +268,13 @@ class Drive402(object):
         # messages are defined in msg/ directory of this package
         self.topics = {
             'error': rospy.Publisher(
-                '%s/%s_error' % (self.parent.compname, self.drive_name),
+                f'{self.parent.compname}/{self.drive_name}_error',
                 msg_error,
                 queue_size=1,
                 latch=True,
             ),
             'status': rospy.Publisher(
-                '%s/%s_status' % (self.parent.compname, self.drive_name),
+                f'{self.parent.compname}/{self.drive_name}_status',
                 msg_status,
                 queue_size=1,
                 latch=True,
@@ -390,7 +389,7 @@ class Drive402(object):
             )
             if self.curr_error == '0x0000':
                 rospy.loginfo(
-                    "%s: %s no error" % (self.parent.compname, self.drive_name)
+                    f"{self.parent.compname}: {self.drive_name} no error"
                 )
             else:
                 rospy.logerr(
