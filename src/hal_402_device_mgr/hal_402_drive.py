@@ -198,6 +198,7 @@ class Drive402:
             'pins_402': self.pins_402,
             'pins_generic': self.pins_generic,
         }
+        self.topics = {}
         self.create_pins()
 
     def sim_set_status(self, status):
@@ -270,7 +271,11 @@ class Drive402:
             next_state = self.active_transition_table[self.curr_state][0]
             rospy.logdebug(
                 "%s, attempting transition %s to state %s"
-                % (self.drive_name, transition, next_state,)
+                % (
+                    self.drive_name,
+                    transition,
+                    next_state,
+                )
             )
             # - look up transition in transition_table
             # - get list with tuples containing pin and value to be set
@@ -298,7 +303,11 @@ class Drive402:
         ):
             rospy.loginfo(
                 "%s: transition %s apparently reached state %s"
-                % (self.drive_name, transition, self.curr_state,)
+                % (
+                    self.drive_name,
+                    transition,
+                    self.curr_state,
+                )
             )
             # current state equals the target state, mimic succesful transition
             return True
