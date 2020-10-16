@@ -72,7 +72,7 @@ class Hal402Mgr:
 
         self.prev_hal_transition_cmd = -2
         self.curr_hal_transition_cmd = -2
-        self.curr_hal_reset_pin = 0
+        self.prev_hal_reset_pin = 0
         self.curr_hal_reset_pin = 0
 
         self.transitions = {
