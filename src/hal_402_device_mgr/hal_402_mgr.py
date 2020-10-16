@@ -479,30 +479,19 @@ class Hal402Mgr:
     def hal_UI_cmd(self):
         if self.transition_cmd_changed():
             self.transition_from_hal()
-        if self.reset_pin_changed():
-            # check if we're in disabled state, and if the reset button has
-            # rising edge, invoke transition to current transition cmd
-            # prevent acting on reset button change from all other states.
-            if (self.curr_hal_reset_pin is True) and (
-                self.fsm.current == 'disabled'
-            ):
-                self.transition_from_hal()
 
     def transition_cmd_changed(self):
-        if not (self.prev_hal_transition_cmd == self.curr_hal_transition_cmd):
-            return True
-        else:
-            return False
+        return self.prev_hal_transition_cmd != self.curr_hal_transition_cmd
 
     def reset_pin_changed(self):
-        if not (self.prev_hal_reset_pin == self.curr_hal_reset_pin):
-            return True
-        else:
-            return False
+        return self.prev_hal_reset_pin != self.curr_hal_reset_pin
 
-    def manage_errors(self):
-        # when in a certain state, we need to check things so we can initiate
-        # a transition to an error state for example
+    def detect_fault_conditions(self):
+        """
+        If anything goes wrong with the drives (FAULT state, or a drive isn't
+        in the expected state), then transition the whole system to the "fault"
+        state for safety.
+        """
         one_drive_faulted = self.one_drive_has_status('FAULT')
         all_drives_operational = self.all_drives_are_status('OPERATION ENABLED')
         if self.fsm.current != 'fault':
@@ -511,13 +500,25 @@ class Hal402Mgr:
         if self.fsm.current == 'enabled':
             if not all_drives_operational:
                 self.execute_transition('error')
+
+    def on_reset_pin_changed(self):
+        # Deliberate fallthrough here to allow 1-click recovery via reset button
         if self.fsm.current == 'fault':
-            if self.reset_pin_changed() and (self.curr_hal_reset_pin is False):
-                rospy.loginfo(
-                    "Reset requested, starting transition sequence to re-enable drives"
-                )
-                # this will get us in the disabled state again, ready for enabling
-                self.execute_transition('stop')
+            rospy.loginfo(
+                "Reset requested, starting transition sequence to re-enable drives"
+            )
+            # this will get us in the disabled state again
+            self.execute_transition('stop')
+
+        if self.fsm.current == 'disabled':
+            # Error was successfully recovered, continue with the transition
+            # requested by the reset click
+            rospy.loginfo("Recovery successful, continuing with reset request")
+            self.transition_from_hal()
+        elif self.fsm.current == 'fault':
+            rospy.logerr(
+                "Unable to come out of Reset. Please ensure that the drives are powered on and the E-stop switch is released."
+            )
 
     def publish_states(self):
         for drive in self.drives:
@@ -537,8 +538,10 @@ class Hal402Mgr:
         try:
             while not rospy.is_shutdown():
                 self.update_drive_states()
-                self.manage_errors()
+                self.detect_fault_conditions()
                 self.hal_UI_cmd()
+                if self.reset_pin_changed():
+                    self.on_reset_pin_changed()
                 self.rate.sleep()
         except rospy.ROSInterruptException as e:
             rospy.loginfo(f"ROSInterruptException: {e}")
