@@ -437,7 +437,7 @@ class Drive402:
     @staticmethod
     def error_code_as_str(error_code):
         return (
-            "0x{:04X} (0x{:04X})".format(error_code[0], error_code[1])
+            "0x{:04X}".format(0xFFFF & error_code[1])
             if error_code and error_code[0]
             else ''
         )
@@ -461,9 +461,7 @@ class Drive402:
                 error_info.get('solution', Drive402.GENERIC_ERROR_SOLUTION),
             )
             if not self.curr_error_code or not self.curr_error_code[0]:
-                rospy.loginfo(
-                    f"{self.parent.compname}: {self.drive_name} no error"
-                )
+                rospy.loginfo(f"{self.drive_name}: No Error")
             else:
                 brief_description = error_info.get(
                     'description', self.GENERIC_ERROR_DESCRIPTION
@@ -473,12 +471,9 @@ class Drive402:
                 )
 
                 rospy.logerr(
-                    f"{self.drive_name} error {err_code_as_str}: ({brief_description})\n{solution}"
+                    f"{self.drive_name}: Error {err_code_as_str}: {brief_description}\n{solution}"
                 )
 
     def publish_fault_state(self):
         if (self.curr_state == 'FAULT') and self.drive_state_changed():
-            rospy.logwarn(
-                "%s: %s entered \'FAULT\' state"
-                % (self.parent.compname, self.drive_name)
-            )
+            rospy.logwarn(f"{self.drive_name} entered 'FAULT' state")
