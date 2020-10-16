@@ -451,6 +451,10 @@ class Hal402Mgr:
                 pin.sync_hal()
         self.curr_hal_transition_cmd = self.pins['state-cmd'].local_pin_value
         self.curr_hal_reset_pin = self.pins['reset'].local_pin_value
+        if self.reset_pin_changed():
+            rospy.loginfo(
+                f"Reset pin was {self.prev_hal_reset_pin}, is now {self.curr_hal_reset_pin}"
+            )
 
     def transition_from_hal(self):
         # get check if the HAL number is one of the transition numbers
