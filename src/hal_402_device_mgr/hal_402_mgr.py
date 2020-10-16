@@ -452,9 +452,6 @@ class Hal402Mgr:
         # get check if the HAL number is one of the transition numbers
         for key, transition in self.transitions.items():
             if transition.value == self.curr_hal_transition_cmd:
-                rospy.loginfo(
-                    f"Found transition {key} requested from HAL (id is {transition.value})"
-                )
                 transition_name = key
                 break
         else:
@@ -527,11 +524,11 @@ class Hal402Mgr:
             while not rospy.is_shutdown():
                 self.update_drive_states()
                 self.detect_fault_conditions()
-                # FIXME the reset pin also triggers a transition_from_hal
-                if self.transition_cmd_changed():
-                    self.transition_from_hal()
                 if self.reset_pin_changed():
                     self.on_reset_pin_changed()
+                if self.transition_cmd_changed():
+                    # If a HAL transition was requested separate from a reset press, do it now
+                    self.transition_from_hal()
                 self.rate.sleep()
         except rospy.ROSInterruptException as e:
             rospy.loginfo(f"ROSInterruptException: {e}")
