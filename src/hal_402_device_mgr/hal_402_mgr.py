@@ -464,10 +464,6 @@ class Hal402Mgr:
 
         self.execute_transition(transition_name)
 
-    def hal_UI_cmd(self):
-        if self.transition_cmd_changed():
-            self.transition_from_hal()
-
     def transition_cmd_changed(self):
         return self.prev_hal_transition_cmd != self.curr_hal_transition_cmd
 
@@ -527,7 +523,9 @@ class Hal402Mgr:
             while not rospy.is_shutdown():
                 self.update_drive_states()
                 self.detect_fault_conditions()
-                self.hal_UI_cmd()
+                # FIXME the reset pin also triggers a transition_from_hal
+                if self.transition_cmd_changed():
+                    self.transition_from_hal()
                 if self.reset_pin_changed():
                     self.on_reset_pin_changed()
                 self.rate.sleep()
