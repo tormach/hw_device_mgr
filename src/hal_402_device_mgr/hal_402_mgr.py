@@ -187,8 +187,7 @@ class Hal402Mgr:
                 len(drive_types) != len(drive_instances)
             ):
                 rospy.logerr(
-                    "%s: nr of drive and slave instances or drive types do not match"
-                    % self.compname
+                    "number of drive and slave instances or drive types do not match"
                 )
             else:
                 for i in range(0, len(drive_instances)):
@@ -206,10 +205,7 @@ class Hal402Mgr:
                     )
                     rospy.loginfo(f"{self.compname}: {drive_name} created")
         else:
-            rospy.logerr(
-                "%s: no correct /hal_402_device_mgr/drives params"
-                % self.compname
-            )
+            rospy.logerr("no correct /hal_402_device_mgr/drives params")
 
     def create_pins(self):
         for key, pin in self.pins.items():
@@ -450,15 +446,7 @@ class Hal402Mgr:
             if pin.dir == hal.HAL_IN:
                 pin.sync_hal()
         self.curr_hal_transition_cmd = self.pins['state-cmd'].local_pin_value
-        if self.transition_cmd_changed():
-            rospy.loginfo(
-                f"Transition cmd pin was {self.prev_hal_transition_cmd}, is now {self.curr_hal_transition_cmd}"
-            )
         self.curr_hal_reset_pin = self.pins['reset'].local_pin_value
-        if self.reset_pin_changed():
-            rospy.loginfo(
-                f"Reset pin was {self.prev_hal_reset_pin}, is now {self.curr_hal_reset_pin}"
-            )
 
     def transition_from_hal(self):
         # get check if the HAL number is one of the transition numbers
