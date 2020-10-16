@@ -361,8 +361,8 @@ class Hal402Mgr:
         target_path = StateMachine402.path_on_fault
         target_name = ('SWITCH ON DISABLED', 'FAULT')
         self.change_drives(target_path, target_name)
-        rospy.logerr(
-            f"The machine entered 'fault' state, previous state was '{e.src}'"
+        rospy.loginfo(
+            f"Robot is in 'fault' state, previous state was '{e.src}'"
         )
         self.update_hal_state_fb()
 
@@ -481,9 +481,13 @@ class Hal402Mgr:
         if self.fsm.current != 'fault':
             if one_drive_faulted:
                 self.execute_transition('error')
+                rospy.logerr("Robot is in fault state due to a drive fault:")
         if self.fsm.current == 'enabled':
             if not all_drives_operational:
                 self.execute_transition('error')
+                rospy.logerr(
+                    "Robot is in fault state due to drive operational status:"
+                )
 
     def on_reset_pin_changed(self):
         # Deliberate fallthrough here to allow 1-click recovery via reset button

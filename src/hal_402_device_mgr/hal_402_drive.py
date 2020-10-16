@@ -437,7 +437,7 @@ class Drive402:
     @staticmethod
     def error_code_as_str(error_code):
         return (
-            "0x{:04x} (0x{:04x})".format(error_code[0], error_code[1])
+            "0x{:04X} (0x{:04X})".format(error_code[0], error_code[1])
             if error_code and error_code[0]
             else ''
         )
@@ -447,14 +447,14 @@ class Drive402:
 
     def publish_error(self):
         if self.drive_error_changed():
-            err_str = self.current_error_code_str()
+            err_code_as_str = self.current_error_code_str()
             error_info = self.parent.get_error_info(
                 self.drive_type, self.curr_error_code
             )
             self.topics['error'].publish(
                 self.drive_name,
                 self.drive_type,
-                err_str,
+                err_code_as_str,
                 error_info.get(
                     'description', Drive402.GENERIC_ERROR_DESCRIPTION
                 ),
@@ -465,21 +465,20 @@ class Drive402:
                     f"{self.parent.compname}: {self.drive_name} no error"
                 )
             else:
+                brief_description = error_info.get(
+                    'description', self.GENERIC_ERROR_DESCRIPTION
+                )
+                solution = error_info.get(
+                    'solution', self.GENERIC_ERROR_SOLUTION
+                )
+
                 rospy.logerr(
-                    '{}: {}, error: {}, description: {}, solution: {}'.format(
-                        self.parent.compname,
-                        self.drive_name,
-                        err_str,
-                        error_info.get(
-                            'description', self.GENERIC_ERROR_DESCRIPTION
-                        ),
-                        error_info.get('solution', self.GENERIC_ERROR_SOLUTION),
-                    )
+                    f"{self.drive_name} error {err_code_as_str}: ({brief_description})\n{solution}"
                 )
 
     def publish_fault_state(self):
         if (self.curr_state == 'FAULT') and self.drive_state_changed():
-            rospy.logerr(
+            rospy.logwarn(
                 "%s: %s entered \'FAULT\' state"
                 % (self.parent.compname, self.drive_name)
             )
