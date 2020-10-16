@@ -69,6 +69,7 @@ class Hal402Mgr:
                 },
             }
         )
+
         self.prev_hal_transition_cmd = -2
         self.curr_hal_transition_cmd = -2
         self.curr_hal_reset_pin = 0
@@ -91,6 +92,7 @@ class Hal402Mgr:
                 name='disable', value=4, transition_cb=self.fsm.disable
             ),
         }
+
         self.pins = {
             # Pins used by this component to call the service callbacks
             'state-cmd': GenericHalPin(
@@ -289,38 +291,34 @@ class Hal402Mgr:
         # the return value for the service response (string) is a message
         # check the requested state for validity
         if req.req_transition not in self.transitions:
-            rospy.loginfo(
-                "%s: request failed, %s not a valid transition"
-                % (self.compname, req.req_transition)
-            )
-            return "{}: request failed, {} not a valid transition".format(
-                self.compname,
-                req.req_transition,
-            )
+            msg = f"Transition request failed: {req.req_transition} is not a valid transition"
+            rospy.loginfo(msg)
+            return msg
         else:
+            rospy.loginfo(f"Transition request {req.req_transition} is valid")
             return self.execute_transition(req.req_transition)
 
+    def missing_transition(self):
+        rospy.logwarn("Transition callback is missing")
+
     def execute_transition(self, transition):
-        msg = "Starting transition '{}' from state '{}'".format(
-            transition,
-            self.fsm.current,
-        )
-        rospy.loginfo(f'{self.compname}:  {msg}')
+        msg = f"Starting transition '{transition}' from state '{self.fsm.current}'"
+        rospy.loginfo(msg)
         try:
-            f = self.transitions[transition].transition_cb
-            f()
-            msg = "Completed transition '{}' to state '{}'".format(
-                transition,
-                self.fsm.current,
+            transition_cb = (
+                self.transitions[transition].transition_cb
+                or self.missing_transition
             )
-            rospy.loginfo(f'{self.compname}:  {msg}')
+            transition_cb()
+            msg = f"Completed transition '{transition}' to state '{self.fsm.current}'"
+            rospy.loginfo(msg)
             return msg
         except FysomError:
             msg = "Transition '{}' not possible from state '{}'".format(
                 transition,
                 self.fsm.current,
             )
-            rospy.logerr(f"{self.compname}:  {msg}")
+            rospy.logerr(msg)
             return msg
 
     # enter state callbacks
@@ -345,6 +343,7 @@ class Hal402Mgr:
         if self.change_drives(target_path, target_name):
             self.execute_transition('disable')
         else:
+
             self.execute_transition('error')
 
     def fsm_in_starting(self, e=None):
@@ -367,8 +366,7 @@ class Hal402Mgr:
         target_name = ('SWITCH ON DISABLED', 'FAULT')
         self.change_drives(target_path, target_name)
         rospy.logerr(
-            "%s: The machine entered \'fault\' state, previous state was \'%s\'"
-            % (self.compname, e.src)
+            f"The machine entered 'fault' state, previous state was '{e.src}'"
         )
         self.update_hal_state_fb()
 
@@ -386,21 +384,21 @@ class Hal402Mgr:
         if isinstance(target_states, str):
             target_states = (target_states,)
         no_error = True
-        timeout = 8.0  # seconds to attempt to transition a single drive
+        timeout = 5.0  # seconds to attempt to transition a single drive
         for drive in self.drives:
             # pick a transition table for the requested state
             drive.set_transition_table(transition_table)
-            retries = 0
+            transition_attempts = 0
             t0 = time.time()
             while (time.time() - t0) < timeout:
-                retries += 1
+                transition_attempts += 1
                 drive.update_state()
                 rospy.logdebug(
                     "%s: %s, try %i: in state %s, 0x%03x"
                     % (
                         self.compname,
                         drive.drive_name,
-                        retries,
+                        transition_attempts,
                         drive.curr_state,
                         drive.curr_status_word,
                     )
@@ -412,19 +410,14 @@ class Hal402Mgr:
                     # if a drive needs to transition itself
                     time.sleep(0.25)
                 else:
+                    time.sleep(0.001)
                     if not drive.next_transition():
                         # If we can't transition then the drive state machine is stuck, so bail out
                         break
 
             if drive.curr_state not in target_states:
-                rospy.loginfo(
-                    "%s did not reach target state after %i retries and %f seconds from state %s"
-                    % (
-                        drive.drive_name,
-                        retries,
-                        time.time() - t0,
-                        drive.curr_state,
-                    )
+                rospy.logerr(
+                    f"{drive.drive_name} did not reach target state after {time.time()-t0:0.2f} seconds (current state is {drive.curr_state})"
                 )
                 no_error = False
                 # But continue trying other drives
@@ -463,17 +456,15 @@ class Hal402Mgr:
         # get check if the HAL number is one of the transition numbers
         for key, transition in self.transitions.items():
             if transition.value == self.curr_hal_transition_cmd:
+                rospy.loginfo(
+                    f"Found transition {key} requested from HAL (id is {transition.value})"
+                )
                 transition_name = key
                 break
         else:
-            rospy.loginfo(
-                "%s: HAL request failed, %s not a valid transition"
-                % (self.compname, self.curr_hal_transition_cmd)
-            )
-            return "{}: HAL request failed, {} not a valid transition".format(
-                self.compname,
-                self.curr_hal_transition_cmd,
-            )
+            msg = f"HAL request failed, {self.curr_hal_transition_cmd} not a valid transition"
+            rospy.loginfo(msg)
+            return msg
 
         self.execute_transition(transition_name)
 
@@ -514,6 +505,9 @@ class Hal402Mgr:
                 self.execute_transition('error')
         if self.fsm.current == 'fault':
             if self.reset_pin_changed() and (self.curr_hal_reset_pin is False):
+                rospy.loginfo(
+                    "Reset requested, starting transition sequence to re-enable drives"
+                )
                 # this will get us in the disabled state again, ready for enabling
                 self.execute_transition('stop')
 
@@ -527,8 +521,8 @@ class Hal402Mgr:
 
     def call_cleanup(self):
         # need to unload the userland component here?
-        rospy.loginfo("%s: Stopping ..." % self.compname)
-        rospy.loginfo("%s: Stopped" % self.compname)
+        rospy.loginfo("Stopping ...")
+        rospy.loginfo("Stopped")
 
     def run(self):
         rospy.on_shutdown(self.call_cleanup)
@@ -538,5 +532,5 @@ class Hal402Mgr:
                 self.manage_errors()
                 self.hal_UI_cmd()
                 self.rate.sleep()
-        except rospy.ROSInterruptException:
-            rospy.loginfo("%s: ROSInterruptException" % self.compname)
+        except rospy.ROSInterruptException as e:
+            rospy.loginfo(f"ROSInterruptException: {e}")
