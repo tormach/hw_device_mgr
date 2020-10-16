@@ -450,6 +450,10 @@ class Hal402Mgr:
             if pin.dir == hal.HAL_IN:
                 pin.sync_hal()
         self.curr_hal_transition_cmd = self.pins['state-cmd'].local_pin_value
+        if self.transition_cmd_changed():
+            rospy.loginfo(
+                f"Transition cmd pin was {self.prev_hal_transition_cmd}, is now {self.curr_hal_transition_cmd}"
+            )
         self.curr_hal_reset_pin = self.pins['reset'].local_pin_value
         if self.reset_pin_changed():
             rospy.loginfo(
