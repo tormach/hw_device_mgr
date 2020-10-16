@@ -461,13 +461,11 @@ class Hal402Mgr:
 
     def transition_from_hal(self):
         # get check if the HAL number is one of the transition numbers
-        nr_known = False
         for key, transition in self.transitions.items():
             if transition.value == self.curr_hal_transition_cmd:
-                nr_known = True
                 transition_name = key
                 break
-        if not nr_known:
+        else:
             rospy.loginfo(
                 "%s: HAL request failed, %s not a valid transition"
                 % (self.compname, self.curr_hal_transition_cmd)
@@ -476,8 +474,8 @@ class Hal402Mgr:
                 self.compname,
                 self.curr_hal_transition_cmd,
             )
-        else:
-            self.execute_transition(transition_name)
+
+        self.execute_transition(transition_name)
 
     def hal_UI_cmd(self):
         if self.transition_cmd_changed():
