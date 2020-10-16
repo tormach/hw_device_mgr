@@ -237,9 +237,11 @@ class Hal402Mgr:
 
         if error_code_pair and len(error_code_pair) >= 2:
             err_key_num = error_code_pair[1] & 0xFFFF
-            err_key_lower = "0x{:04x}".format(err_key_num)
-            err_key_upper = "0x{:04X}".format(err_key_num)
-            err_info = error_code_list.get(err_key_lower, error_code_list.get(err_key_upper, None))
+            err_key_lower = f"0x{err_key_num:04x}"
+            err_key_upper = f"0x{err_key_num:04X}"
+            err_info = error_code_list.get(
+                err_key_lower, error_code_list.get(err_key_upper, None)
+            )
 
             if err_info is not None:
                 return err_info
