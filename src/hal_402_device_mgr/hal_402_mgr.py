@@ -488,7 +488,7 @@ class Hal402Mgr:
 
     def on_reset_pin_changed(self):
         # Deliberate fallthrough here to allow 1-click recovery via reset button
-        if self.fsm.current == 'fault':
+        if self.fsm.current in ('fault', 'initial'):
             rospy.loginfo(
                 "Reset requested, starting transition sequence to re-enable drives"
             )
