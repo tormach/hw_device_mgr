@@ -105,14 +105,6 @@ class Hal402Mgr:
                 '%s.reset' % self.compname, hal.HAL_IN, hal.HAL_BIT
             ),
         }
-        self.conv_value_to_state = {
-            3: 'initial',
-            2: 'fault',
-            0: 'disabled',
-            1: 'enabled',
-            4: 'stopping',
-            5: 'starting',
-        }
 
         # read in the error list from parameters
         self.devices_error_list = self.read_device_error_list()
@@ -157,13 +149,9 @@ class Hal402Mgr:
 
     def read_device_error_list(self):
         if self.has_parameters(['/device_fault_code_list']):
-            device_err_list = rospy.get_param('/device_fault_code_list')
-            return device_err_list
-        else:
-            rospy.logerr(
-                "%s: no /device_fault_code_list params" % self.compname
-            )
-            return {}
+            return rospy.get_param('/device_fault_code_list')
+        rospy.logerr("%s: no /device_fault_code_list params" % self.compname)
+        return {}
 
     def create_drives(self):
         if self.has_parameters(
@@ -190,7 +178,7 @@ class Hal402Mgr:
                     "number of drive and slave instances or drive types do not match"
                 )
             else:
-                for i in range(0, len(drive_instances)):
+                for i in range(len(drive_instances)):
                     # create n drives from ROS parameters
                     drive_name = name + "_%s" % drive_instances[i]
                     slave_inst = slave_instances[i]
@@ -327,10 +315,7 @@ class Hal402Mgr:
 
     def change_drives(self, target_path, target_name):
         self.update_hal_state_fb()
-        if self.process_drive_transitions(target_path, target_name):
-            return True
-        else:
-            return False
+        return self.process_drive_transitions(target_path, target_name)
 
     def fsm_in_stopping(self, e=None):
         target_path = StateMachine402.path_to_switch_on_disabled
@@ -369,11 +354,17 @@ class Hal402Mgr:
     # make sure we mirror the state in the halpin
     # convert state to number
     def update_hal_state_fb(self):
-        for key, val in self.conv_value_to_state.items():
-            if val == self.fsm.current:
-                state_nr = key
-                self.pins['state-fb'].set_local_value(state_nr)
-                self.pins['state-fb'].set_hal_value()
+        conv_state_to_value = {
+            'initial': 3,
+            'fault': 2,
+            'disabled': 0,
+            'enabled': 1,
+            'stopping': 4,
+            'starting': 5,
+        }
+        state_nr = conv_state_to_value.get(self.fsm.current)
+        self.pins['state-fb'].set_local_value(state_nr)
+        self.pins['state-fb'].set_hal_value()
 
     def process_drive_transitions(self, transition_table, target_states):
         # Allow singular target state or multiple
@@ -475,16 +466,14 @@ class Hal402Mgr:
         """
         one_drive_faulted = self.one_drive_has_status('FAULT')
         all_drives_operational = self.all_drives_are_status('OPERATION ENABLED')
-        if self.fsm.current != 'fault':
-            if one_drive_faulted:
-                self.execute_transition('error')
-                rospy.logerr("Robot is in fault state due to a drive fault:")
-        if self.fsm.current == 'enabled':
-            if not all_drives_operational:
-                self.execute_transition('error')
-                rospy.logerr(
-                    "Robot is in fault state due to drive operational status:"
-                )
+        if self.fsm.current != 'fault' and one_drive_faulted:
+            self.execute_transition('error')
+            rospy.logerr("Robot is in fault state due to a drive fault:")
+        if self.fsm.current == 'enabled' and not all_drives_operational:
+            self.execute_transition('error')
+            rospy.logerr(
+                "Robot is in fault state due to drive operational status:"
+            )
 
     def on_reset_pin_changed(self):
         # Deliberate fallthrough here to allow 1-click recovery via reset button
