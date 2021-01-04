@@ -213,16 +213,16 @@ class Hal402Mgr:
                 % self.compname
             )
 
-    def get_error_info(self, devicetype, error_code_pair):
+    def get_error_info(self, devicetype, aux_error_code):
         rospy.loginfo(
             "Looking up error code {} for device type {}".format(
-                error_code_pair, devicetype
+                aux_error_code, devicetype
             )
         )
         error_code_list = self.devices_error_list.get(devicetype, {})
 
-        if error_code_pair and len(error_code_pair) >= 2:
-            err_key_num = error_code_pair[1] & 0xFFFF
+        if aux_error_code:
+            err_key_num = aux_error_code & 0xFFFF
             err_key_lower = f"0x{err_key_num:04x}"
             err_key_upper = f"0x{err_key_num:04X}"
             err_info = error_code_list.get(

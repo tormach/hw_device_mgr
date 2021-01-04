@@ -173,14 +173,15 @@ class Drive402:
         self.curr_state = 'unknown'
         self.prev_status_word = 0
         self.curr_status_word = 0
-        self.prev_error_code = (0, 0)
-        self.curr_error_code = (0, 0)
+        self.prev_error_code = 0
+        self.curr_error_code = 0
         self.active_transition_table = None
         self.pins_402 = dict()
         for pname, pdir, ptype, ppos in self.pins_402_spec:
             self.pins_402[pname] = Pin402(
                 f'{self.drive_name}.{pname}', pdir, ptype, ppos
             )
+        # NOTE: error-code is deprecated (need the space in PDO for homing options)
         self.pins_generic = {
             # Pins used by this component
             'error-code': GenericHalPin(
@@ -366,10 +367,9 @@ class Drive402:
                 if pin.dir == hal.HAL_IN:
                     pin.sync_hal()
 
-        self.curr_error_code = (
-            self.pins_generic['error-code'].local_pin_value,
-            self.pins_generic['aux-error-code'].local_pin_value,
-        )
+        self.curr_error_code = self.pins_generic[
+            'aux-error-code'
+        ].local_pin_value
 
     def calculate_status_word(self):
         # traverse dict and for the local values do some bitwise operation so
@@ -436,11 +436,7 @@ class Drive402:
 
     @staticmethod
     def error_code_as_str(error_code):
-        return (
-            "0x{:04X}".format(0xFFFF & error_code[1])
-            if error_code and error_code[0]
-            else ''
-        )
+        return "0x{:04X}".format(0xFFFF & error_code) if error_code else ''
 
     def current_error_code_str(self):
         return self.error_code_as_str(self.curr_error_code)
@@ -460,7 +456,7 @@ class Drive402:
                 ),
                 error_info.get('solution', Drive402.GENERIC_ERROR_SOLUTION),
             )
-            if not self.curr_error_code or not self.curr_error_code[0]:
+            if not self.curr_error_code:
                 rospy.loginfo(f"{self.drive_name}: No Error")
             else:
                 brief_description = error_info.get(
