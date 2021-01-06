@@ -7,12 +7,15 @@ from hal_402_device_mgr.msg import msg_error, msg_status
 
 
 class GenericHalPin:
-    def __init__(self, name, dir, type):
+    def __init__(self, name, dir, type, parent_comp=None):
         self.name = name
         self.dir = dir
         self.type = type
+        self.parent_comp = parent_comp
         self.halpin = None
         self.local_pin_value = None
+        if self.parent_comp:
+            self.create_halpin()
 
     def set_parent_comp(self, component):
         self.parent_comp = component
@@ -28,6 +31,14 @@ class GenericHalPin:
 
     def get_hal_value(self):
         self.local_pin_value = self.halpin.get()
+
+    def set_pin(self, value):
+        self.set_local_value(value)
+        self.set_hal_value()
+
+    def get_pin(self):
+        self.local_pin_value = self.halpin.get()
+        return self.local_pin_value
 
     def sync_hal(self):
         if self.dir == hal.HAL_OUT:
@@ -141,6 +152,77 @@ class StateMachine402:
     }
 
 
+class DriveOffsetPins:
+    DRIVE_MODE_HOMING = 6
+    DRIVE_MODE_CSP = 8
+
+    def __init__(self, drive_name, parent_comp, timeout_sec=5):
+        self.name = drive_name
+        self.homing_start_pin = GenericHalPin(
+            drive_name + "-homing-start-cmd",
+            hal.HAL_OUT,
+            hal.HAL_BIT,
+            parent_comp,
+        )
+        self.drive_mode_cmd_pin = GenericHalPin(
+            drive_name + "-drive-mode-cmd",
+            hal.HAL_OUT,
+            hal.HAL_U32,
+            parent_comp,
+        )
+        self.drive_mode_fb_pin = GenericHalPin(
+            drive_name + "-drive-mode-fb", hal.HAL_IN, hal.HAL_U32, parent_comp
+        )
+        self.homing_complete_pin = GenericHalPin(
+            drive_name + "-homing-done-fb", hal.HAL_IN, hal.HAL_BIT, parent_comp
+        )
+        self.timeout_sec = timeout_sec
+        self.init_pins()
+
+    def init_pins(self):
+        # KLUDGE set default pin values here (make sure to update this if we ever switch to CSV mode)
+        self.homing_start_pin.set_pin(False)
+        self.drive_mode_cmd_pin.set_pin(self.DRIVE_MODE_CSP)
+
+    def start_homing(self):
+        # Set up homing type and switch modes
+        self.drive_mode_cmd_pin.set_pin(self.DRIVE_MODE_HOMING)
+        # KLUDGE don't have a way to test homing mode here, so it better be 35!
+        t0 = time.time()
+        while time.time() - t0 < self.timeout_sec:
+            if self.drive_mode_fb_pin.get_pin() == self.DRIVE_MODE_HOMING:
+                break
+        else:
+            rospy.logerr(
+                f"Drive {self.name} failed to reach homing mode in {self.timeout_sec} seconds"
+            )
+            return False
+
+        self.homing_start_pin.set_pin(1)
+        return True
+
+    def wait_for_home(self):
+        try:
+            t0 = time.time()
+            while time.time() - t0 < self.timeout_sec:
+                if self.homing_complete_pin.get_pin():
+                    break
+            else:
+                rospy.logerr(
+                    f"Drive {self.name} failed to complete homing in {self.timeout_sec} seconds"
+                )
+                return False
+
+            return True
+
+        finally:
+            # IMPORTANT Cancel homing mode and restore CSP regardless of success
+            self.homing_start_pin.set_pin(0)
+
+    def finish_homing(self):
+        self.drive_mode_cmd_pin.set_pin(self.DRIVE_MODE_CSP)
+
+
 class Drive402:
     GENERIC_ERROR_DESCRIPTION = 'This is an unknown error'
     GENERIC_ERROR_SOLUTION = (
@@ -150,7 +232,7 @@ class Drive402:
         # Pin tuple format:
         #   (name, hal_dir, hal_type, bit_num)
         #
-        # bits 0-3 and 7 and 8 of the controlword, bit 4-6 and
+        # bits 0-4 and 7 and 8 of the controlword, bit 5-6 and
         # 9 - 15 intentionally not implemented yest
         ('switch-on', hal.HAL_OUT, hal.HAL_BIT, 0),
         ('enable-voltage', hal.HAL_OUT, hal.HAL_BIT, 1),
@@ -201,6 +283,7 @@ class Drive402:
         }
         self.topics = {}
         self.create_pins()
+        self.homing = DriveOffsetPins(drive_name, self.parent.halcomp)
 
     def sim_set_status(self, status):
         # bitmask = StateMachine402.states_402[status][0]

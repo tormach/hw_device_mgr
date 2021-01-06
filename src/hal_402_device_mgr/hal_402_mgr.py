@@ -74,6 +74,8 @@ class Hal402Mgr:
         self.curr_hal_transition_cmd = -2
         self.prev_hal_reset_pin = 0
         self.curr_hal_reset_pin = 0
+        self.prev_hal_zero_all_joints_pin = 0
+        self.curr_hal_zero_all_joints_pin = 0
 
         self.transitions = {
             'stop': TransitionItem(
@@ -103,6 +105,9 @@ class Hal402Mgr:
             ),
             'reset': GenericHalPin(
                 '%s.reset' % self.compname, hal.HAL_IN, hal.HAL_BIT
+            ),
+            'zero-all-joints': GenericHalPin(
+                '%s.zero-all-joints' % self.compname, hal.HAL_IN, hal.HAL_BIT
             ),
         }
 
@@ -433,11 +438,15 @@ class Hal402Mgr:
         # get the status pins, and save their value locally
         self.prev_hal_transition_cmd = self.curr_hal_transition_cmd
         self.prev_hal_reset_pin = self.curr_hal_reset_pin
+        self.prev_hal_zero_all_joints_pin = self.curr_hal_zero_all_joints_pin
         for key, pin in self.pins.items():
             if pin.dir == hal.HAL_IN:
                 pin.sync_hal()
         self.curr_hal_transition_cmd = self.pins['state-cmd'].local_pin_value
         self.curr_hal_reset_pin = self.pins['reset'].local_pin_value
+        self.curr_hal_zero_all_joints_pin = self.pins[
+            'zero-all-joints'
+        ].local_pin_value
 
     def transition_from_hal(self):
         # get check if the HAL number is one of the transition numbers
@@ -457,6 +466,33 @@ class Hal402Mgr:
 
     def reset_pin_changed(self):
         return self.prev_hal_reset_pin != self.curr_hal_reset_pin
+
+    def zero_all_joints_pin_changed(self):
+        return (
+            self.prev_hal_zero_all_joints_pin
+            != self.curr_hal_zero_all_joints_pin
+        )
+
+    def on_zero_all_joints_pin_changed(self):
+        try:
+            rospy.loginfo("Disabling all drives for CSP->HM switchover")
+            # self.execute_transition('stop')
+            rospy.loginfo("Switching to homing mode in all drives")
+            rospy.loginfo("Enabling all drives for homing")
+            self.execute_transition('start')
+            for drive in self.drives:
+                if not drive.homing.start_homing():
+                    return False
+            rospy.loginfo("Home each drive")
+            for drive in self.drives:
+                if not drive.homing.wait_for_home():
+                    return False
+            rospy.loginfo("Homing complete, disable drives")
+        finally:
+            self.execute_transition('stop')
+            for drive in self.drives:
+                drive.homing.finish_homing()
+            rospy.loginfo("User must click 'Reset' to start robot again")
 
     def detect_fault_conditions(self):
         """
@@ -518,6 +554,9 @@ class Hal402Mgr:
                 if self.transition_cmd_changed():
                     # If a HAL transition was requested separate from a reset press, do it now
                     self.transition_from_hal()
+                if self.zero_all_joints_pin_changed():
+                    self.on_zero_all_joints_pin_changed()
                 self.rate.sleep()
+                # If zero pin changed
         except rospy.ROSInterruptException as e:
             rospy.loginfo(f"ROSInterruptException: {e}")
