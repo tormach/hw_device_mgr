@@ -97,17 +97,11 @@ class Hal402Mgr:
 
         self.pins = {
             # Pins used by this component to call the service callbacks
-            'state-cmd': GenericHalPin(
-                '%s.state-cmd' % self.compname, hal.HAL_IN, hal.HAL_U32
-            ),
-            'state-fb': GenericHalPin(
-                '%s.state-fb' % self.compname, hal.HAL_OUT, hal.HAL_S32
-            ),
-            'reset': GenericHalPin(
-                '%s.reset' % self.compname, hal.HAL_IN, hal.HAL_BIT
-            ),
+            'state-cmd': GenericHalPin('state-cmd', hal.HAL_IN, hal.HAL_U32),
+            'state-fb': GenericHalPin('state-fb', hal.HAL_OUT, hal.HAL_S32),
+            'reset': GenericHalPin('reset', hal.HAL_IN, hal.HAL_BIT),
             'zero-all-joints': GenericHalPin(
-                '%s.zero-all-joints' % self.compname, hal.HAL_IN, hal.HAL_BIT
+                'zero-all-joints', hal.HAL_IN, hal.HAL_BIT
             ),
         }
 
