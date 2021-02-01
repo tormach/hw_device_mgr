@@ -156,7 +156,7 @@ class DriveOffsetPins:
     DRIVE_MODE_HOMING = 6
     DRIVE_MODE_CSP = 8
 
-    def __init__(self, drive_name, parent_comp, timeout_sec=5):
+    def __init__(self, drive_name, parent_comp, timeout_sec=1):
         self.name = drive_name
         self.homing_start_pin = GenericHalPin(
             drive_name + "-homing-start-cmd",

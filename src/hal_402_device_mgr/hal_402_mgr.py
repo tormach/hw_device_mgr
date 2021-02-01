@@ -370,7 +370,7 @@ class Hal402Mgr:
         if isinstance(target_states, str):
             target_states = (target_states,)
         no_error = True
-        timeout = 5.0  # seconds to attempt to transition a single drive
+        timeout = 1.0  # seconds to attempt to transition a single drive
         for drive in self.drives:
             # pick a transition table for the requested state
             drive.set_transition_table(transition_table)
