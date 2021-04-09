@@ -519,7 +519,7 @@ class Drive402:
 
     @staticmethod
     def error_code_as_str(error_code):
-        return "0x{:04X}".format(0xFFFF & error_code) if error_code else ''
+        return f"0x{0xFFFF & error_code:04X}" if error_code else ''
 
     def current_error_code_str(self):
         return self.error_code_as_str(self.curr_error_code)
