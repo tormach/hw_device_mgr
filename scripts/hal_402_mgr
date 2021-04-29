@@ -1,14 +1,8 @@
 #!/usr/bin/env python
 
 from hal_402_device_mgr.hal_402_mgr import Hal402Mgr
-import time
-
 
 if __name__ == '__main__':
-    # Create and name node
     hal_402_drives_mgr = Hal402Mgr()
-    # give some time to settle down until we are going to run
-    # if we don't wait, drives can be not properly initialized and then
-    # calling state transitions will give error 108's... Bad...
-    time.sleep(10)
+    hal_402_drives_mgr.init()
     hal_402_drives_mgr.run()

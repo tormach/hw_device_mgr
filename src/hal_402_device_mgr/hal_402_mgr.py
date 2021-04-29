@@ -1,556 +1,504 @@
 import rospy
-import time
 import hal
-import attr
-from fysom import Fysom, FysomError
+import traceback
+import time
+from fysom import FysomGlobalMixin, FysomGlobal, Canceled
 
-# import service messages from the ROS node
-from hal_402_device_mgr.srv import srv_robot_state
-from hal_402_device_mgr.hal_402_drive import (
-    Drive402,
-    GenericHalPin,
-    StateMachine402,
-)
+from .pins import HALPins
+
+from hal_402_device_mgr.hal_402_drive import Drive402
 
 
-@attr.s
-class TransitionItem:
-    name = attr.ib()
-    value = attr.ib()
-    transition_cb = attr.ib()
+class Hal402Timeout(RuntimeError):
+    pass
 
 
-class Hal402Mgr:
+class Hal402Mgr(FysomGlobalMixin):
     compname = 'hal_402_mgr'
+    default_control_mode = 'MODE_CSP'
+    ros_param_base = 'hal_402_device_mgr'
+    goal_state_timeout = 5.0  # seconds
+
+    pin_specs = {
+        # IO pin for command request and feedback
+        'state-cmd': dict(ptype=hal.HAL_U32, pdir=hal.HAL_IO),
+        # IN pin set high when external quick stop triggered
+        'quick_stop': dict(ptype=hal.HAL_BIT, pdir=hal.HAL_IN),
+        # OUT pin set high for two update cycles around drive enable
+        # transition
+        'reset': dict(ptype=hal.HAL_BIT, pdir=hal.HAL_OUT),
+    }
+
+    ####################################################
+    # Initialization
 
     def __init__(self):
-        # create ROS node
-        rospy.init_node(self.compname)
-        rospy.loginfo("%s: Node started" % self.compname)
+        self.state = 'stop_command'
+        self.command = 'stop'
+        super().__init__()
 
-        # create HAL userland component
-        self.halcomp = hal.component(self.compname)
-        rospy.loginfo("%s: HAL component created" % self.compname)
-
-        # Configure sim mode if SIM environment variable is set
-        self.sim = rospy.get_param("/sim_mode", True)
-        self.drives = []
-        self.fsm = Fysom(
-            {
-                'initial': {'state': 'initial', 'event': 'init', 'defer': True},
-                'events': [
-                    {
-                        'name': 'stop',
-                        'src': ['initial', 'fault', 'enabled'],
-                        'dst': 'stopping',
-                    },
-                    {'name': 'start', 'src': 'disabled', 'dst': 'starting'},
-                    {'name': 'enable', 'src': 'starting', 'dst': 'enabled'},
-                    {'name': 'disable', 'src': 'stopping', 'dst': 'disabled'},
-                    {
-                        'name': 'error',
-                        'src': [
-                            'initial',
-                            'starting',
-                            'enabled',
-                            'stopping',
-                            'disabled',
-                        ],
-                        'dst': 'fault',
-                    },
-                ],
-                'callbacks': {
-                    'oninitial': self.fsm_in_initial,
-                    'onstopping': self.fsm_in_stopping,
-                    'onstarting': self.fsm_in_starting,
-                    'ondisabled': self.fsm_in_disabled,
-                    'onenabled': self.fsm_in_enabled,
-                    'onfault': self.fsm_in_fault,
-                },
-            }
-        )
-
-        self.prev_hal_transition_cmd = -2
-        self.curr_hal_transition_cmd = -2
-        self.prev_hal_reset_pin = 0
-        self.curr_hal_reset_pin = 0
-        self.prev_hal_zero_all_joints_pin = 0
-        self.curr_hal_zero_all_joints_pin = 0
-
-        self.transitions = {
-            'stop': TransitionItem(
-                name='stop', value=0, transition_cb=self.fsm.stop
-            ),
-            'start': TransitionItem(
-                name='start', value=1, transition_cb=self.fsm.start
-            ),
-            'error': TransitionItem(
-                name='error', value=2, transition_cb=self.fsm.error
-            ),
-            'enable': TransitionItem(
-                name='enable', value=3, transition_cb=self.fsm.enable
-            ),
-            'disable': TransitionItem(
-                name='disable', value=4, transition_cb=self.fsm.disable
-            ),
-        }
-
-        self.pins = {
-            # Pins used by this component to call the service callbacks
-            'state-cmd': GenericHalPin('state-cmd', hal.HAL_IN, hal.HAL_U32),
-            'state-fb': GenericHalPin('state-fb', hal.HAL_OUT, hal.HAL_S32),
-            'reset': GenericHalPin('reset', hal.HAL_IN, hal.HAL_BIT),
-            'zero-all-joints': GenericHalPin(
-                'zero-all-joints', hal.HAL_IN, hal.HAL_BIT
-            ),
-        }
-
-        # read in the error list from parameters
-        self.devices_error_list = self.read_device_error_list()
-        # create drives which create pins
+    # To be called by external code
+    def init(self):
+        # Init ROS
+        self.init_ros()
+        # Init HAL component and common pins
+        self.hal_comp_init()
+        # Init drive objects and drive pins
         self.create_drives()
-        # create pins for calling service callback
-        self.create_pins()
+        # Mark HAL comp ready
+        self.hal_comp_ready()
 
-        # check if we're running real hardware, and set up sim state if
-        # applicable
-        self.check_for_real_hardware_setup()
+    def init_ros(self):
+        # Init ROS node, shutdown callback, rate object
+        rospy.init_node(self.compname)
+        rospy.on_shutdown(self.call_cleanup)
+        self.update_rate = rospy.get_param(
+            f'{self.ros_param_base}/update_rate', 10
+        )
+        self.rate = rospy.Rate(self.update_rate)
+        rospy.loginfo(f"Initialized '{self.compname}' ROS node")
 
-        self.get_update_rate()
-        self.create_service()
-        self.create_publisher()
+    def hal_comp_init(self):
+        # Init HAL userland component
+        self.comp = hal.component(self.compname)
+        rospy.loginfo(f"Initialized '{self.compname}' HAL component")
+        self.pins = HALPins(self.comp, self.pin_specs)
+        self.pins.init_pins()
 
-        # done
-        self.halcomp.ready()
-        self.fsm.init()
-
+    def hal_comp_ready(self):
+        self.comp.ready()
         rospy.loginfo("%s: HAL component ready" % self.compname)
 
-    def has_parameters(self, list_of_parameters):
-        has_parameters = True
-        for parameter in list_of_parameters:
-            has_parameters = rospy.has_param(parameter)
-            if has_parameters is False:
-                # exit this list at first missing parameter
-                break
-        return has_parameters
-
-    def check_for_real_hardware_setup(self):
-        if self.sim:
-            self.sim_set_drives_status('SWITCH ON DISABLED')
-            rospy.loginfo(
-                "%s: no hardware setup detected, default to "
-                "simulation mode" % self.compname
-            )
-        else:
-            # Configure real hardware mode
-            rospy.loginfo("%s: hardware setup detected" % self.compname)
-
-    def read_device_error_list(self):
-        if self.has_parameters(['/device_fault_code_list']):
-            return rospy.get_param('/device_fault_code_list')
-        rospy.logerr("%s: no /device_fault_code_list params" % self.compname)
-        return {}
-
     def create_drives(self):
-        if self.has_parameters(
-            [
-                '/hal_402_device_mgr/drives/name',
-                '/hal_402_device_mgr/drives/instances',
-                '/hal_402_device_mgr/drives/types',
-                '/hal_402_device_mgr/slaves/instances',
-            ]
-        ):
-            name = rospy.get_param('/hal_402_device_mgr/drives/name')
-            drive_instances = rospy.get_param(
-                '/hal_402_device_mgr/drives/instances'
+        self.drives = []
+        drive_config = rospy.get_param(f'{self.ros_param_base}/drives', None)
+        if drive_config is None:
+            rospy.logerr(f"No drive config in {self.ros_param_base}/drives")
+            return
+
+        self.sim = rospy.get_param("/sim_mode", True)
+
+        num_drives = len(drive_config)
+        mode = "sim" if self.sim else "real-hardware"
+        rospy.loginfo(f"Configuring {num_drives} {mode}-mode drives")
+
+        drives = {}
+        for drive_name in drive_config.keys():
+            # Create drives from ROS parameters; read drive attributes
+            # one at a time to create meaningful errors without extra
+            # code
+            base_param = f"{self.ros_param_base}/drives/{drive_name}"
+            drive_obj = Drive402(
+                drive_name=drive_name,
+                drive_type=rospy.get_param(f"{base_param}/type"),
+                slave_number=rospy.get_param(f"{base_param}/slave_number"),
+                comp=self.comp,
+                sim=self.sim,
             )
-            slave_instances = rospy.get_param(
-                '/hal_402_device_mgr/slaves/instances'
-            )
-            drive_types = rospy.get_param('/hal_402_device_mgr/drives/types')
-            # sanity check
-            if (len(slave_instances) != len(drive_instances)) or (
-                len(drive_types) != len(drive_instances)
-            ):
-                rospy.logerr(
-                    "number of drive and slave instances or drive types do not match"
-                )
-            else:
-                for i in range(len(drive_instances)):
-                    # create n drives from ROS parameters
-                    drive_name = name + "_%s" % drive_instances[i]
-                    slave_inst = slave_instances[i]
-                    drive_type = drive_types[i]
-                    self.drives.append(
-                        Drive402(
-                            drive_name=drive_name,
-                            drive_type=drive_type,
-                            parent=self,
-                            slave_inst=slave_inst,
-                        )
-                    )
-                    rospy.loginfo(f"{self.compname}: {drive_name} created")
+            drive_obj.init()
+            drives[drive_obj.slave_number] = drive_obj
+            rospy.loginfo(f"Initialized drive {drive_obj.drive_name}")
+        self.drives = [drives[i] for i in sorted(drives.keys())]
+
+    ####################################################
+    # Drive state FSM
+
+    GSM = FysomGlobal(
+        initial=dict(state='stop', event='stop_command', defer=True),
+        events=[
+            # Fault state:  From any state
+            # - fault:  done
+            dict(name='fault_command', src='*', dst='fault_1'),
+            dict(name='fault_complete', src='fault_1', dst='fault_complete'),
+            # Start state:  From any state but 'start*'
+            # - start_1:  Switch all drives to SWITCHED ON
+            # - start_2:  Set all drive control modes to default
+            # - start_3:  Switch all drives to OPERATION ENABLED
+            # - start_complete:  Done
+            dict(name='start_command', src='*', dst='start_1'),
+            dict(name='start_2', src='start_1', dst='start_2'),
+            dict(name='start_3', src='start_2', dst='start_3'),
+            dict(name='start_complete', src='start_3', dst='start_complete'),
+            # Stop state:  From any state but 'stop*'
+            # - stop_1:  Put all drives in SWITCH ON DISABLED and CSP mode
+            # - stop_complete:  Done
+            dict(name='stop_command', src='*', dst='stop_1'),
+            dict(name='stop_complete', src='stop_1', dst='stop_complete'),
+            # Home state:  From only 'stop_complete'
+            # - home_1:  Set all drive control modes to HM
+            # - home_2:  Switch all drives to OPERATION ENABLED
+            # - home_3:  Set home flag
+            # - home_complete:  Done; issue 'stop' command
+            dict(name='home_command', src='*', dst='home_1'),
+            dict(name='home_2', src='home_1', dst='home_2'),
+            dict(name='home_3', src='home_2', dst='home_3'),
+            dict(name='home_complete', src='home_3', dst='home_complete'),
+        ],
+        state_field='state',
+    )
+
+    #
+    # Fault command
+    #
+    def on_before_fault_command(self, e):
+        if self.fsm_check_command(e):
+            rospy.logerr('Entering fault state')
+            return True
         else:
-            rospy.logerr("no correct /hal_402_device_mgr/drives params")
+            return False
 
-    def create_pins(self):
-        for key, pin in self.pins.items():
-            pin.set_parent_comp(self.halcomp)
-            pin.create_halpin()
+    def on_enter_fault_1(self, e):
+        return self.fsm_set_drive_goal_state(e, 'FAULT')
 
-    def get_update_rate(self):
-        has_update_rate = rospy.has_param('/hal_402_device_mgr/update_rate')
-        if has_update_rate:
-            self.update_rate = rospy.get_param(
-                '/hal_402_device_mgr/update_rate'
-            )
-            self.rate = rospy.Rate(self.update_rate)
-        else:
-            rospy.logerr(
-                "%s: no /hal_402_device_mgr/update_rate param found"
-                % self.compname
-            )
+    def on_before_fault_complete(self, e):
+        return self.fsm_check_drive_goal_state(e, 'FAULT')
 
-    def get_error_info(self, devicetype, aux_error_code):
+    def on_enter_fault_complete(self, e):
+        self.fsm_finalize_command(e)
+
+    #
+    # Start command
+    #
+    def on_before_start_command(self, e):
+        return self.fsm_check_command(e)
+
+    def on_enter_start_1(self, e):
+        self.fsm_set_drive_goal_state(e, 'SWITCHED ON')
+
+    def on_before_start_2(self, e):
+        if not self.all_drives_status_flags(VOLTAGE_ENABLED=True):
+            self.timer_check_overrun("No voltage at drive motor power inputs")
+            return False
+        return self.fsm_check_drive_goal_state(e, 'SWITCHED ON')
+
+    def on_enter_start_2(self, e):
+        mode = self.default_control_mode
+        self.fsm_set_drive_control_mode(e, mode)
+
+    def on_before_start_3(self, e):
+        mode = self.default_control_mode
+        return self.fsm_check_drive_control_mode(e, mode)
+
+    def on_enter_start_3(self, e):
+        # Set reset pin during transition to OPERATION ENABLED
+        e.reset_pin = True
+        self.fsm_set_drive_goal_state(e, 'OPERATION ENABLED')
+
+    def on_before_start_complete(self, e):
+        return self.fsm_check_drive_goal_state(e, 'OPERATION ENABLED')
+
+    def on_enter_start_complete(self, e):
+        # Clear reset pin in OPERATION ENABLED
+        e.reset_pin = False
+        self.fsm_finalize_command(e)
+
+    #
+    # Stop command
+    #
+    def on_before_stop_command(self, e):
+        return self.fsm_check_command(e)
+
+    def on_enter_stop_1(self, e):
+        # Zero out command & feedback differences to give operator
+        # confidence turning on machine
+        e.reset_pin = True
+        return self.fsm_set_drive_goal_state(e, 'SWITCH ON DISABLED')
+
+    def on_before_stop_complete(self, e):
+        return self.fsm_check_drive_goal_state(e, 'SWITCH ON DISABLED')
+
+    def on_enter_stop_complete(self, e):
+        e.reset_pin = False
+        self.fsm_finalize_command(e)
+
+    #
+    # Home command
+    #
+    def on_before_home_command(self, e):
+        if not e.src == 'stop_complete':
+            rospy.logwarn("Unable to home when drives not stopped")
+            return False
+        return self.fsm_check_command(e)
+
+    def on_enter_home_1(self, e):
+        self.fsm_set_drive_control_mode(e, 'MODE_HM')
+
+    def on_before_home_2(self, e):
+        return self.fsm_check_drive_control_mode(e, 'MODE_HM')
+
+    def on_enter_home_2(self, e):
+        self.fsm_set_drive_goal_state(e, 'OPERATION ENABLED')
+
+    def on_before_home_3(self, e):
+        if not self.all_drives_status_flags(VOLTAGE_ENABLED=True):
+            self.timer_check_overrun("No voltage at drive motor power inputs")
+            return False
+        return self.fsm_check_drive_goal_state(e, 'OPERATION ENABLED')
+
+    def on_enter_home_3(self, e):
+        # MODE_HM:  OPERATION_MODE_SPECIFIC_1 = HOMING_START
+        self.set_drive_control_flags(OPERATION_MODE_SPECIFIC_1=True)
+
+    def on_before_home_complete(self, e):
+        if self.all_drives_status_flags(HOMING_COMPLETED=True):
+            return True
+        self.timer_check_overrun("waiting on drives HOMING_COMPLETED flags")
+        # Cancel event
         rospy.loginfo(
-            "Looking up error code {} for device type {}".format(
-                aux_error_code, devicetype
-            )
+            "Homing sequence waiting on drives HOMING_COMPLETED flags"
         )
-        error_code_list = self.devices_error_list.get(devicetype, {})
-
-        if aux_error_code:
-            err_key_num = aux_error_code & 0xFFFF
-            err_key_lower = f"0x{err_key_num:04x}"
-            err_key_upper = f"0x{err_key_num:04X}"
-            err_info = error_code_list.get(
-                err_key_lower, error_code_list.get(err_key_upper, None)
-            )
-
-            if err_info is not None:
-                return err_info
-
-        return {
-            'description': Drive402.GENERIC_ERROR_DESCRIPTION,
-            'solution': Drive402.GENERIC_ERROR_SOLUTION,
-        }
-
-    def create_publisher(self):
-        # create publishers for topics and send out a test message
-        for drive in self.drives:
-            drive.create_topics()
-            if drive.sim is True:
-                drive.test_publisher()
-
-    def all_drives_are_status(self, status):
-        # check if all the drives have the same status
-        for drive in self.drives:
-            if not (drive.curr_state == status):
-                return False
-        return True
-
-    def all_drives_are_not_status(self, status):
-        # check if all the drives have a status other than 'status' argument
-        for drive in self.drives:
-            if drive.curr_state == status:
-                return False
-        return True
-
-    def one_drive_has_status(self, status):
-        # check if all the drives have the same status
-        for drive in self.drives:
-            if drive.curr_state == status:
-                return True
         return False
 
-    def sim_set_drives_status(self, status):
-        for drive in self.drives:
-            drive.sim_set_status(status)
+    def on_enter_home_complete(self, e):
+        self.fsm_finalize_command(e)
+        # Automatically return to SWITCH ON DISABLED after homing
+        self.command = 'stop'
 
-    def cb_robot_state_service(self, req):
-        # The service callback
-        # the requested transition is in req.req_transition (string)
-        # the return value for the service response (string) is a message
-        # check the requested state for validity
-        if req.req_transition not in self.transitions:
-            msg = f"Transition request failed: {req.req_transition} is not a valid transition"
-            rospy.loginfo(msg)
-            return msg
+    #
+    # All states
+    #
+    def on_change_state(self, e):
+        # This runs after every `on_enter_*`; attrs of e set there (or
+        # `on_before_*`) will be present here
+
+        # Set/clear reset pin
+        self.pins.reset.set(getattr(e, 'reset_pin', False))
+        if self.pins.reset.changed:
+            rospy.loginfo(f'Reset pin set to {self.pins.reset.get()}')
+            self.pins.reset.write()  # Set now to effect reset early
+
+    #
+    # Helpers
+    #
+    cmd_name_to_int_map = {
+        'stop': 0,
+        'start': 1,
+        'home': 2,
+        'fault': 3,
+    }
+
+    cmd_int_to_name_map = {v: k for k, v in cmd_name_to_int_map.items()}
+
+    def timer_start(self):
+        self._timeout = time.time() + self.goal_state_timeout
+
+    def timer_check_overrun(self, msg):
+        if not hasattr(self, '_timeout') or time.time() <= self._timeout:
+            return
+
+        msg = f'{self.command} timeout:  {msg}'
+        self.command = 'fault'
+        del self._timeout
+        raise Hal402Timeout(msg)
+
+    @classmethod
+    def fsm_command_from_event(cls, e):
+        return e.dst.split('_')[0]
+
+    def fsm_check_command(self, e):
+        cmd_name = self.fsm_command_from_event(e)
+        if e.src != f'{cmd_name}_command' and e.src.startswith(cmd_name):
+            # Already running
+            rospy.logwarn(f"Ignoring {cmd_name} command from state {e.src}")
+            return False
         else:
-            rospy.loginfo(f"Transition request {req.req_transition} is valid")
-            return self.execute_transition(req.req_transition)
+            rospy.loginfo(f"Received {cmd_name} command:  {e.msg}")
+            self.command = cmd_name
+            self.timer_start()
+            return True
 
-    def missing_transition(self):
-        rospy.logwarn("Transition callback is missing")
+    def fsm_check_drive_goal_state(self, e, state):
+        if self.all_drives_goal_state_reached(state):
+            return True
+        self.timer_check_overrun(f"waiting on drives to reach {state}")
+        # Cancel event
+        return False
 
-    def execute_transition(self, transition):
-        msg = f"Starting transition '{transition}' from state '{self.fsm.current}'"
-        rospy.loginfo(msg)
+    def fsm_set_drive_goal_state(self, e, state):
+        cmd_name = self.fsm_command_from_event(e)
+        rospy.loginfo(f"{cmd_name} command:  setting drive goal state {state}")
+        self.set_drive_goal_state(state)
+
+    def fsm_check_drive_control_mode(self, e, mode):
+        if self.all_drives_mode(mode):
+            return True
+        self.timer_check_overrun(f"waiting on drives to enter mode {mode}")
+        # Cancel event
+        return False
+
+    def fsm_set_drive_control_mode(self, e, mode):
+        cmd_name = self.fsm_command_from_event(e)
+        rospy.loginfo(f"{cmd_name} command:  Setting drive mode {mode}")
+        self.set_drive_control_mode(mode)
+
+    def fsm_finalize_command(self, e):
+        cmd_name = self.fsm_command_from_event(e)
+        self.pins.state_cmd.set(self.cmd_name_to_int_map[cmd_name])
+        rospy.loginfo(f"Command {cmd_name} completed")
+
+    ####################################################
+    # Execution
+
+    def run(self):
         try:
-            transition_cb = (
-                self.transitions[transition].transition_cb
-                or self.missing_transition
-            )
-            transition_cb()
-            msg = f"Completed transition '{transition}' to state '{self.fsm.current}'"
-            rospy.loginfo(msg)
-            return msg
-        except FysomError:
-            msg = "Transition '{}' not possible from state '{}'".format(
-                transition,
-                self.fsm.current,
-            )
-            rospy.logerr(msg)
-            return msg
-
-    # enter state callbacks
-    def fsm_in_initial(self, e=None):
-        # print('in_initial')
-        self.update_hal_state_fb()
-
-    def fsm_in_disabled(self, e=None):
-        self.update_hal_state_fb()
-
-    def change_drives(self, target_path, target_name):
-        self.update_hal_state_fb()
-        return self.process_drive_transitions(target_path, target_name)
-
-    def fsm_in_stopping(self, e=None):
-        target_path = StateMachine402.path_to_switch_on_disabled
-        target_name = 'SWITCH ON DISABLED'
-        self.update_hal_state_fb()
-        if self.change_drives(target_path, target_name):
-            self.execute_transition('disable')
-        else:
-
-            self.execute_transition('error')
-
-    def fsm_in_starting(self, e=None):
-        target_path = StateMachine402.path_to_operation_enabled
-        target_name = 'OPERATION ENABLED'
-        self.update_hal_state_fb()
-        if self.change_drives(target_path, target_name):
-            self.execute_transition('enable')
-        else:
-            self.execute_transition('error')
-
-    def fsm_in_enabled(self, e=None):
-        self.update_hal_state_fb()
-
-    def fsm_in_fault(self, e=None):
-        # first try to shut down all the drives, if they are not already off
-        # thru the HAL plumbing (quick-stop bit should be low at the moment
-        # one of the drive faults).
-        target_path = StateMachine402.path_on_fault
-        target_name = ('SWITCH ON DISABLED', 'FAULT')
-        self.change_drives(target_path, target_name)
-        rospy.loginfo(
-            f"Robot is in 'fault' state, previous state was '{e.src}'"
-        )
-        self.update_hal_state_fb()
-
-    # make sure we mirror the state in the halpin
-    # convert state to number
-    def update_hal_state_fb(self):
-        conv_state_to_value = {
-            'initial': 3,
-            'fault': 2,
-            'disabled': 0,
-            'enabled': 1,
-            'stopping': 4,
-            'starting': 5,
-        }
-        state_nr = conv_state_to_value.get(self.fsm.current)
-        self.pins['state-fb'].set_local_value(state_nr)
-        self.pins['state-fb'].set_hal_value()
-
-    def process_drive_transitions(self, transition_table, target_states):
-        # Allow singular target state or multiple
-        if isinstance(target_states, str):
-            target_states = (target_states,)
-        no_error = True
-        timeout = 1.0  # seconds to attempt to transition a single drive
-        for drive in self.drives:
-            # pick a transition table for the requested state
-            drive.set_transition_table(transition_table)
-            transition_attempts = 0
-            t0 = time.time()
-            while (time.time() - t0) < timeout:
-                transition_attempts += 1
-                drive.update_state()
-                rospy.logdebug(
-                    "%s: %s, try %i: in state %s, 0x%03x"
-                    % (
-                        self.compname,
-                        drive.drive_name,
-                        transition_attempts,
-                        drive.curr_state,
-                        drive.curr_status_word,
-                    )
-                )
-                if drive.curr_state in target_states:
-                    break
-
-                if not drive.is_transitionable():
-                    # if a drive needs to transition itself
-                    time.sleep(0.25)
-                else:
-                    time.sleep(0.001)
-                    if not drive.next_transition():
-                        # If we can't transition then the drive state machine is stuck, so bail out
-                        break
-
-            if drive.curr_state not in target_states:
-                rospy.logerr(
-                    f"{drive.drive_name} did not reach target state after {time.time()-t0:0.2f} seconds (current state is {drive.curr_state})"
-                )
-                no_error = False
-                # But continue trying other drives
-
-        self.update_drive_states()
-        self.publish_states()
-        return no_error
-
-    def create_service(self):
-        # $ rosservice call rosservice call /hal_402_drives_mgr "req_transition: ''"
-        # will call the function callback, that will receive the service message
-        # as an argument. The transition should be added between the single quotes.
-
-        self.service = rospy.Service(
-            'hal_402_drives_mgr', srv_robot_state, self.cb_robot_state_service
-        )
-        rospy.loginfo(
-            "%s: service %s created"
-            % (self.compname, self.service.resolved_name)
-        )
-
-    def update_drive_states(self):
-        for drive in self.drives:
-            drive.update_state()
-
-        # get the status pins, and save their value locally
-        self.prev_hal_transition_cmd = self.curr_hal_transition_cmd
-        self.prev_hal_reset_pin = self.curr_hal_reset_pin
-        self.prev_hal_zero_all_joints_pin = self.curr_hal_zero_all_joints_pin
-        for key, pin in self.pins.items():
-            if pin.dir == hal.HAL_IN:
-                pin.sync_hal()
-        self.curr_hal_transition_cmd = self.pins['state-cmd'].local_pin_value
-        self.curr_hal_reset_pin = self.pins['reset'].local_pin_value
-        self.curr_hal_zero_all_joints_pin = self.pins[
-            'zero-all-joints'
-        ].local_pin_value
-
-    def transition_from_hal(self):
-        # get check if the HAL number is one of the transition numbers
-        for key, transition in self.transitions.items():
-            if transition.value == self.curr_hal_transition_cmd:
-                transition_name = key
-                break
-        else:
-            msg = f"HAL request failed, {self.curr_hal_transition_cmd} not a valid transition"
-            rospy.loginfo(msg)
-            return msg
-
-        self.execute_transition(transition_name)
-
-    def transition_cmd_changed(self):
-        return self.prev_hal_transition_cmd != self.curr_hal_transition_cmd
-
-    def reset_pin_changed(self):
-        return self.prev_hal_reset_pin != self.curr_hal_reset_pin
-
-    def zero_all_joints_pin_changed(self):
-        return (
-            self.prev_hal_zero_all_joints_pin
-            != self.curr_hal_zero_all_joints_pin
-        )
-
-    def on_zero_all_joints_pin_changed(self):
-        try:
-            rospy.loginfo("Disabling all drives for CSP->HM switchover")
-            # self.execute_transition('stop')
-            rospy.loginfo("Switching to homing mode in all drives")
-            rospy.loginfo("Enabling all drives for homing")
-            self.execute_transition('start')
-            for drive in self.drives:
-                if not drive.homing.start_homing():
-                    return False
-            rospy.loginfo("Home each drive")
-            for drive in self.drives:
-                if not drive.homing.wait_for_home():
-                    return False
-            rospy.loginfo("Homing complete, disable drives")
-        finally:
-            self.execute_transition('stop')
-            for drive in self.drives:
-                drive.homing.finish_homing()
-            rospy.loginfo("User must click 'Reset' to start robot again")
-
-    def detect_fault_conditions(self):
-        """
-        If anything goes wrong with the drives (FAULT state, or a drive isn't
-        in the expected state), then transition the whole system to the "fault"
-        state for safety.
-        """
-        one_drive_faulted = self.one_drive_has_status('FAULT')
-        all_drives_operational = self.all_drives_are_status('OPERATION ENABLED')
-        if self.fsm.current != 'fault' and one_drive_faulted:
-            self.execute_transition('error')
-            rospy.logerr("Robot is in fault state due to a drive fault:")
-        if self.fsm.current == 'enabled' and not all_drives_operational:
-            self.execute_transition('error')
-            rospy.logerr(
-                "Robot is in fault state due to drive operational status:"
-            )
-
-    def on_reset_pin_changed(self):
-        # Deliberate fallthrough here to allow 1-click recovery via reset button
-        if self.fsm.current in ('fault', 'initial'):
-            rospy.loginfo(
-                "Reset requested, starting transition sequence to re-enable drives"
-            )
-            # this will get us in the disabled state again
-            self.execute_transition('stop')
-
-        if self.fsm.current == 'disabled':
-            # Error was successfully recovered, continue with the transition
-            # requested by the reset click
-            rospy.loginfo("Recovery successful, continuing with reset request")
-            self.transition_from_hal()
-        elif self.fsm.current == 'fault':
-            rospy.logerr(
-                "Unable to come out of Reset. Please ensure that the drives are powered on and the E-stop switch is released."
-            )
-
-    def publish_states(self):
-        for drive in self.drives:
-            drive.publish_state()
-
-    def publish_errors(self):
-        for drive in self.drives:
-            drive.publish_error()
+            while not rospy.is_shutdown():
+                try:
+                    self.update()
+                except rospy.exceptions.ROSInterruptException:
+                    raise  # Catch again outside the loop
+                except Hal402Timeout as e:
+                    rospy.logerr(e)
+                except Exception:
+                    # Ignore other exceptions & enter fault mode in
+                    # hopes we can recover
+                    rospy.logerr('Ignoring unexpected exception; details:')
+                    for line in traceback.format_exc().splitlines():
+                        rospy.logerr(line)
+                    self.command = 'fault'
+                self.rate.sleep()
+        except rospy.exceptions.ROSInterruptException as e:
+            rospy.loginfo(f"ROSInterruptException: {e}")
 
     def call_cleanup(self):
         # need to unload the userland component here?
         rospy.loginfo("Stopping ...")
         rospy.loginfo("Stopped")
 
-    def run(self):
-        rospy.on_shutdown(self.call_cleanup)
-        try:
-            while not rospy.is_shutdown():
-                self.update_drive_states()
-                self.detect_fault_conditions()
-                if self.reset_pin_changed():
-                    self.on_reset_pin_changed()
-                if self.transition_cmd_changed():
-                    # If a HAL transition was requested separate from a reset press, do it now
-                    self.transition_from_hal()
-                if self.zero_all_joints_pin_changed():
-                    self.on_zero_all_joints_pin_changed()
-                self.rate.sleep()
-                # If zero pin changed
-        except rospy.ROSInterruptException as e:
-            rospy.loginfo(f"ROSInterruptException: {e}")
+    fsm_next_state_map = dict(
+        # Map current command to dict of {current_state:next_event}
+        # names; `None` means arrived
+        start=dict(
+            start_1='start_2',
+            start_2='start_3',
+            start_3='start_complete',
+            start_complete=None,
+        ),
+        stop=dict(
+            stop_1='stop_complete',
+            stop_complete=None,
+        ),
+        home=dict(
+            home_1='home_2',
+            home_2='home_3',
+            home_3='home_complete',
+            home_complete=None,
+        ),
+        fault=dict(
+            fault_1='fault_complete',
+            fault_complete=None,
+        ),
+    )
+
+    def update(self):
+        # Read all input pins and update state machine
+        self.pins.read_all()
+        self.read_drives_state()
+
+        # Check for incoming command on state-cmd pin
+        if self.pins.state_cmd.changed:
+            # Other commands from state-cmd pin; can't override fault
+            cmd = self.cmd_int_to_name_map[self.pins.state_cmd.get()]
+            msg = 'state-cmd pin changed'
+        else:
+            cmd = None
+
+        # Drive fault may trigger an overriding 'fault' command
+        if self.any_drives_in_state('FAULT') and cmd not in ('stop', 'start'):
+            cmd = 'fault'
+            fds = self.drives_in_state('FAULT')
+            fd_names = ', '.join(d.drive_name for d in fds)
+            msg = f'Drives ({fd_names}) in FAULT state'
+        elif self.pins.quick_stop.get() and self.command != 'fault':
+            # Quick stop pin high; treat this as a fault command
+            cmd = 'fault'
+            msg = 'quick_stop pin high'
+
+        if cmd is not None and cmd != self.command:
+            # Received new command to stop/start/home/fault.  Try it
+            # by triggering the FSM event; a Canceled exception means
+            # it can't be done, so ignore it.
+            event = f'{cmd}_command'
+            try:
+                self.trigger(event, msg=msg)
+            except Canceled:
+                rospy.loginfo(f'Unable to honor {event} command')
+
+        # Attempt automatic transition to next state; if not possible,
+        # `on_before_{event}()` method will cause Canceled exception
+        event = self.automatic_next_event()
+        if event is not None:
+            try:
+                self.trigger(event, msg='Automatic transition')
+            except Canceled:
+                rospy.logdebug(f'Cannot transition to next state {event}')
+
+        # Write all output pins and let drives do their thing
+        self.pins.write_all()
+        self.write_drives_state()
+
+    def automatic_next_event(self):
+        state_map = self.fsm_next_state_map[self.command]
+        event = state_map.get(self.state, f'{self.command}_command')
+        return event
+
+    ####################################################
+    # Drive helpers
+
+    def read_drives_state(self):
+        for drive in self.drives:
+            drive.read_state()
+
+    def write_drives_state(self):
+        for drive in self.drives:
+            drive.write_state()
+
+    def set_drive_goal_state(self, goal_state):
+        for drive in self.drives:
+            drive.set_goal_state(goal_state)
+            drive.set_control_flags()
+
+    def set_drive_control_mode(self, mode):
+        mode = Drive402.normalize_control_mode(mode)
+        for drive in self.drives:
+            drive.set_control_mode(mode)
+
+    def set_drive_control_flags(self, **flags):
+        for drive in self.drives:
+            drive.set_control_flags(**flags)
+
+    def all_drives_mode(self, mode):
+        mode = Drive402.normalize_control_mode(mode)
+        for drive in self.drives:
+            if drive.get_control_mode() != mode:
+                return False
+        return True
+
+    def all_drives_status_flags(self, **flags):
+        for drive in self.drives:
+            for flag, val in flags.items():
+                if drive.get_status_flag(flag) != val:
+                    return False
+        return True
+
+    def drives_in_state(self, state, negate=False):
+        # Return list of drives with matching state
+        if negate:
+            return [d for d in self.drives if d.sm402.curr_state != state]
+        else:
+            return [d for d in self.drives if d.sm402.curr_state == state]
+
+    def any_drives_in_state(self, state):
+        # check if any drives have the matching state
+        return len(self.drives_in_state(state)) > 0
+
+    def all_drives_in_state(self, state):
+        # check if all drives have the matching state
+        return len(self.drives_in_state(state, negate=True)) == 0
+
+    def all_drives_goal_state_reached(self, state):
+        for drive in self.drives:
+            if not drive.get_goal_state() == state:
+                return False
+            if not drive.is_goal_state_reached():
+                return False
+        return True

@@ -17,10 +17,7 @@ catkin_python_setup()
 #***********************************************
 
 #* Generate messages in the 'msg' folder
-add_message_files(FILES msg_error.msg msg_status.msg)
-
-#* Generate services in the 'srv' folder
-add_service_files(FILES srv_robot_state.srv)
+add_message_files(FILES msg_error.msg)
 
 #* Generate added messages and services with any dependencies listed here
 generate_messages()
@@ -37,3 +34,13 @@ catkin_package(CATKIN_DEPENDS message_runtime rospy)
 # Install python executables
 catkin_install_python(PROGRAMS scripts/hal_402_mgr DESTINATION
                       ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+#**********
+#* Tests **
+#**********
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  find_package(ros_pytest REQUIRED)
+  add_rostest(tests/test.launch)
+endif()
