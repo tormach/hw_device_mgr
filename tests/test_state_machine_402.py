@@ -8,7 +8,11 @@ class TestStateMachine402:
 
     @pytest.fixture
     def obj(self, mock_rospy):
-        yield self.tc()
+        obj = self.tc()
+        # Default to online operational
+        obj.slave_online = True
+        obj.slave_oper = True
+        yield obj
 
     def test_mode_attrs(self):
         modes = dict()
@@ -121,11 +125,66 @@ class TestStateMachine402:
         test.update(dict(OPERATION_MODE_SPECIFIC_1=True, HALT=True, NA_1=True))
         assert self.tc.get_control_word_flags(0x0310) == test
 
+    def test_update_state_operational(self, obj):
+        # Also test `obj.operational`, `obj.slave_online_changed`,
+        # `obj.slave_oper_changed` properties
+        obj.slave_online = False
+        obj.slave_oper = False
+        for (
+            online_in,
+            online_exp,
+            prev_online_exp,
+            oper_in,
+            oper_exp,
+            prev_oper_exp,
+            operational_exp,
+        ) in (
+            # Drive offline
+            (False, False, False, False, False, False, False),
+            # Drive online but not slave_oper
+            (True, True, False, False, False, False, False),
+            # Drive offline again
+            (False, False, True, False, False, False, False),
+            # Drive online but not slave_oper again
+            (True, True, False, False, False, False, False),
+            # Drive online operational
+            (True, True, True, True, True, False, True),
+            # Drive online operational again
+            (True, True, True, True, True, True, True),
+            # Drive online, not operational
+            (True, True, True, False, False, True, False),
+        ):
+            print(
+                online_in,
+                online_exp,
+                prev_online_exp,
+                oper_in,
+                oper_exp,
+                prev_oper_exp,
+                operational_exp,
+            )
+
+            obj.update_state(online_in, oper_in, 0x0000)
+            assert obj.slave_online is online_exp
+            assert obj.prev_slave_online is prev_online_exp
+            online_changed_exp = online_exp is not prev_online_exp
+            assert obj.slave_online_changed is online_changed_exp
+            assert obj.slave_oper is oper_exp
+            assert obj.prev_slave_oper is prev_oper_exp
+            oper_changed_exp = oper_exp is not prev_oper_exp
+            assert obj.slave_oper_changed is oper_changed_exp
+            assert obj.operational is operational_exp
+
+        obj.update_state(False, False, 0x0000)
+        assert obj.slave_online is False
+        assert obj.slave_oper is False
+        assert obj.operational is False
+
     def test_update_state(self, obj):
         # Also test related `get_status_flag` and 'drive_state_changed'
         sw = self.tc.states_402['READY TO SWITCH ON'][1]
         sw += self.sw_extra_bits_mask  # Set all extra status word bits
-        obj.update_state(sw)
+        obj.update_state(True, True, sw)
         assert obj.curr_state == 'READY TO SWITCH ON'
         assert obj.prev_state == 'START'
         assert obj.drive_state_changed()
@@ -134,7 +193,7 @@ class TestStateMachine402:
             assert obj.get_status_flag(flag)
 
         # Bogus status word:  state unchanged; warning message
-        obj.update_state(0x42)
+        obj.update_state(True, True, 0x42)
         self.mock_rospy.logwarn.assert_called()
         self.mock_rospy.logwarn.reset_mock()
         assert obj.curr_state == 'READY TO SWITCH ON'
@@ -144,7 +203,7 @@ class TestStateMachine402:
             assert not obj.curr_state_flags[flag]
             assert not obj.get_status_flag(flag)
 
-        obj.update_state(0x23 + self.sw_extra_bits_mask)
+        obj.update_state(True, True, 0x23 + self.sw_extra_bits_mask)
         assert obj.curr_state == 'SWITCHED ON'
         assert obj.prev_state == 'READY TO SWITCH ON'
         assert obj.drive_state_changed()
@@ -153,7 +212,7 @@ class TestStateMachine402:
             assert obj.get_status_flag(flag)
 
         obj.curr_state = 'START'
-        obj.update_state(0x0000)
+        obj.update_state(True, True, 0x0000)
         assert obj.curr_state == 'NOT READY TO SWITCH ON'
 
     def test_goal_paths(self):
@@ -212,6 +271,14 @@ class TestStateMachine402:
         assert not obj.is_goal_state_reached()
 
         obj.curr_state = 'SWITCH ON DISABLED'
+        assert obj.is_goal_state_reached()
+
+        # Not reached when not online operational
+        obj.slave_oper = False
+        assert not obj.operational
+        assert not obj.is_goal_state_reached()
+        obj.slave_oper = True
+        assert obj.operational
         assert obj.is_goal_state_reached()
 
         obj.curr_state = 'FAULT'
@@ -293,7 +360,7 @@ class TestStateMachine402:
             ('OPERATION ENABLED', 0x27, None),
         ):
             obj.set_goal_state(goal_state)
-            obj.update_state(status_word)
+            obj.update_state(True, True, status_word)
             result = obj.get_transition_control_word()
             if expected is None:
                 print(goal_state, hex(status_word), expected, result)
@@ -332,7 +399,16 @@ class TestStateMachine402:
             # Transition 11 -> QUICK STOP ACTIVE
             (0x27, dict(), 0x0002),
         ):
-            obj.update_state(status_word)
+            obj.update_state(True, True, status_word)
             result = obj.get_control_word(**kwargs)
             print(hex(status_word), kwargs, hex(expected), hex(result))
             assert result == expected
+
+            # Not online operational, status word is 0
+            obj.slave_oper = False
+            assert not obj.operational
+            assert obj.get_control_word(**kwargs) == 0x0000
+            # ...and back to normal
+            obj.slave_oper = True
+            assert obj.operational
+            assert obj.get_control_word(**kwargs) == expected

@@ -1,77 +1,127 @@
 tests:
-  # Overview of tests, in order:
-  # - Power on to SWITCH ON DISABLED
-  #   - Simulate drive init sequence
-  # - Issue redundant stop command (does nothing)
-  #   - Simulate real-life noise in command
-  # - Issue start command via ROS service
-  #   - Simulate drive start sequence
-  #   - Exercise ROS service
-  # - Issue stop command via ROS service
-  #   - Simulate drive stop sequence
-  #   - Exercise ROS service
-  # - Issue start command, interrupted by a drive fault
-  #   - Simulate interruption of a sequence
-  #   - Simulate fault sequence, non-fault drives direct to SWITCH ON DISABLED
-  # - Reset pin goes high in fault state
-  #   - Simulate recovery from fault by reset
-  #   - Exercise reset input
-  # - Reset pin goes low
-  #   - Simulate real-life noise in command
-  # - Drive faults in OPERATION ENABLED
-  #   - Simulate fault sequence, non-fault drives pass through QUICK STOP ACTIVE
-  # - Recover from fault with stop command
-  #   - Simulate recovery from fault by stop command
-  # - Issue start command, and again before complete via ROS svc
-  #   - Simulate real-life noise in command
-  # - Issue home command while started
-  #   - Simulate mode conflict
-  # - Stop drives and issue home command
-  #   - Simulate home sequence
-  #   - Test zero-all-joints pin
-  #   - Test status and control word flag handling
-
   # TODO:
   # - Simulate transition timeout
 
   ################################
-  # Power on:  Automatic transitions to SWITCH ON DISABLED
-  - desc:  "Power on:  Transition 0 START -> NOT READY TO SWITCH ON"
+  # Power off -> power on
+
+  - desc:  "Powered off, drives offline, non-operational"
     before:
+      slave_online:  False
+      slave_oper:  False
+      pins:
+        reset: 0
+    after:
+      fsm_state: fault_1
+      slave_online:  False
+      slave_oper:  False
+      pins:
+        reset: 0
+      drive_pins:
+        all:
+          control-word: 0x00  # Special case for offline, non-operational drives
+
+  - desc:  "Powered off, still offline"
+    after:
+      fsm_state: fault_1  # No progression when not operational
+      slave_online:  False
+      slave_oper:  False
+      pins:
+        reset: 0
+      drive_pins:
+        all:
+          control-word: 0x00  # Special case for offline, non-operational drives
+
+  - desc:  "Drives online, ESM 'Init' state"
+    changes:
+      drive_pins:
+        all:
+          slave-online:  True
+          slave-state-init:  True
+    after:
+      fsm_state: fault_1  # No progression when not operational
+      slave_online:  True
+      slave_oper:  False
+      pins:
+        reset: 0
+      drive_pins:
+        all:
+          control-word: 0x00  # Special case for offline, non-operational drives
+
+  - desc:  "Drives online, ESM 'Pre-Op' state"
+    changes:
+      drive_pins:
+        all:
+          slave-online:  True
+          slave-state-init:  False
+          slave-state-preop:  True
+    after:
+      fsm_state: fault_1  # No progression when not operational
+      slave_online:  True
+      slave_oper:  False
+      pins:
+        reset: 0
+      drive_pins:
+        all:
+          control-word: 0x00  # Special case for offline, non-operational drives
+
+  - desc:  "Drives online, ESM 'Safe-Op' state"
+    changes:
+      drive_pins:
+        all:
+          slave-online:  True
+          slave-state-preop:  False
+          slave-state-safeop:  True
+    after:
+      fsm_state: fault_1  # No progression when not operational
+      slave_online:  True
+      slave_oper:  False
       drive_state:  START
       pins:
         reset: 0
+      drive_pins:
+        all:
+          status-word: 0x00
+          control-word: 0x00  # Special case for offline, non-operational drives
+
+  - desc:  "Drives online, ESM 'Op' state:  Now operational"
+    changes:
+      drive_pins:
+        all:
+          slave-online:  True
+          slave-state-safeop:  False
+          slave-state-op:  True
+          slave-oper:  True
     after:
-      fsm_state: stop_1
+      fsm_state: fault_1  # No progression when not operational
+      slave_online:  True
+      slave_oper:  True
+      # Automatic transition (in real drive, may have happened earlier)
       drive_state:  NOT READY TO SWITCH ON
       pins:
-        reset: 1
-      goal_state:  SWITCH ON DISABLED
-      goal_state_reached:  False
+        reset: 0
+      drive_pins:
+        all:
+          status-word: 0x40
+          control-word: 0x00  # Special case for offline, non-operational drives
 
-  - desc:  "Power on:  Transition 1 NOT READY TO SWITCH ON -> SWITCH ON DISABLED"
+  - desc:  "Drives auto-transition to SWITCH ON DISABLED"
     after:
-      fsm_state: stop_complete
+      fsm_state: fault_complete
+      slave_online:  True
+      slave_oper:  True
+      # Automatic transition (in real drive, may have happened earlier)
       drive_state:  SWITCH ON DISABLED
       pins:
         reset: 0
       drive_pins:
         all:
           status-word: 0x40
-      goal_state:  SWITCH ON DISABLED
-      goal_state_reached:  True
-
-  - desc:  "Power on:  Hold state SWITCH ON DISABLED"
-    after:
-      fsm_state: stop_complete
-      drive_state:  SWITCH ON DISABLED
-      drive_pins:
-        all:
-          status-word: 0x40
-      goal_state:  SWITCH ON DISABLED
+          control-word: 0x00  # Hold SWITCH ON DISABLED
 
   ################################
-  # Stopped:  Issue stop command (redundant)
+  # Issue stop command and exit FAULT state
+
   - desc:  "Issue 'stop' command from SWITCH ON DISABLED"
     changes:
       pins:
@@ -86,6 +136,7 @@ tests:
 
   ################################
   # Enable drives:  Issue start command
+
   - desc:  "Issue 'start' command & enter 'start_1' from SWITCH ON DISABLED"
     changes:
       pins:
@@ -103,6 +154,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  SWITCHED ON
       goal_state_reached:  False
+
   - desc:  "Waiting on 'start_2'; READY TO SWITCH ON"
     after:
       fsm_state: start_1
@@ -115,6 +167,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  SWITCHED ON
       goal_state_reached:  False
+
   - desc:  "Enter 'start_2'; SWITCHED ON"
     after:
       fsm_state: start_2
@@ -128,6 +181,7 @@ tests:
       goal_state:  SWITCHED ON
     # debug: true
       goal_state_reached:  True
+
   - desc:  "Enter 'start_3'; CSP mode; goal state OPERATION ENABLED"
     after:
       fsm_state: start_3
@@ -141,6 +195,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  OPERATION ENABLED
       goal_state_reached:  False
+
   - desc:  "Enter 'start_complete' & OPERATION ENABLED"
     after:
       fsm_state: start_complete
@@ -155,6 +210,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  OPERATION ENABLED
       goal_state_reached:  True
+
   - desc:  "Hold 'start_complete' & OPERATION ENABLED"
     after:
       fsm_state: start_complete
@@ -190,6 +246,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  SWITCH ON DISABLED
       goal_state_reached:  False
+
   - desc:  "Waiting on stop_complete, -> QUICK STOP ACTIVE"
     after:
       fsm_state: stop_1
@@ -204,6 +261,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  SWITCH ON DISABLED
       goal_state_reached:  False
+
   - desc:  "Enter stop_complete, hold"
     after:
       fsm_state: stop_complete
@@ -240,6 +298,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  SWITCHED ON
       goal_state_reached:  False
+
   - desc:  "Enter start_3; READY TO SWITCH ON"
     after:
       fsm_state: start_1
@@ -252,6 +311,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  SWITCHED ON
       goal_state_reached:  False
+
   - desc:  "Drive 1 faults; others start move to SWITCH ON DISABLED"
     changes:
       drive_pins:
@@ -277,6 +337,7 @@ tests:
       goal_state_reached:
         all: False
         drive_1:  True
+
   - desc:  "All drives reach FAULT or SWITCH ON DISABLED state"
     after:
       fsm_state: fault_complete
@@ -318,6 +379,7 @@ tests:
           status-word: 0x40  # SWITCH ON DISABLED
       goal_state:  SWITCHED ON
       goal_state_reached: False
+
   - desc:  "Waiting on start_1; SWITCH ON DISABLED/READY TO SWITCH ON"
     after:
       fsm_state: start_1
@@ -337,6 +399,7 @@ tests:
           status-word: 0x21  # READY TO SWITCH ON
       goal_state:  SWITCHED ON
       goal_state_reached:  False
+
   - desc:  "Waiting on start_1; READY TO SWITCH ON/SWITCHED ON"
     after:
       fsm_state: start_1
@@ -358,6 +421,7 @@ tests:
       goal_state_reached:
         all:  True
         drive_1:  False
+
   - desc:  "Enter start_2; SWITCHED ON"
     after:
       fsm_state: start_2
@@ -372,6 +436,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  SWITCHED ON
       goal_state_reached:  True
+
   - desc:  "Enter start_3, goal OPERATION ENABLED"
     after:
       fsm_state: start_3
@@ -386,6 +451,7 @@ tests:
           drive-mode-cmd:  8  # CSP
       goal_state:  OPERATION ENABLED
       goal_state_reached:  False
+
   - desc:  "Enter start_complete; goal state reached"
     after:
       fsm_state: start_complete
@@ -448,6 +514,7 @@ tests:
       goal_state_reached:
         all: False
         drive_3:  True
+
   - desc:  "Waiting on fault_complete; drives move to SWITCH ON DISABLED"
     after:
       fsm_state: fault_1
@@ -467,6 +534,7 @@ tests:
       goal_state_reached:
         all: False
         drive_3:  True
+
   - desc:  "FSM reaches fault state; done"
     after:
       fsm_state: fault_complete
@@ -515,6 +583,7 @@ tests:
       goal_state_reached:
         all:  True
         drive_3:  False
+
   - desc:  "Stop command complete"
     after:
       fsm_state: stop_complete
@@ -549,6 +618,7 @@ tests:
           drive-mode-cmd:  6  # HM
       goal_state:  OPERATION ENABLED
       goal_state_reached:  False
+
   - desc:  "Wait on home_3; drives -> READY TO SWITCH ON"
     after:
       fsm_state: home_2
@@ -561,6 +631,7 @@ tests:
           drive-mode-cmd:  6  # HM
       goal_state:  OPERATION ENABLED
       goal_state_reached:  False
+
   - desc:  "Wait on home_3; drives -> SWITCHED ON"
     after:
       fsm_state: home_2
@@ -577,6 +648,7 @@ tests:
         HOMING_COMPLETED:  False
       goal_state:  OPERATION ENABLED
       goal_state_reached:  False
+
   - desc:  "Enter home_3; drives -> OPERATION ENABLED"
     after:
       fsm_state: home_3
@@ -593,6 +665,7 @@ tests:
         HOMING_COMPLETED:  True
       goal_state:  OPERATION ENABLED
       goal_state_reached:  True
+
   - desc:  "Enter home; status word HOMING_COMPLETED True"
     after:
       fsm_state: home_complete
@@ -609,6 +682,7 @@ tests:
         HOMING_COMPLETED:  True
       goal_state:  OPERATION ENABLED
       goal_state_reached:  True
+
   - desc:  "After homing, stop triggered automatically"
     after:
       fsm_state: stop_1
@@ -623,6 +697,7 @@ tests:
           drive-mode-cmd:  6  # HM
       goal_state:  SWITCH ON DISABLED
       goal_state_reached:  False
+
   - desc:  "Waiting on stop_1; SWITCH ON DISABLED"
     after:
       fsm_state: stop_1
@@ -637,6 +712,7 @@ tests:
           drive-mode-cmd:  6  # HM
       goal_state:  SWITCH ON DISABLED
       goal_state_reached:  False
+
   - desc:  "Stop command complete"
     after:
       fsm_state: stop_complete
@@ -651,4 +727,119 @@ tests:
           drive-mode-fb:  6  # HM
           drive-mode-cmd:  6  # HM
       goal_state:  SWITCH ON DISABLED
+      goal_state_reached:  True
+
+  ################################
+  # Drive leaves operational or online state
+
+  - desc:  "Drive 5 leaves operational state"
+    changes:
+      drive_pins:
+        drive_5:
+          slave-oper:  False
+          slave-state-op:  False
+    after:
+      fsm_state: fault_1
+      slave_online: True
+      slave_oper:
+        all:
+          True
+        drive_5:
+          False
+      drive_state:  SWITCH ON DISABLED
+      drive_pins:
+        all:
+          control-word: 0x00  # Hold SWITCH ON DISABLED
+          status-word: 0x40  # SWITCH ON DISABLED
+        drive_5:
+          control-word: 0x00  # Special case, drive offline/not operational
+          status-word: null  # Doesn't matter
+      goal_state:  FAULT
+      goal_state_reached:
+        all:  True
+        drive_5:  False
+
+  - desc:  "Drive 5 reenters operational state"
+    changes:
+      drive_pins:
+        drive_5:
+          slave-oper:  True
+          slave-state-op:  True
+    after:
+      fsm_state: fault_complete
+      slave_online: True
+      slave_oper:  True
+      drive_state:  SWITCH ON DISABLED
+      drive_pins:
+        all:
+          control-word: 0x00  # Hold SWITCH ON DISABLED
+          status-word: 0x40  # SWITCH ON DISABLED
+      goal_state:  FAULT
+      goal_state_reached:  True
+
+  - desc:  "Clear fault"
+    changes:
+      pins:
+        state-cmd:  0  # stop
+    after:
+      fsm_state: stop_complete
+      slave_online: True
+      slave_oper:  True
+      drive_state:  SWITCH ON DISABLED
+      drive_pins:
+        all:
+          control-word: 0x00  # Hold SWITCH ON DISABLED
+          status-word: 0x40  # SWITCH ON DISABLED
+      goal_state:  SWITCH ON DISABLED
+      goal_state_reached:  True
+
+  - desc:  "Drive 4 enters offline state"
+    changes:
+      drive_pins:
+        drive_4:
+          slave-online:  False
+          slave-oper:  False
+          slave-state-op:  False
+    after:
+      fsm_state: fault_1
+      slave_online:
+        all:
+          True
+        drive_4:
+          False
+      slave_oper:
+        all:
+          True
+        drive_4:
+          False
+      drive_state:  SWITCH ON DISABLED
+      drive_pins:
+        all:
+          control-word: 0x00  # Hold SWITCH ON DISABLED
+          status-word: 0x40  # SWITCH ON DISABLED
+        drive_4:
+          control-word: 0x00  # Special case, drive offline/not operational
+          status-word: null  # Doesn't matter
+      goal_state:  FAULT
+      goal_state_reached:
+        all:  True
+        drive_4:  False
+
+  - desc:  "Drive 4 reenters online operational state"
+    changes:
+      drive_pins:
+        drive_4:
+          slave-online:  True
+          slave-oper:  True
+          slave-state-op:  True
+    after:
+      fsm_state: fault_complete
+      slave_online: True
+      slave_oper:  True
+      drive_state:  SWITCH ON DISABLED
+      drive_pins:
+        all:
+          control-word: 0x00  # Hold SWITCH ON DISABLED
+          status-word: 0x40  # SWITCH ON DISABLED
+      goal_state:  FAULT
       goal_state_reached:  True

@@ -3,11 +3,15 @@ import rospy
 
 class StateMachine402:
     def __init__(self):
+        self.slave_online = self.prev_slave_online = False
+        self.slave_oper = self.prev_slave_oper = False
+        self.status_word = self.prev_status_word = 0x0000
         self.curr_state = self.prev_state = 'START'
         self.goal_state = 'SWITCH ON DISABLED'
         self.control_mode = self.MODE_CSP
         self.curr_state_flags = dict()
         self.param_605a = 3  # QUICK STOP ACTIVE auto TRANSITION_12
+        self.voltage_enabled = False
 
     # Modes available by setting 6060h, feedback in 6061h;
     # supported modes have corresponding bit set in 6502h
@@ -78,6 +82,10 @@ class StateMachine402:
         'FAULT': [0x4F, 0x08],
         'QUICK STOP ACTIVE': [0x6F, 0x07],
     }
+
+    def check_voltage_enabled(self, control_word):
+        # Power at drive motor power inputs when status word bit 4 set
+        self.voltage_enabled = bool(control_word & 0x10)
 
     def fake_status_word(self, control_word):
         # Given a state name and flags, return a manufactured status
@@ -166,8 +174,20 @@ class StateMachine402:
             flags[name] = bool(control_word & 1 << bitnum)
         return flags
 
-    def update_state(self, status_word):
+    def update_state(self, slave_online, slave_oper, status_word):
+        # EtherCAT State Machine
+        self.prev_slave_online = self.slave_online
+        self.slave_online = slave_online
+        self.prev_slave_oper = self.slave_oper
+        self.slave_oper = slave_oper
+        if not slave_online or not slave_oper:
+            return
+
+        # 402 State Machine
+        self.prev_status_word = self.status_word
+        self.status_word = status_word
         self.prev_state = self.curr_state
+        self.check_voltage_enabled(status_word)
         for key, state in self.states_402.items():
             if state is None:
                 continue  # Start state
@@ -179,14 +199,26 @@ class StateMachine402:
                 break
         else:
             rospy.logwarn(
-                f"Unknown status word {status_word:X}; "
+                f"Unknown status word 0x{status_word:X}; "
                 f"state {self.curr_state} unchanged"
             )
 
-        # Extract extra mode-specific flags from status word
+        # - Extract extra mode-specific flags from status word
         self.curr_state_flags.clear()
         for flag, bitnum in self.sw_extra_bits.items():
             self.curr_state_flags[flag] = bool(status_word & (1 << bitnum))
+
+    @property
+    def operational(self):
+        return bool(self.slave_online and self.slave_oper)
+
+    @property
+    def slave_online_changed(self):
+        return self.slave_online is not self.prev_slave_online
+
+    @property
+    def slave_oper_changed(self):
+        return self.slave_oper is not self.prev_slave_oper
 
     def get_status_flag(self, flag):
         return self.curr_state_flags.get(flag, False)
@@ -290,9 +322,13 @@ class StateMachine402:
         return self.goal_path[self.curr_state][1]
 
     def is_goal_state_reached(self):
-        return self.get_next_transition() is None
+        return self.operational and self.get_next_transition() is None
 
     def get_control_word(self, **flags):
+        # If drive not operational, all bets are off
+        if not self.operational:
+            return self.hold_state_control_word['SWITCH ON DISABLED']
+
         # Get base control word
         if self.is_goal_state_reached():
             # Holding current state

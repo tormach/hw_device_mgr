@@ -402,8 +402,15 @@ class Hal402Mgr(FysomGlobalMixin):
         else:
             cmd = None
 
-        # Drive fault may trigger an overriding 'fault' command
-        if self.any_drives_in_state('FAULT') and cmd not in ('stop', 'start'):
+        # Special cases that override with 'fault' command:
+        if not self.all_drives_operational():
+            # Some drives not online operational
+            cmd = 'fault'
+            fds = self.drives_operational(negate=True)
+            fd_names = ', '.join(d.drive_name for d in fds)
+            msg = f'Drives ({fd_names}) not online and operational'
+        elif self.any_drives_in_state('FAULT') and cmd not in ('stop', 'start'):
+            # Some drives in FAULT but no recovery command
             cmd = 'fault'
             fds = self.drives_in_state('FAULT')
             fd_names = ', '.join(d.drive_name for d in fds)
@@ -480,12 +487,21 @@ class Hal402Mgr(FysomGlobalMixin):
                     return False
         return True
 
+    def drives_operational(self, negate=False):
+        # Return list of operational drives (online & slave-oper)
+        status = not negate
+        return [d for d in self.drives if d.operational is status]
+
+    def all_drives_operational(self):
+        # Check if all drives are operational (no drives not operational!)
+        return len(self.drives_operational(negate=True)) == 0
+
     def drives_in_state(self, state, negate=False):
         # Return list of drives with matching state
         if negate:
-            return [d for d in self.drives if d.sm402.curr_state != state]
+            return [d for d in self.drives if d.state != state]
         else:
-            return [d for d in self.drives if d.sm402.curr_state == state]
+            return [d for d in self.drives if d.state == state]
 
     def any_drives_in_state(self, state):
         # check if any drives have the matching state
@@ -497,6 +513,8 @@ class Hal402Mgr(FysomGlobalMixin):
 
     def all_drives_goal_state_reached(self, state):
         for drive in self.drives:
+            if not drive.operational:
+                return False
             if not drive.get_goal_state() == state:
                 return False
             if not drive.is_goal_state_reached():

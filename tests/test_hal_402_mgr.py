@@ -14,6 +14,12 @@ class TestHal402MgrBase:
     init_fixture_obj = True
     init_pins = True
     sim = True
+    drives_start_operational = True
+
+    @pytest.fixture
+    def start_offline(self):
+        # Add this to test function BEFORE `obj`
+        self.drives_start_operational = False
 
     @pytest.fixture
     def obj(self, mock_hal, mock_rospy):
@@ -29,11 +35,23 @@ class TestHal402MgrBase:
                 pin.old_val = 0
                 self.comp.set_pin_val(pin.name, 0)
             for drive in obj.drives:
-                for pin in drive.pins.pin_dict.values():
+                pin_start_vals = {k: 0 for k in drive.pins.pin_dict}
+                if self.drives_start_operational:
+                    drive.sm402.slave_online = True
+                    drive.sm402.slave_oper = True
+                    pin_start_vals.update(
+                        {
+                            'slave-online': True,
+                            'slave-oper': True,
+                            'slave-state-op': True,
+                        }
+                    )
+                    drive.sm402.curr_state_flags['VOLTAGE_ENABLED'] = True
+                for pname, pin in drive.pins.pin_dict.items():
                     # Set value & ensure pin.changed is False, even after update()
-                    pin.val = 0
-                    pin.old_val = 0
-                    self.comp.set_pin_val(pin.name, 0)
+                    val = pin_start_vals[pname]
+                    pin.val = pin.old_val = val
+                    self.comp.set_pin_val(pin.name, val)
         self.obj = obj
         yield obj
 
@@ -163,13 +181,39 @@ class TestHal402Mgr(TestHal402MgrBase):
         assert obj.all_drives_mode(self.MODE_HM)
         assert not obj.all_drives_mode(self.MODE_DEFAULT)
 
-    def test_all_drives_status_flags(self, obj):
+    def test_all_drives_status_flags(self, start_offline, obj):
         assert obj.all_drives_status_flags(WARNING=False, REMOTE=False)
         for drive in obj.drives:
-            drive.sm402.update_state(0x23 + 0xFF90)
+            drive.sm402.update_state(True, True, 0x23 + 0xFF90)
         assert obj.all_drives_status_flags(WARNING=True, REMOTE=True)
-        self.sm402(1).update_state(0)
+        self.sm402(1).update_state(True, True, 0)
         assert not obj.all_drives_status_flags(WARNING=True, REMOTE=True)
+
+    def test_drives_operational(self, start_offline, obj):
+        # Also test all_drives_operational()
+        for drive in obj.drives:
+            assert not drive.operational  # Sanity
+        assert set(obj.drives_operational()) == set()
+        assert set(obj.drives_operational(negate=True)) == set(obj.drives)
+        assert not obj.all_drives_operational()
+
+        online = obj.drives[:3]
+        offline = obj.drives[3:]
+        for drive in online:
+            drive.sm402.slave_online = True
+            drive.sm402.slave_oper = True
+            assert drive.operational
+        assert set(obj.drives_operational()) == set(online)
+        assert set(obj.drives_operational(negate=True)) == set(offline)
+        assert not obj.all_drives_operational()
+
+        for drive in offline:
+            drive.sm402.slave_online = True
+            drive.sm402.slave_oper = True
+            assert drive.operational
+        assert set(obj.drives_operational()) == set(obj.drives)
+        assert set(obj.drives_operational(negate=True)) == set()
+        assert obj.all_drives_operational()
 
     def test_drives_in_state(self, obj):
         d012 = obj.drives[:3]
@@ -495,6 +539,9 @@ class TestHal402Mgr(TestHal402MgrBase):
 class TestHal402MgrUpdate(TestHal402MgrBase):
     sim = False  # Need to run drive.sim_fake_next_inputs() ourselves
 
+    # Start with slaves offline
+    drives_start_operational = False
+
     def drive_pin_val(self, drive, pname, new_val=None):
         pin = drive.pins.pin_dict[pname]
         if new_val is None:
@@ -546,6 +593,30 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
                 passing = False
         return passing
 
+    def check_slave_online(self, exp):
+        exp = self.expand_drives(exp)
+        passing = True
+        for drive in self.obj.drives:
+            name = drive.drive_name
+            val = drive.sm402.slave_online
+            print(f'  slave_online {name}: exp "{exp[name]}"; actual "{val}"')
+            if val != exp[name]:
+                print('MISMATCH')
+                passing = False
+        return passing
+
+    def check_slave_oper(self, exp):
+        exp = self.expand_drives(exp)
+        passing = True
+        for drive in self.obj.drives:
+            name = drive.drive_name
+            val = drive.sm402.slave_oper
+            print(f'  slave_oper {name}: exp "{exp[name]}"; actual "{val}"')
+            if val != exp[name]:
+                print('MISMATCH')
+                passing = False
+        return passing
+
     def check_pins(self, expected):
         passing = True
         for pname, exp in expected.items():
@@ -569,6 +640,9 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
             exp.update(all_expected.get('all', dict()))
             exp.update(all_expected.get(drive.drive_name, dict()))
             for pname, exp in exp.items():
+                if exp is None:
+                    print(f'  drive_pin {name}.{pname}:  (ignoring)')
+                    continue
                 val = self.drive_pin_val(drive, pname)
                 val &= self.pin_value_masks.get(pname, 0xFFFF)
                 print(

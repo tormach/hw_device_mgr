@@ -63,6 +63,13 @@ class Drive402:
         'control-word-fb': dict(ptype='u32', pdir='in'),
         'drive-mode-cmd': dict(ptype='u32', pdir='out'),
         'drive-mode-fb': dict(ptype='u32', pdir='in'),
+        # The lcec component automatically creates these for each drive
+        'slave-online': dict(ptype='bit', pdir='in'),
+        'slave-oper': dict(ptype='bit', pdir='in'),
+        'slave-state-init': dict(ptype='bit', pdir='in'),
+        'slave-state-preop': dict(ptype='bit', pdir='in'),
+        'slave-state-safeop': dict(ptype='bit', pdir='in'),
+        'slave-state-op': dict(ptype='bit', pdir='in'),
     }
 
     def setup_pins(self):
@@ -94,6 +101,10 @@ class Drive402:
     ########################################
     # Main logic and external interface
 
+    @property
+    def operational(self):
+        return self.sm402.operational
+
     def set_goal_state(self, goal_state):
         self.sm402.set_goal_state(goal_state)
 
@@ -117,7 +128,11 @@ class Drive402:
         self.pins.read_all()
 
     def update_state_machine(self):
-        self.sm402.update_state(self.pins.status_word.get())
+        self.sm402.update_state(
+            self.pins.slave_online.get(),
+            self.pins.slave_oper.get(),
+            self.pins.status_word.get(),
+        )
 
     def set_control_flags(self, **flags):
         self.control_flags = flags
@@ -133,17 +148,31 @@ class Drive402:
         control_word = self.sm402.get_control_word(**self.control_flags)
         self.pins.control_word.set(control_word)
 
-        if self.pins.control_word.changed or self.pins.status_word.changed:
+        # Log slave online operational status and 402 state changes
+        if self.sm402.slave_online_changed:
+            rospy.loginfo(
+                f"{self.drive_name} online status"
+                f" was {self.sm402.prev_slave_online},"
+                f" now {self.sm402.slave_online}"
+            )
+        if self.sm402.slave_oper_changed:
+            rospy.loginfo(
+                f"{self.drive_name} operational status"
+                f" was {self.sm402.prev_slave_oper},"
+                f" now {self.sm402.slave_oper}"
+            )
+        if self.sm402.operational and self.pins.control_word.changed:
+            status_word = self.pins.status_word.get()
             transition = self.sm402.get_next_transition()
             curr_state = self.sm402.curr_state
             next_state = self.sm402.get_next_state()
             if transition is None:
                 transition = '(Hold state)'
             rospy.loginfo(
-                f"{self.drive_name} control word 0x{control_word:04X}"
+                f"{self.drive_name} control/status words"
+                f"  0x{control_word:04X}/0x{status_word:04X}"
                 f" {transition}:  {curr_state} -> {next_state}"
             )
-        return
 
     def write_halpins(self):
         # Write to output HAL pins
@@ -173,6 +202,10 @@ class Drive402:
             )
             self.prev_fake_inputs = (control_mode, state, status_word)
 
+    @property
+    def state(self):
+        return self.sm402.curr_state
+
     def set_control_mode(self, mode):
         rospy.loginfo(f"{self.drive_name} entering drive control mode {mode}")
         mode = self.normalize_control_mode(mode)
@@ -191,16 +224,27 @@ class Drive402:
     # ROS topics
 
     def publish_status(self):
-        self.publish_fault_state()
+        self.log_error_state()
         self.publish_error()
 
-    def publish_fault_state(self):
-        if not self.sm402.drive_state_changed():
-            return
-        if self.sm402.curr_state == 'FAULT':
-            rospy.logwarn(f"{self.drive_name} entered 'FAULT' state")
-        elif self.sm402.prev_state == 'FAULT':
-            rospy.loginfo(f"{self.drive_name} left 'FAULT' state")
+    def log_error_state(self):
+        if self.sm402.slave_online_changed:
+            if self.sm402.slave_online:
+                rospy.loginfo(f"{self.drive_name} came online")
+            else:
+                rospy.logwarn(f"{self.drive_name} went offline")
+        if self.sm402.slave_oper_changed:
+            if self.sm402.slave_oper:
+                rospy.loginfo(f"{self.drive_name} came operational")
+            else:
+                rospy.logwarn(f"{self.drive_name} went non-operational")
+        if not self.sm402.operational:
+            return  # Don't care about state
+        if self.sm402.drive_state_changed():
+            if self.sm402.curr_state == 'FAULT':
+                rospy.logwarn(f"{self.drive_name} entered 'FAULT' state")
+            elif self.sm402.prev_state == 'FAULT':
+                rospy.loginfo(f"{self.drive_name} left 'FAULT' state")
 
     @staticmethod
     def error_code_hex(error_code):
