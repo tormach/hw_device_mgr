@@ -1,0 +1,5 @@
+[flake8]
+# E203: space after :, not PEP8 compliant
+# W503: no operator after line break, not PEP8 compliant
+ignore = E203, W503
+max-line-length = 80
