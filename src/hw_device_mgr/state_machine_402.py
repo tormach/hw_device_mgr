@@ -6,8 +6,8 @@ class StateMachine402:
         self.slave_online = self.prev_slave_online = False
         self.slave_oper = self.prev_slave_oper = False
         self.status_word = self.prev_status_word = 0x0000
-        self.curr_state = self.prev_state = 'START'
-        self.goal_state = 'SWITCH ON DISABLED'
+        self.curr_state = self.prev_state = "START"
+        self.goal_state = "SWITCH ON DISABLED"
         self.control_mode = self.MODE_CSP
         self.curr_state_flags = dict()
         self.param_605a = 3  # QUICK STOP ACTIVE auto TRANSITION_12
@@ -72,15 +72,15 @@ class StateMachine402:
         return self.control_mode
 
     states_402 = {
-        'START': None,
-        'NOT READY TO SWITCH ON': [0x4F, 0x00],
-        'SWITCH ON DISABLED': [0x4F, 0x40],
-        'READY TO SWITCH ON': [0x6F, 0x21],
-        'SWITCHED ON': [0x6F, 0x23],
-        'OPERATION ENABLED': [0x6F, 0x27],
-        'FAULT REACTION ACTIVE': [0x4F, 0x0F],
-        'FAULT': [0x4F, 0x08],
-        'QUICK STOP ACTIVE': [0x6F, 0x07],
+        "START": None,
+        "NOT READY TO SWITCH ON": [0x4F, 0x00],
+        "SWITCH ON DISABLED": [0x4F, 0x40],
+        "READY TO SWITCH ON": [0x6F, 0x21],
+        "SWITCHED ON": [0x6F, 0x23],
+        "OPERATION ENABLED": [0x6F, 0x27],
+        "FAULT REACTION ACTIVE": [0x4F, 0x0F],
+        "FAULT": [0x4F, 0x08],
+        "QUICK STOP ACTIVE": [0x6F, 0x07],
     }
 
     def check_voltage_enabled(self, control_word):
@@ -95,11 +95,11 @@ class StateMachine402:
         if (
             self.curr_state
             in [
-                'START',
-                'NOT READY TO SWITCH ON',
-                'FAULT REACTION ACTIVE',
+                "START",
+                "NOT READY TO SWITCH ON",
+                "FAULT REACTION ACTIVE",
             ]
-            + (['QUICK STOP ACTIVE'] if self.param_605a <= 3 else [])
+            + (["QUICK STOP ACTIVE"] if self.param_605a <= 3 else [])
         ):
             # Automatic transitions ignore control word
             state = self.get_next_state()
@@ -107,35 +107,35 @@ class StateMachine402:
             for test_cw, test_states, next_state in [
                 # Order matters!  Non-matches will fall through; None
                 # matches any starting state
-                (0x0080, ['FAULT'], 'SWITCH ON DISABLED'),
-                (0x0000, ['FAULT'], 'FAULT'),
-                (0x0000, None, 'SWITCH ON DISABLED'),
-                (0x0002, ['FAULT'], 'FAULT'),
-                (0x0002, ['OPERATION ENABLED'], 'QUICK STOP ACTIVE'),
-                (0x0002, None, 'SWITCH ON DISABLED'),
+                (0x0080, ["FAULT"], "SWITCH ON DISABLED"),
+                (0x0000, ["FAULT"], "FAULT"),
+                (0x0000, None, "SWITCH ON DISABLED"),
+                (0x0002, ["FAULT"], "FAULT"),
+                (0x0002, ["OPERATION ENABLED"], "QUICK STOP ACTIVE"),
+                (0x0002, None, "SWITCH ON DISABLED"),
                 (
                     0x0006,
                     # (I forgot where I read quick stop triggers these
                     # transitions)
                     [
-                        'SWITCH ON DISABLED',
-                        'SWITCHED ON',
-                        'OPERATION ENABLED',
+                        "SWITCH ON DISABLED",
+                        "SWITCHED ON",
+                        "OPERATION ENABLED",
                     ],
-                    'READY TO SWITCH ON',
+                    "READY TO SWITCH ON",
                 ),
                 (
                     0x0007,
                     [
-                        'READY TO SWITCH ON',
-                        'OPERATION ENABLED',
+                        "READY TO SWITCH ON",
+                        "OPERATION ENABLED",
                     ],
-                    'SWITCHED ON',
+                    "SWITCHED ON",
                 ),
                 (
                     0x000F,
-                    ['SWITCHED ON', 'QUICK STOP ACTIVE'],
-                    'OPERATION ENABLED',
+                    ["SWITCHED ON", "QUICK STOP ACTIVE"],
+                    "OPERATION ENABLED",
                 ),
             ]:
                 if masked_cw == test_cw and (
@@ -148,8 +148,8 @@ class StateMachine402:
 
         cw_flags = self.get_control_word_flags(control_word)
         sw_flags = dict(
-            HOMING_COMPLETED=cw_flags['OPERATION_MODE_SPECIFIC_1'],
-            VOLTAGE_ENABLED=getattr(self, 'sim_voltage_enabled', True),
+            HOMING_COMPLETED=cw_flags["OPERATION_MODE_SPECIFIC_1"],
+            VOLTAGE_ENABLED=getattr(self, "sim_voltage_enabled", True),
         )
         status_word = self.add_status_word_flags(status_word, **sw_flags)
         return state, status_word
@@ -232,67 +232,67 @@ class StateMachine402:
         # transition is `None`, the final state has been reached.
         # Some transitions happen automatically; those are marked with
         # a `None` value in the `transitions` dict.
-        'SWITCHED ON': {
+        "SWITCHED ON": {
             # Drives in OPERATION ENABLED move to QUICK STOP ACTIVE
-            'OPERATION ENABLED': ['QUICK STOP ACTIVE', 'TRANSITION_11'],
+            "OPERATION ENABLED": ["QUICK STOP ACTIVE", "TRANSITION_11"],
             # QUICK STOP ACTIVE: if 605Ah from 0-3, automatic
             # TRANSITION_12 to SWITCH ON DISABLED; otherwise hold
-            'QUICK STOP ACTIVE': ['QUICK STOP ACTIVE', None],  # End state
+            "QUICK STOP ACTIVE": ["QUICK STOP ACTIVE", None],  # End state
             # Transition other drives to SWITCHED ON
-            'START': ['NOT READY TO SWITCH ON', 'TRANSITION_0'],
-            'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_1'],
-            'SWITCH ON DISABLED': ['READY TO SWITCH ON', 'TRANSITION_2'],
-            'READY TO SWITCH ON': ['SWITCHED ON', 'TRANSITION_3'],
-            'SWITCHED ON': ['SWITCHED ON', None],  # End state
-            'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
-            'FAULT REACTION ACTIVE': ['FAULT', 'TRANSITION_14'],
+            "START": ["NOT READY TO SWITCH ON", "TRANSITION_0"],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_1"],
+            "SWITCH ON DISABLED": ["READY TO SWITCH ON", "TRANSITION_2"],
+            "READY TO SWITCH ON": ["SWITCHED ON", "TRANSITION_3"],
+            "SWITCHED ON": ["SWITCHED ON", None],  # End state
+            "FAULT": ["SWITCH ON DISABLED", "TRANSITION_15"],
+            "FAULT REACTION ACTIVE": ["FAULT", "TRANSITION_14"],
         },
-        'OPERATION ENABLED': {
+        "OPERATION ENABLED": {
             # Drives transition to OPERATION ENABLED; note the
             # Hal402Mgr always brings drives to SWITCHED ON state
             # first before setting OPERATION ENABLED goal state
-            'SWITCHED ON': ['OPERATION ENABLED', 'TRANSITION_4'],
-            'OPERATION ENABLED': ['OPERATION ENABLED', None],  # End
-            'START': ['START', 'TRANSITION_0'],
-            'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_1'],
-            'SWITCH ON DISABLED': ['READY TO SWITCH ON', 'TRANSITION_2'],
-            'READY TO SWITCH ON': ['SWITCHED ON', 'TRANSITION_3'],
-            'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
-            'FAULT REACTION ACTIVE': ['FAULT', 'TRANSITION_14'],
-            'QUICK STOP ACTIVE': ['OPERATION ENABLED', 'TRANSITION_16'],
+            "SWITCHED ON": ["OPERATION ENABLED", "TRANSITION_4"],
+            "OPERATION ENABLED": ["OPERATION ENABLED", None],  # End
+            "START": ["START", "TRANSITION_0"],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_1"],
+            "SWITCH ON DISABLED": ["READY TO SWITCH ON", "TRANSITION_2"],
+            "READY TO SWITCH ON": ["SWITCHED ON", "TRANSITION_3"],
+            "FAULT": ["SWITCH ON DISABLED", "TRANSITION_15"],
+            "FAULT REACTION ACTIVE": ["FAULT", "TRANSITION_14"],
+            "QUICK STOP ACTIVE": ["OPERATION ENABLED", "TRANSITION_16"],
         },
-        # These transitions take longer from OPERATION ENABLED -> SWITCH ON DISABLED
+        # These transitions take longer: OPERATION ENABLED -> SWITCH ON DISABLED
         # 'OPERATION ENABLED':        ['SWITCHED ON', 'TRANSITION_5'],
         # 'SWITCHED ON':              ['READY TO SWITCH ON', 'TRANSITION_6'],
         # 'READY TO SWITCH ON':       ['SWITCH ON DISABLED', 'TRANSITION_7']
-        'SWITCH ON DISABLED': {
-            'START': ['NOT READY TO SWITCH ON', 'TRANSITION_0'],
-            'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_1'],
-            'SWITCH ON DISABLED': ['SWITCH ON DISABLED', None],  # End State
-            'READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_7'],
-            'SWITCHED ON': ['SWITCH ON DISABLED', 'TRANSITION_10'],
-            'FAULT REACTION ACTIVE': ['FAULT', 'TRANSITION_14'],
-            'FAULT': ['SWITCH ON DISABLED', 'TRANSITION_15'],
+        "SWITCH ON DISABLED": {
+            "START": ["NOT READY TO SWITCH ON", "TRANSITION_0"],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_1"],
+            "SWITCH ON DISABLED": ["SWITCH ON DISABLED", None],  # End State
+            "READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_7"],
+            "SWITCHED ON": ["SWITCH ON DISABLED", "TRANSITION_10"],
+            "FAULT REACTION ACTIVE": ["FAULT", "TRANSITION_14"],
+            "FAULT": ["SWITCH ON DISABLED", "TRANSITION_15"],
             # ENABLED state effect QUICK STOP ACTIVE; then (605Ah set
             # to 0-3) automatic TRANSITION_12 to SWITCH ON DISABLED
-            'OPERATION ENABLED': ['QUICK STOP ACTIVE', 'TRANSITION_11'],
-            'QUICK STOP ACTIVE': ['SWITCH ON DISABLED', 'TRANSITION_12'],
+            "OPERATION ENABLED": ["QUICK STOP ACTIVE", "TRANSITION_11"],
+            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", "TRANSITION_12"],
         },
         # Fault state has three possible final states; see inline notes
-        'FAULT': {
+        "FAULT": {
             # Drives in FAULT state remain in that state
-            'FAULT REACTION ACTIVE': ['FAULT', 'TRANSITION_14'],
-            'FAULT': ['FAULT', None],  # End state
+            "FAULT REACTION ACTIVE": ["FAULT", "TRANSITION_14"],
+            "FAULT": ["FAULT", None],  # End state
             # ENABLED state effect QUICK STOP ACTIVE; then (605Ah set
             # to 0-3) automatic TRANSITION_12 to SWITCH ON DISABLED
-            'OPERATION ENABLED': ['QUICK STOP ACTIVE', 'TRANSITION_11'],
-            'QUICK STOP ACTIVE': ['QUICK STOP ACTIVE', None],  # End state
+            "OPERATION ENABLED": ["QUICK STOP ACTIVE", "TRANSITION_11"],
+            "QUICK STOP ACTIVE": ["QUICK STOP ACTIVE", None],  # End state
             # Drives in all other states transition to SWITCH ON DISABLED
-            'START': ['NOT READY TO SWITCH ON', 'TRANSITION_0'],
-            'NOT READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_1'],
-            'SWITCH ON DISABLED': ['SWITCH ON DISABLED', None],  # End state
-            'READY TO SWITCH ON': ['SWITCH ON DISABLED', 'TRANSITION_7'],
-            'SWITCHED ON': ['SWITCH ON DISABLED', 'TRANSITION_10'],
+            "START": ["NOT READY TO SWITCH ON", "TRANSITION_0"],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_1"],
+            "SWITCH ON DISABLED": ["SWITCH ON DISABLED", None],  # End state
+            "READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_7"],
+            "SWITCHED ON": ["SWITCH ON DISABLED", "TRANSITION_10"],
         },
     }
 
@@ -311,14 +311,14 @@ class StateMachine402:
     def get_next_state(self):
         # Return next expected state
         # Special case:  QUICK STOP ACTIVE automatic TRANSITION_12
-        if self.curr_state == 'QUICK STOP ACTIVE' and self.param_605a <= 3:
-            return 'SWITCH ON DISABLED'
+        if self.curr_state == "QUICK STOP ACTIVE" and self.param_605a <= 3:
+            return "SWITCH ON DISABLED"
         return self.goal_path[self.curr_state][0]
 
     def get_next_transition(self):
         # Special case:  QUICK STOP ACTIVE automatic TRANSITION_12
-        if self.curr_state == 'QUICK STOP ACTIVE' and self.param_605a <= 3:
-            return 'TRANSITION_12'
+        if self.curr_state == "QUICK STOP ACTIVE" and self.param_605a <= 3:
+            return "TRANSITION_12"
         return self.goal_path[self.curr_state][1]
 
     def is_goal_state_reached(self):
@@ -327,7 +327,7 @@ class StateMachine402:
     def get_control_word(self, **flags):
         # If drive not operational, all bets are off
         if not self.operational:
-            return self.hold_state_control_word['SWITCH ON DISABLED']
+            return self.hold_state_control_word["SWITCH ON DISABLED"]
 
         # Get base control word
         if self.is_goal_state_reached():
@@ -355,15 +355,15 @@ class StateMachine402:
     # `None` indicates hold state N/A in automatic transition states
     # where control word is ignored
     hold_state_control_word = {
-        'START': None,
-        'NOT READY TO SWITCH ON': None,
-        'SWITCH ON DISABLED': 0x0000,
-        'READY TO SWITCH ON': 0x0006,
-        'SWITCHED ON': 0x0007,
-        'OPERATION ENABLED': 0x000F,
-        'QUICK STOP ACTIVE': 0x0002,
-        'FAULT REACTION ACTIVE': None,
-        'FAULT': 0x0000,  # Anything but 0x0080 will hold state
+        "START": None,
+        "NOT READY TO SWITCH ON": None,
+        "SWITCH ON DISABLED": 0x0000,
+        "READY TO SWITCH ON": 0x0006,
+        "SWITCHED ON": 0x0007,
+        "OPERATION ENABLED": 0x000F,
+        "QUICK STOP ACTIVE": 0x0002,
+        "FAULT REACTION ACTIVE": None,
+        "FAULT": 0x0000,  # Anything but 0x0080 will hold state
     }
 
     def get_hold_state_control_word(self):

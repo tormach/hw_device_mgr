@@ -7,13 +7,13 @@ from hw_device_mgr.msg import msg_error
 
 
 class Drive402:
-    GENERIC_ERROR_DESCRIPTION = 'This is an unknown error'
+    GENERIC_ERROR_DESCRIPTION = "This is an unknown error"
     GENERIC_ERROR_SOLUTION = (
-        'Please consult the troubleshooting section of your hardware manual'
+        "Please consult the troubleshooting section of your hardware manual"
     )
 
     MODE_DEFAULT = StateMachine402.MODE_CSP
-    DEVICE_FAULT_CODE_PARAM = 'device_fault_code_list'
+    DEVICE_FAULT_CODE_PARAM = "device_fault_code_list"
 
     ########################################
     # Init
@@ -55,31 +55,31 @@ class Drive402:
     pin_specs = {
         # NOTE: error-code is deprecated (need the space in PDO for
         # homing options)
-        'error-code': dict(ptype='u32', pdir='in'),
-        'aux-error-code': dict(ptype='u32', pdir='in'),
-        'status-word': dict(ptype='u32', pdir='in'),
-        'status-word-sim': dict(ptype='u32', pdir='out'),
-        'control-word': dict(ptype='u32', pdir='out'),
-        'control-word-fb': dict(ptype='u32', pdir='in'),
-        'drive-mode-cmd': dict(ptype='u32', pdir='out'),
-        'drive-mode-fb': dict(ptype='u32', pdir='in'),
+        "error-code": dict(ptype="u32", pdir="in"),
+        "aux-error-code": dict(ptype="u32", pdir="in"),
+        "status-word": dict(ptype="u32", pdir="in"),
+        "status-word-sim": dict(ptype="u32", pdir="out"),
+        "control-word": dict(ptype="u32", pdir="out"),
+        "control-word-fb": dict(ptype="u32", pdir="in"),
+        "drive-mode-cmd": dict(ptype="u32", pdir="out"),
+        "drive-mode-fb": dict(ptype="u32", pdir="in"),
         # The lcec component automatically creates these for each drive
-        'slave-online': dict(ptype='bit', pdir='in'),
-        'slave-oper': dict(ptype='bit', pdir='in'),
-        'slave-state-init': dict(ptype='bit', pdir='in'),
-        'slave-state-preop': dict(ptype='bit', pdir='in'),
-        'slave-state-safeop': dict(ptype='bit', pdir='in'),
-        'slave-state-op': dict(ptype='bit', pdir='in'),
+        "slave-online": dict(ptype="bit", pdir="in"),
+        "slave-oper": dict(ptype="bit", pdir="in"),
+        "slave-state-init": dict(ptype="bit", pdir="in"),
+        "slave-state-preop": dict(ptype="bit", pdir="in"),
+        "slave-state-safeop": dict(ptype="bit", pdir="in"),
+        "slave-state-op": dict(ptype="bit", pdir="in"),
     }
 
     def setup_pins(self):
-        prefix = f'{self.drive_name}.'
+        prefix = f"{self.drive_name}."
         self.pins = HALPins(self.comp, self.pin_specs, prefix=prefix)
         self.pins.init_pins()
         self.set_control_mode(self.MODE_DEFAULT)
 
     def read_device_error_list(self):
-        param = f'/{self.DEVICE_FAULT_CODE_PARAM}/{self.drive_type}'
+        param = f"/{self.DEVICE_FAULT_CODE_PARAM}/{self.drive_type}"
         if not rospy.has_param(param):
             rospy.logerr(f"ROS param {param} unset")
             return {}
@@ -90,8 +90,8 @@ class Drive402:
         # for each drive, an error and status topic are created
         # messages are defined in msg/ directory of this package
         self.topics = {
-            'error': rospy.Publisher(
-                f'{self.compname}/{self.drive_name}_error',
+            "error": rospy.Publisher(
+                f"{self.compname}/{self.drive_name}_error",
                 msg_error,
                 queue_size=1,
                 latch=True,
@@ -167,7 +167,7 @@ class Drive402:
             curr_state = self.sm402.curr_state
             next_state = self.sm402.get_next_state()
             if transition is None:
-                transition = '(Hold state)'
+                transition = "(Hold state)"
             rospy.loginfo(
                 f"{self.drive_name} control/status words"
                 f"  0x{control_word:04X}/0x{status_word:04X}"
@@ -194,10 +194,10 @@ class Drive402:
         state, status_word = self.sm402.fake_status_word(cw)
         self.pins.status_word_sim.hal_pin.set(status_word)
 
-        prev_inputs = getattr(self, 'prev_fake_inputs', (None, None, None))
+        prev_inputs = getattr(self, "prev_fake_inputs", (None, None, None))
         if prev_inputs != (control_mode, state, status_word):
             rospy.loginfo(
-                f'{self.drive_name} next inputs:  mode=0x{control_mode:04X};'
+                f"{self.drive_name} next inputs:  mode=0x{control_mode:04X};"
                 f' state="{state}"; status word=0x{status_word:04X}'
             )
             self.prev_fake_inputs = (control_mode, state, status_word)
@@ -241,14 +241,14 @@ class Drive402:
         if not self.sm402.operational:
             return  # Don't care about state
         if self.sm402.drive_state_changed():
-            if self.sm402.curr_state == 'FAULT':
+            if self.sm402.curr_state == "FAULT":
                 rospy.logwarn(f"{self.drive_name} entered 'FAULT' state")
-            elif self.sm402.prev_state == 'FAULT':
+            elif self.sm402.prev_state == "FAULT":
                 rospy.loginfo(f"{self.drive_name} left 'FAULT' state")
 
     @staticmethod
     def error_code_hex(error_code):
-        return f"0x{0xFFFF & error_code:04X}" if error_code else ''
+        return f"0x{0xFFFF & error_code:04X}" if error_code else ""
 
     def get_error_info(self, err_code):
         if not err_code:
@@ -256,7 +256,7 @@ class Drive402:
                 description="No error",
                 solution="",
             )
-        err_code_str = f'0x{err_code:04X}'
+        err_code_str = f"0x{err_code:04X}"
 
         err_info = self.device_error_list.get(err_code_str, None)
         if err_info is not None:
@@ -273,9 +273,9 @@ class Drive402:
         err_code = self.pins.error_code.get() & 0xFFFF
         err_hex = self.error_code_hex(err_code)
         err_info = self.get_error_info(err_code)
-        description = err_info['description']
-        solution = err_info.get('solution', '')
-        self.topics['error'].publish(
+        description = err_info["description"]
+        solution = err_info.get("solution", "")
+        self.topics["error"].publish(
             self.drive_name,
             self.drive_type,
             err_hex,

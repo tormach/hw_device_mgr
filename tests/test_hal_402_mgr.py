@@ -9,7 +9,7 @@ class TestHal402MgrBase:
         "hw_device_mgr.hal_402_mgr.rospy",
         "hw_device_mgr.hal_402_drive.rospy",
     )
-    ros_params_yaml = 'ros_params.yaml'
+    ros_params_yaml = "ros_params.yaml"
 
     init_fixture_obj = True
     init_pins = True
@@ -41,14 +41,15 @@ class TestHal402MgrBase:
                     drive.sm402.slave_oper = True
                     pin_start_vals.update(
                         {
-                            'slave-online': True,
-                            'slave-oper': True,
-                            'slave-state-op': True,
+                            "slave-online": True,
+                            "slave-oper": True,
+                            "slave-state-op": True,
                         }
                     )
-                    drive.sm402.curr_state_flags['VOLTAGE_ENABLED'] = True
+                    drive.sm402.curr_state_flags["VOLTAGE_ENABLED"] = True
                 for pname, pin in drive.pins.pin_dict.items():
-                    # Set value & ensure pin.changed is False, even after update()
+                    # Set value & ensure pin.changed is False, even
+                    # after update()
                     val = pin_start_vals[pname]
                     pin.val = pin.old_val = val
                     self.comp.set_pin_val(pin.name, val)
@@ -86,18 +87,18 @@ class TestHal402MgrInit(TestHal402MgrBase):
 
     def test_init_ros(self, obj):
         obj.init_ros()
-        self.mock_rospy.init_node.assert_called_with('hal_402_mgr')
+        self.mock_rospy.init_node.assert_called_with("hal_402_mgr")
         self.mock_rospy.on_shutdown.assert_called_with(obj.call_cleanup)
         assert obj.update_rate == 10
         self.mock_rospy.Rate.assert_called_with(10)
-        assert hasattr(obj, 'rate')
+        assert hasattr(obj, "rate")
 
     def test_hal_comp_init(self, obj):
         # Check HAL component creation, pin creation, pin values
         obj.hal_comp_init()
         assert obj.comp is self.comp
-        assert hasattr(obj, 'pins')
-        assert hasattr(obj.pins, 'state_cmd')
+        assert hasattr(obj, "pins")
+        assert hasattr(obj.pins, "state_cmd")
 
     def test_hal_comp_ready(self, obj):
         obj.hal_comp_init()
@@ -108,18 +109,18 @@ class TestHal402MgrInit(TestHal402MgrBase):
     def test_create_drives(self, obj):
         obj.hal_comp_init()
         obj.create_drives()
-        print('drives:', obj.drives)
+        print("drives:", obj.drives)
         assert isinstance(obj.drives, list)
         assert len(obj.drives) == 6
         drive_inst = -1
         for drive in obj.drives:
-            assert type(drive).__name__ == 'Drive402'
+            assert type(drive).__name__ == "Drive402"
             # Check for increasing numbers
             assert drive.slave_number > drive_inst
             drive_inst = drive.slave_number
 
         # If drive config param is absent
-        obj.ros_param_base = 'bogus'
+        obj.ros_param_base = "bogus"
         self.mock_rospy.logerr.reset_mock()
         obj.create_drives()
         assert obj.drives == []
@@ -128,10 +129,10 @@ class TestHal402MgrInit(TestHal402MgrBase):
     def test_init(self, obj):
         obj.init()
         # Check that main components were initialized
-        assert hasattr(obj, 'rate')
-        assert hasattr(obj, 'comp')
-        assert hasattr(obj, 'drives')
-        assert obj.drives[0].sm402.goal_state == 'SWITCH ON DISABLED'
+        assert hasattr(obj, "rate")
+        assert hasattr(obj, "comp")
+        assert hasattr(obj, "drives")
+        assert obj.drives[0].sm402.goal_state == "SWITCH ON DISABLED"
         self.comp.ready.assert_called_once()
 
 
@@ -150,9 +151,9 @@ class TestHal402Mgr(TestHal402MgrBase):
             drive.write_state.assert_called()
 
     def test_set_drive_goal_state(self, obj):
-        obj.set_drive_goal_state('SWITCHED ON')
+        obj.set_drive_goal_state("SWITCHED ON")
         for drive in obj.drives:
-            assert drive.sm402.goal_state == 'SWITCHED ON'
+            assert drive.sm402.goal_state == "SWITCHED ON"
             assert drive.control_flags == {}
 
     def test_set_drive_control_mode(self, obj):
@@ -218,37 +219,37 @@ class TestHal402Mgr(TestHal402MgrBase):
     def test_drives_in_state(self, obj):
         d012 = obj.drives[:3]
         d345 = obj.drives[3:]
-        assert len(obj.drives_in_state('START')) == 6
-        assert obj.all_drives_in_state('START')
-        assert obj.any_drives_in_state('START')
-        assert len(obj.drives_in_state('OPERATION ENABLED')) == 0
-        assert not obj.all_drives_in_state('OPERATION ENABLED')
-        assert not obj.any_drives_in_state('OPERATION ENABLED')
+        assert len(obj.drives_in_state("START")) == 6
+        assert obj.all_drives_in_state("START")
+        assert obj.any_drives_in_state("START")
+        assert len(obj.drives_in_state("OPERATION ENABLED")) == 0
+        assert not obj.all_drives_in_state("OPERATION ENABLED")
+        assert not obj.any_drives_in_state("OPERATION ENABLED")
 
         for drive in d012:
-            drive.sm402.curr_state = 'OPERATION ENABLED'
-        assert len(obj.drives_in_state('START')) == 3
-        assert not obj.all_drives_in_state('START')
-        assert obj.any_drives_in_state('START')
-        assert len(obj.drives_in_state('OPERATION ENABLED')) == 3
-        assert not obj.all_drives_in_state('OPERATION ENABLED')
-        assert obj.any_drives_in_state('OPERATION ENABLED')
+            drive.sm402.curr_state = "OPERATION ENABLED"
+        assert len(obj.drives_in_state("START")) == 3
+        assert not obj.all_drives_in_state("START")
+        assert obj.any_drives_in_state("START")
+        assert len(obj.drives_in_state("OPERATION ENABLED")) == 3
+        assert not obj.all_drives_in_state("OPERATION ENABLED")
+        assert obj.any_drives_in_state("OPERATION ENABLED")
 
         for drive in d345:
-            drive.sm402.curr_state = 'OPERATION ENABLED'
-        assert len(obj.drives_in_state('START')) == 0
-        assert not obj.all_drives_in_state('START')
-        assert not obj.any_drives_in_state('START')
-        assert len(obj.drives_in_state('OPERATION ENABLED')) == 6
-        assert obj.all_drives_in_state('OPERATION ENABLED')
-        assert obj.any_drives_in_state('OPERATION ENABLED')
+            drive.sm402.curr_state = "OPERATION ENABLED"
+        assert len(obj.drives_in_state("START")) == 0
+        assert not obj.all_drives_in_state("START")
+        assert not obj.any_drives_in_state("START")
+        assert len(obj.drives_in_state("OPERATION ENABLED")) == 6
+        assert obj.all_drives_in_state("OPERATION ENABLED")
+        assert obj.any_drives_in_state("OPERATION ENABLED")
 
     ####################################################
     # Drive state FSM
 
     @pytest.fixture
     def e(self, mocker):
-        return mocker.MagicMock(dst='bogus_complete')
+        return mocker.MagicMock(dst="bogus_complete")
 
     #
     # Helpers
@@ -265,29 +266,29 @@ class TestHal402Mgr(TestHal402MgrBase):
                 assert self.tc.fsm_command_from_event(e) == cmd
 
     def test_fsm_check_command(self, obj, e):
-        obj.command = 'start'
+        obj.command = "start"
 
         # Command can't run:  already running
-        e.configure_mock(src='start_3', dst='start_4')
+        e.configure_mock(src="start_3", dst="start_4")
         assert not obj.fsm_check_command(e)
 
         # Command can run
-        e.configure_mock(src='start_complete', dst='stop_command')
+        e.configure_mock(src="start_complete", dst="stop_command")
         assert obj.fsm_check_command(e)
-        assert obj.command == 'stop'
+        assert obj.command == "stop"
 
     def test_fsm_check_drive_goal_state(self, obj, e):
         for drive in obj.drives:
-            drive.sm402.curr_state = 'OPERATION ENABLED'
-        obj.set_drive_goal_state('FAULT')
-        assert not obj.fsm_check_drive_goal_state(e, 'OPERATION ENABLED')
-        obj.set_drive_goal_state('OPERATION ENABLED')
-        assert obj.fsm_check_drive_goal_state(e, 'OPERATION ENABLED')
+            drive.sm402.curr_state = "OPERATION ENABLED"
+        obj.set_drive_goal_state("FAULT")
+        assert not obj.fsm_check_drive_goal_state(e, "OPERATION ENABLED")
+        obj.set_drive_goal_state("OPERATION ENABLED")
+        assert obj.fsm_check_drive_goal_state(e, "OPERATION ENABLED")
 
     def test_fsm_set_drive_goal_state(self, obj, e):
-        obj.fsm_set_drive_goal_state(e, 'OPERATION ENABLED')
+        obj.fsm_set_drive_goal_state(e, "OPERATION ENABLED")
         for drive in obj.drives:
-            assert drive.sm402.goal_state == 'OPERATION ENABLED'
+            assert drive.sm402.goal_state == "OPERATION ENABLED"
 
     def test_fsm_check_drive_control_mode(self, obj, e):
         obj.set_drive_control_mode(self.MODE_CSP)
@@ -301,12 +302,12 @@ class TestHal402Mgr(TestHal402MgrBase):
     @pytest.fixture
     def on_before_command_helper(self, obj, e):
         def helper(cmd, test_cases):
-            print(f'on_before_command_helper:  {cmd}')
-            method = getattr(obj, f'on_before_{cmd}_command')
+            print(f"on_before_command_helper:  {cmd}")
+            method = getattr(obj, f"on_before_{cmd}_command")
             for src, res in test_cases:
-                obj.command = ''
-                print(f'Checking src {src}_complete; res {res}')
-                e.configure_mock(src=f'{src}_complete', dst=f'{cmd}_command')
+                obj.command = ""
+                print(f"Checking src {src}_complete; res {res}")
+                e.configure_mock(src=f"{src}_complete", dst=f"{cmd}_command")
                 assert method(e) is res
                 if res:
                     assert obj.command == cmd
@@ -316,7 +317,7 @@ class TestHal402Mgr(TestHal402MgrBase):
     @pytest.fixture
     def on_enter_transition_helper(self, obj, e):
         def helper(transition, state):
-            method = getattr(self.obj, f'on_enter_{transition}')
+            method = getattr(self.obj, f"on_enter_{transition}")
             method(e)
             assert self.sm402(1).goal_state == state
             assert self.drive(1).control_flags == {}
@@ -329,7 +330,7 @@ class TestHal402Mgr(TestHal402MgrBase):
             if mode is None:
                 mode = getattr(self.sm402(1), obj.default_control_mode)
             mode = self.drive(1).normalize_control_mode(mode)
-            method = getattr(self.obj, f'on_enter_{transition}')
+            method = getattr(self.obj, f"on_enter_{transition}")
             method(e)
             assert self.sm402(1).get_control_mode() == mode
 
@@ -338,20 +339,20 @@ class TestHal402Mgr(TestHal402MgrBase):
     @pytest.fixture
     def on_before_transition_helper(self, obj, e):
         def helper(transition, state):
-            method = getattr(self.obj, f'on_before_{transition}')
+            method = getattr(self.obj, f"on_before_{transition}")
             obj.set_drive_goal_state(state)
             for drive in obj.drives:
                 drive.sm402.curr_state = state
             assert method(e)
             for drive in obj.drives:
-                drive.sm402.curr_state = 'START'
+                drive.sm402.curr_state = "START"
             assert not method(e)
 
         return helper
 
     def all_drive_pin_values(self, obj, pname, val):
         for drive in obj.drives:
-            print(f'{pname}:  {drive.pins.pin_dict[pname].val:X} {val:X}')
+            print(f"{pname}:  {drive.pins.pin_dict[pname].val:X} {val:X}")
             if drive.pins.pin_dict[pname].val != val:
                 return False
         return True
@@ -363,7 +364,7 @@ class TestHal402Mgr(TestHal402MgrBase):
                 mode = getattr(self.sm402(1), obj.default_control_mode)
             mode = self.drive(1).normalize_control_mode(mode)
 
-            method_name = f'on_before_{transition}'
+            method_name = f"on_before_{transition}"
             method = getattr(obj, method_name)
             print(f"method={method_name}; mode={mode}")
 
@@ -381,8 +382,8 @@ class TestHal402Mgr(TestHal402MgrBase):
     @pytest.fixture
     def on_enter_complete_helper(self, obj, e):
         def helper(command):
-            e.configure_mock(src=f'{command}_4', dst=f'{command}_complete')
-            method_name = f'on_enter_{command}_complete'
+            e.configure_mock(src=f"{command}_4", dst=f"{command}_complete")
+            method_name = f"on_enter_{command}_complete"
             method = getattr(obj, method_name)
             obj.pins.state_cmd.set(-1)
             method(e)
@@ -395,117 +396,117 @@ class TestHal402Mgr(TestHal402MgrBase):
     #
     def test_on_before_fault_command(self, on_before_command_helper):
         test_cases = (
-            ('stopped', True),
-            ('start', True),
-            ('home', True),
-            ('fault', False),
+            ("stopped", True),
+            ("start", True),
+            ("home", True),
+            ("fault", False),
         )
-        on_before_command_helper('fault', test_cases)
+        on_before_command_helper("fault", test_cases)
 
     def test_on_enter_fault_1(self, on_enter_transition_helper):
-        on_enter_transition_helper('fault_1', 'FAULT')
+        on_enter_transition_helper("fault_1", "FAULT")
 
     def test_on_before_fault_complete(self, on_before_transition_helper):
-        on_before_transition_helper('fault_complete', 'FAULT')
+        on_before_transition_helper("fault_complete", "FAULT")
 
     def test_on_enter_fault_complete(self, on_enter_complete_helper):
-        on_enter_complete_helper('fault')
+        on_enter_complete_helper("fault")
 
     #
     # Start command
     #
     def test_on_before_start_command(self, on_before_command_helper):
         test_cases = (
-            ('stop', True),
-            ('start', False),
-            ('home', True),
-            ('fault', True),
+            ("stop", True),
+            ("start", False),
+            ("home", True),
+            ("fault", True),
         )
-        on_before_command_helper('start', test_cases)
+        on_before_command_helper("start", test_cases)
 
     def test_on_enter_start_1(self, on_enter_transition_helper):
-        on_enter_transition_helper('start_1', 'SWITCHED ON')
+        on_enter_transition_helper("start_1", "SWITCHED ON")
 
     def test_on_before_start_2(self, on_before_transition_helper):
-        on_before_transition_helper('start_2', 'SWITCHED ON')
+        on_before_transition_helper("start_2", "SWITCHED ON")
 
     def test_on_enter_start_2(self, on_enter_control_mode_helper):
-        on_enter_control_mode_helper('start_2', None)
+        on_enter_control_mode_helper("start_2", None)
 
     def test_on_before_start_3(self, on_before_control_mode_helper):
-        on_before_control_mode_helper('start_3', None)
+        on_before_control_mode_helper("start_3", None)
 
     def test_on_enter_start_3(self, on_enter_transition_helper):
-        on_enter_transition_helper('start_3', 'OPERATION ENABLED')
+        on_enter_transition_helper("start_3", "OPERATION ENABLED")
 
     def test_on_before_start_complete(self, on_before_transition_helper):
-        on_before_transition_helper('start_complete', 'OPERATION ENABLED')
+        on_before_transition_helper("start_complete", "OPERATION ENABLED")
 
     def test_on_enter_start_complete(self, on_enter_complete_helper):
-        on_enter_complete_helper('start')
+        on_enter_complete_helper("start")
 
     #
     # Stop command
     #
     def test_on_before_stop_command(self, on_before_command_helper):
         test_cases = (
-            ('stop', False),
-            ('start', True),
-            ('home', True),
-            ('fault', True),
+            ("stop", False),
+            ("start", True),
+            ("home", True),
+            ("fault", True),
         )
-        on_before_command_helper('stop', test_cases)
+        on_before_command_helper("stop", test_cases)
 
     def test_on_enter_stop_1(self, on_enter_transition_helper):
-        on_enter_transition_helper('stop_1', 'SWITCH ON DISABLED')
+        on_enter_transition_helper("stop_1", "SWITCH ON DISABLED")
 
     def test_on_before_stop_complete(self, on_before_transition_helper):
-        on_before_transition_helper('stop_complete', 'SWITCH ON DISABLED')
+        on_before_transition_helper("stop_complete", "SWITCH ON DISABLED")
 
     def test_on_enter_stop_complete(self, on_enter_complete_helper):
-        on_enter_complete_helper('stop')
+        on_enter_complete_helper("stop")
 
     #
     # Homed state
     #
     def test_on_before_home_command(self, on_before_command_helper):
         test_cases = (
-            ('stop', True),
-            ('start', False),
-            ('home', False),
-            ('fault', False),
+            ("stop", True),
+            ("start", False),
+            ("home", False),
+            ("fault", False),
         )
-        on_before_command_helper('home', test_cases)
+        on_before_command_helper("home", test_cases)
 
     def test_on_enter_home_1(self, on_enter_control_mode_helper):
-        on_enter_control_mode_helper('home_1', 'MODE_HM')
+        on_enter_control_mode_helper("home_1", "MODE_HM")
 
     def test_on_before_home_2(self, on_before_control_mode_helper):
-        on_before_control_mode_helper('home_2', 'MODE_HM')
+        on_before_control_mode_helper("home_2", "MODE_HM")
 
     def test_on_enter_home_2(self, on_enter_transition_helper):
-        on_enter_transition_helper('home_2', 'OPERATION ENABLED')
+        on_enter_transition_helper("home_2", "OPERATION ENABLED")
 
     def test_on_before_home_3(self, on_before_transition_helper):
-        on_before_transition_helper('home_3', 'OPERATION ENABLED')
+        on_before_transition_helper("home_3", "OPERATION ENABLED")
 
     def test_on_enter_home_3(self, obj, e):
         obj.on_enter_home_3(e)
         for drive in obj.drives:
             # MODE_HM:  OPERATION_MODE_SPECIFIC_1 = HOMING_START
-            assert drive.control_flags['OPERATION_MODE_SPECIFIC_1'] is True
+            assert drive.control_flags["OPERATION_MODE_SPECIFIC_1"] is True
 
     def test_on_before_home_complete(self, obj, e):
         for drive in obj.drives:
-            drive.sm402.curr_state_flags['HOMING_COMPLETED'] = True
+            drive.sm402.curr_state_flags["HOMING_COMPLETED"] = True
         assert obj.on_before_home_complete(e)
-        self.sm402(1).curr_state_flags['HOMING_COMPLETED'] = False
+        self.sm402(1).curr_state_flags["HOMING_COMPLETED"] = False
         assert not obj.on_before_home_complete(e)
-        self.sm402(1).curr_state_flags.pop('HOMING_COMPLETED')
+        self.sm402(1).curr_state_flags.pop("HOMING_COMPLETED")
         assert not obj.on_before_home_complete(e)
 
     def test_on_enter_home_complete(self, on_enter_complete_helper):
-        on_enter_complete_helper('home')
+        on_enter_complete_helper("home")
 
     ####################################################
     # Execution
@@ -521,7 +522,7 @@ class TestHal402Mgr(TestHal402MgrBase):
         obj.update = mock_update
 
         # Run ends with rospy.is_shutdown()
-        self.mock_rospy.is_shutdown_behavior = 'shutdown'
+        self.mock_rospy.is_shutdown_behavior = "shutdown"
         obj.run()
         assert len(mock_update.mock_calls) == 2
         assert len(obj.rate.sleep.mock_calls) == 2
@@ -529,9 +530,9 @@ class TestHal402Mgr(TestHal402MgrBase):
         mock_update.reset_mock()
 
         # Run ends with rospy.ROSInterruptException
-        self.mock_rospy.is_shutdown_behavior = 'raise'
+        self.mock_rospy.is_shutdown_behavior = "raise"
         obj.run()
-        assert getattr(self, 'raised_ros_interrupt_exception', False) is True
+        assert getattr(self, "raised_ros_interrupt_exception", False) is True
         assert len(mock_update.mock_calls) == 2
         obj.rate.sleep.assert_called()
 
@@ -551,11 +552,11 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
 
     def expand_drives(self, data):
         if not isinstance(data, dict):
-            return {f'drive_{i}': data for i in range(1, 7)}
-        if 'all' in data:
+            return {f"drive_{i}": data for i in range(1, 7)}
+        if "all" in data:
             data = data.copy()
-            data_all = data.pop('all')
-            data_tmp = {f'drive_{i}': data_all for i in range(1, 7)}
+            data_all = data.pop("all")
+            data_tmp = {f"drive_{i}": data_all for i in range(1, 7)}
             for key in data:
                 data_tmp[key] = data[key]
             return data_tmp
@@ -566,9 +567,9 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
     #
     def print_iter_intro(self, desc):
         print()
-        print('*' * 80)
-        print('    ', desc)
-        print('*' * 80)
+        print("*" * 80)
+        print("    ", desc)
+        print("*" * 80)
 
     #
     # Object checks
@@ -577,7 +578,7 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
         val = self.obj.state
         print(f'  fsm_state: exp "{exp}"; actual "{val}"')
         if val != exp:
-            print('MISMATCH')
+            print("MISMATCH")
             return False
         return True
 
@@ -589,7 +590,7 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
             val = drive.sm402.curr_state
             print(f'  drive_state {name}: exp "{exp[name]}"; actual "{val}"')
             if val != exp[name]:
-                print('MISMATCH')
+                print("MISMATCH")
                 passing = False
         return passing
 
@@ -601,7 +602,7 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
             val = drive.sm402.slave_online
             print(f'  slave_online {name}: exp "{exp[name]}"; actual "{val}"')
             if val != exp[name]:
-                print('MISMATCH')
+                print("MISMATCH")
                 passing = False
         return passing
 
@@ -613,7 +614,7 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
             val = drive.sm402.slave_oper
             print(f'  slave_oper {name}: exp "{exp[name]}"; actual "{val}"')
             if val != exp[name]:
-                print('MISMATCH')
+                print("MISMATCH")
                 passing = False
         return passing
 
@@ -621,15 +622,15 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
         passing = True
         for pname, exp in expected.items():
             val = self.comp.get_pin_val(pname)
-            print(f'  pin {pname}:  exp {exp}; actual {val}')
+            print(f"  pin {pname}:  exp {exp}; actual {val}")
             if val != exp:
-                print('MISMATCH')
+                print("MISMATCH")
                 passing = False
         return passing
 
     pin_value_masks = {
-        'control-word': 0x008F,
-        'status-word': 0x006F,
+        "control-word": 0x008F,
+        "status-word": 0x006F,
     }
 
     def check_drive_pins(self, all_expected):
@@ -637,20 +638,20 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
         for drive in self.obj.drives:
             name = drive.drive_name
             exp = dict()
-            exp.update(all_expected.get('all', dict()))
+            exp.update(all_expected.get("all", dict()))
             exp.update(all_expected.get(drive.drive_name, dict()))
             for pname, exp in exp.items():
                 if exp is None:
-                    print(f'  drive_pin {name}.{pname}:  (ignoring)')
+                    print(f"  drive_pin {name}.{pname}:  (ignoring)")
                     continue
                 val = self.drive_pin_val(drive, pname)
                 val &= self.pin_value_masks.get(pname, 0xFFFF)
                 print(
-                    f'  drive_pin {name}.{pname}:'
-                    f' exp 0x{exp:X}; actual 0x{val:X}'
+                    f"  drive_pin {name}.{pname}:"
+                    f" exp 0x{exp:X}; actual 0x{val:X}"
                 )
                 if val != exp:
-                    print('MISMATCH')
+                    print("MISMATCH")
                     passing = False
         return passing
 
@@ -659,9 +660,9 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
         for drive in self.obj.drives:
             name = drive.drive_name
             val = drive.sm402.goal_state
-            print(f'  goal_state {name}:  exp {exp}; actual {val}')
+            print(f"  goal_state {name}:  exp {exp}; actual {val}")
             if val != exp:
-                print('MISMATCH')
+                print("MISMATCH")
                 passing = False
         return passing
 
@@ -672,10 +673,10 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
             name = drive.drive_name
             val = drive.is_goal_state_reached()
             print(
-                f'  goal_state_reached {name}:  exp {exp[name]}; actual {val}'
+                f"  goal_state_reached {name}:  exp {exp[name]}; actual {val}"
             )
             if val != exp[name]:
-                print('MISMATCH')
+                print("MISMATCH")
                 passing = False
         return passing
 
@@ -684,15 +685,15 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
         for name, val in exp.items():
             for drive in self.obj.drives:
                 mask = 1 << drive.sm402.cw_extra_bits[name]
-                cw = self.drive_pin_val(drive, 'control-word')
+                cw = self.drive_pin_val(drive, "control-word")
                 flag = bool(mask & cw)
                 dname = drive.drive_name
                 print(
-                    f'  control_word_flags {dname}:  {name} '
-                    f'exp {val}; actual {flag}'
+                    f"  control_word_flags {dname}:  {name} "
+                    f"exp {val}; actual {flag}"
                 )
                 if flag != val:
-                    print('MISMATCH')
+                    print("MISMATCH")
                     passing = False
         return passing
 
@@ -701,23 +702,23 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
         for name, val in exp.items():
             for drive in self.obj.drives:
                 mask = 1 << drive.sm402.sw_extra_bits[name]
-                sw = self.drive_pin_val(drive, 'status-word')
+                sw = self.drive_pin_val(drive, "status-word")
                 flag = bool(mask & sw)
                 dname = drive.drive_name
                 print(
-                    f'  status_word_flags {dname}:  {name} '
-                    f'exp {val}; actual {flag}'
+                    f"  status_word_flags {dname}:  {name} "
+                    f"exp {val}; actual {flag}"
                 )
                 if flag != val:
-                    print('MISMATCH')
+                    print("MISMATCH")
                     passing = False
         return passing
 
     def check_obj(self, when, spec):
-        print(f'*** {when} state checks:')
+        print(f"*** {when} state checks:")
         passing = True
         for key, val in spec.items():
-            if not getattr(self, f'check_{key}')(val):
+            if not getattr(self, f"check_{key}")(val):
                 passing = False
 
         assert passing
@@ -729,41 +730,41 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
         for drive in self.obj.drives:
             name = drive.drive_name
             changes = dict()
-            changes.update(all_changes.get('all', dict()))
+            changes.update(all_changes.get("all", dict()))
             changes.update(all_changes.get(name, dict()))
             for pname, val in changes.items():
                 self.drive_pin_val(drive, pname, val)
-                print(f'  pin {name}.{pname}: set to {val:X}')
+                print(f"  pin {name}.{pname}: set to {val:X}")
 
     def change_pins(self, changes):
         for pname, val in changes.items():
             self.comp.set_pin_val(pname, val)
-            print(f'  pin {pname}: set to {val:X}')
+            print(f"  pin {pname}: set to {val:X}")
 
     def effect_changes(self, changes):
-        print('*** Effecting changes:')
+        print("*** Effecting changes:")
         if changes is None:
             return
         for key, val in changes.items():
-            getattr(self, f'change_{key}')(val)
+            getattr(self, f"change_{key}")(val)
 
     #
     # Update
     #
     def update_obj(self):
-        print('*** Running update()')
+        print("*** Running update()")
         self.obj.update()
         for drive in self.obj.drives:
-            print(f'*** Faking {drive.drive_name} next state')
-            mode = self.drive_pin_val(drive, 'drive-mode-cmd')
-            self.drive_pin_val(drive, 'drive-mode-fb', mode)
-            cw = self.drive_pin_val(drive, 'control-word')
-            self.drive_pin_val(drive, 'control-word-fb', cw)
+            print(f"*** Faking {drive.drive_name} next state")
+            mode = self.drive_pin_val(drive, "drive-mode-cmd")
+            self.drive_pin_val(drive, "drive-mode-fb", mode)
+            cw = self.drive_pin_val(drive, "control-word")
+            self.drive_pin_val(drive, "control-word-fb", cw)
             drive.sim_fake_next_inputs()
-            sw = self.drive_pin_val(drive, 'status-word-sim')
-            self.drive_pin_val(drive, 'status-word', sw)
+            sw = self.drive_pin_val(drive, "status-word-sim")
+            self.drive_pin_val(drive, "status-word", sw)
             name = drive.drive_name
-            print(f'{name}:  mode={mode}; cw=0x{cw:04X}; sw=0x{sw:04X}')
+            print(f"{name}:  mode={mode}; cw=0x{cw:04X}; sw=0x{sw:04X}")
 
     #
     # Debug
@@ -772,14 +773,14 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
         if not debug:
             return
 
-        print('*** debugging:')
+        print("*** debugging:")
         for drive in self.obj.drives:
             for pname, pin in drive.pins.pin_dict.items():
                 name = drive.drive_name
                 hal_val = self.drive_pin_val(drive, pname)
                 print(
-                    f'  dbg {name}.{pname}:  HAL {hal_val} val {pin.val} '
-                    f'old {pin.old_val}'
+                    f"  dbg {name}.{pname}:  HAL {hal_val} val {pin.val} "
+                    f"old {pin.old_val}"
                 )
 
     #
@@ -788,15 +789,15 @@ class TestHal402MgrUpdate(TestHal402MgrBase):
     def test_update(self, obj, fpath):
         assert obj.sim is False
 
-        with open(fpath('mgr_tests.yaml')) as f:
+        with open(fpath("mgr_tests.yaml")) as f:
             test_config = yaml.safe_load(f)
 
         default_before_checks = dict()
-        for test in test_config['tests']:
-            self.print_iter_intro(test['desc'])
-            self.check_obj('Before', test.get('before', default_before_checks))
-            self.effect_changes(test.get('changes', None))
+        for test in test_config["tests"]:
+            self.print_iter_intro(test["desc"])
+            self.check_obj("Before", test.get("before", default_before_checks))
+            self.effect_changes(test.get("changes", None))
             self.update_obj()
-            self.debug(test.get('debug', False))
-            self.check_obj('After', test['after'])
-            default_before_checks = test['after']
+            self.debug(test.get("debug", False))
+            self.check_obj("After", test["after"])
+            default_before_checks = test["after"]

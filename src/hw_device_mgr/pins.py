@@ -7,7 +7,7 @@ class HALBase:
     _hal_enum_to_str_map = dict()
     for name in dir(hal):
         val = getattr(hal, name)
-        if not name.startswith('HAL_') or not isinstance(val, int):
+        if not name.startswith("HAL_") or not isinstance(val, int):
             continue  # pragma: no cover
         locals()[name] = val
         _hal_enum_to_str_map[val] = name
@@ -15,7 +15,7 @@ class HALBase:
     # Normalize 'in', 'IN' or hal.HAL_IN to hal.HAL_IN
     @classmethod
     def hal_enum(cls, x):
-        return getattr(hal, f'HAL_{x.upper()}') if isinstance(x, str) else x
+        return getattr(hal, f"HAL_{x.upper()}") if isinstance(x, str) else x
 
     # Translate 3 to 'HAL_S32'
     @classmethod
@@ -24,7 +24,7 @@ class HALBase:
 
     @staticmethod
     def pname_to_attr(pname):
-        return pname.replace('-', '_')
+        return pname.replace("-", "_")
 
 
 class HALPin(HALBase):
@@ -67,7 +67,7 @@ class HALPin(HALBase):
 
 
 class HALPins(HALBase):
-    def __init__(self, comp, pin_specs, prefix=''):
+    def __init__(self, comp, pin_specs, prefix=""):
         self.comp = comp
         self.prefix = prefix
         self.pin_specs = pin_specs
@@ -76,7 +76,7 @@ class HALPins(HALBase):
         self.pin_dict = pin_dict = dict()
         for pname, spec in self.pin_specs.items():
             pin = HALPin(
-                self.comp, self.prefix + pname, spec['ptype'], spec['pdir']
+                self.comp, self.prefix + pname, spec["ptype"], spec["pdir"]
             )
             setattr(self, self.pname_to_attr(pname), pin)
             pin_dict[pname] = pin

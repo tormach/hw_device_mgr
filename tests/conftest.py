@@ -11,8 +11,8 @@ import os
 
 
 class MockFixture:
-    fixture_name = 'MockFixture'
-    instance_attr = 'name'
+    fixture_name = "MockFixture"
+    instance_attr = "name"
     mock_methods = []
     mock_attrs = []
     patches = None
@@ -64,7 +64,7 @@ class MockFixture:
 
     @property
     def mock_obj(self):
-        if not hasattr(self, '_mock_obj'):
+        if not hasattr(self, "_mock_obj"):
             self._mock_obj = self._make_mock_obj()
         return self._mock_obj
 
@@ -91,13 +91,13 @@ class MockFixture:
         if cls.patches is not None:
             patches = cls.patches
         else:
-            patches = getattr(request.instance, f'patch_{name}', None)
+            patches = getattr(request.instance, f"patch_{name}", None)
         if patches is None:
             raise RuntimeError(f"Unable to determine which {name} to patch")
         if isinstance(patches, str):
             patches = (patches,)
         for p in patches:
-            print(f'Patching {name} target {p}')
+            print(f"Patching {name} target {p}")
             patch(p, new=mock_obj).start()
         cls.tweak_fixture(mock_obj, mock_obj.obj)
         yield mock_obj
@@ -132,9 +132,9 @@ def fpath(request):
 
 
 class MockHALPin(MockFixture):
-    fixture_name = 'MockHALPin'
-    instance_attr = 'pname'
-    mock_methods = ['get', 'set']
+    fixture_name = "MockHALPin"
+    instance_attr = "pname"
+    mock_methods = ["get", "set"]
 
     def __init__(self, pname, ptype, pdir):
         self.pname = pname
@@ -152,21 +152,21 @@ class MockHALPin(MockFixture):
 
 
 class MockHALComponent(MockFixture):
-    fixture_name = 'MockHALComponent'
-    instance_attr = 'name'
+    fixture_name = "MockHALComponent"
+    instance_attr = "name"
     mock_methods = [
-        'ready',
-        'getprefix',
-        'newpin',
-        'pin_names',
-        'get_pin',
-        'set_pin_val',
-        'get_pin_val',
-        'get_pin_type',
-        'get_pin_dir',
+        "ready",
+        "getprefix",
+        "newpin",
+        "pin_names",
+        "get_pin",
+        "set_pin_val",
+        "get_pin_val",
+        "get_pin_type",
+        "get_pin_dir",
     ]
-    mock_attrs = ['is_ready']
-    patches = 'hal.component'
+    mock_attrs = ["is_ready"]
+    patches = "hal.component"
 
     def __init__(self, name):
         self.name = name
@@ -225,8 +225,8 @@ def mock_halcomp(request):
     direction are accessible via `mock_halcomp.get_pin_type(pin_name)`
     and `mock_halcomp.get_pin_dir(pin_name)`, respectively.
     """
-    comp_name = getattr(request.instance, 'halcomp_name', 'foocomp')
-    yield from MockHALComponent.fixture('mock_halcomp', request, comp_name)
+    comp_name = getattr(request.instance, "halcomp_name", "foocomp")
+    yield from MockHALComponent.fixture("mock_halcomp", request, comp_name)
 
 
 @pytest.fixture()
@@ -244,7 +244,7 @@ def mock_hal(request):
     )
     request.instance.mock_hal = mock_hal
     request.instance.components = MockHALComponent
-    patch('hal.component', side_effect=mock_hal.component).start()
+    patch("hal.component", side_effect=mock_hal.component).start()
     yield mock_hal
     MockHALComponent.clear()
     patch.stopall()
@@ -258,53 +258,53 @@ def mock_hal(request):
 def ros_params(request, fpath):
     """Fixture for mocking ROS params; used with `mock_rospy` fixture."""
 
-    if hasattr(request.instance, 'ros_params_yaml'):
+    if hasattr(request.instance, "ros_params_yaml"):
         # Load .yaml file from current directory
-        yaml_file_base = getattr(request.instance, 'ros_params_yaml', None)
+        yaml_file_base = getattr(request.instance, "ros_params_yaml", None)
         yaml_file = fpath(yaml_file_base)
         with open(yaml_file) as f:
             return yaml.safe_load(f)
     else:
         # Look for params in test object attrs
-        return getattr(request.instance, 'ros_params', {})
+        return getattr(request.instance, "ros_params", {})
 
 
 class MockRospy(MockFixture):
-    fixture_name = 'MockRospy'
+    fixture_name = "MockRospy"
     mock_methods = [
-        'reset',
-        'init_node',
-        'is_shutdown',
-        'has_param',
-        'get_param',
-        'logdebug',
-        'loginfo',
-        'logwarn',
-        'logerr',
-        'Publisher',
-        'Service',
+        "reset",
+        "init_node",
+        "is_shutdown",
+        "has_param",
+        "get_param",
+        "logdebug",
+        "loginfo",
+        "logwarn",
+        "logerr",
+        "Publisher",
+        "Service",
         # Out-of-band accessors
-        'set_shutdown',
+        "set_shutdown",
     ]
     mock_attrs = [
-        'is_shutdown_max_cycles',
-        'is_shutdown_behavior',
+        "is_shutdown_max_cycles",
+        "is_shutdown_behavior",
     ]
 
     def __init__(self, params):
         self.params = params
         self.is_shutdown_max_cycles = 3
-        self.is_shutdown_behavior = 'shutdown'
+        self.is_shutdown_behavior = "shutdown"
         self.reset()
 
     def reset(self):
         self.shutdown = False
         self.cycles = 0
-        if hasattr(self, 'mock_obj'):
+        if hasattr(self, "mock_obj"):
             self.mock_obj.reset_mock()
 
     def init_node(self, name):
-        print(f'rospy.init_node({name})')
+        print(f"rospy.init_node({name})")
         self.name = name
 
     def is_shutdown(self):
@@ -312,15 +312,15 @@ class MockRospy(MockFixture):
         if self.shutdown:
             res = True
         elif self.cycles >= self.is_shutdown_max_cycles:
-            if self.is_shutdown_behavior == 'shutdown':
+            if self.is_shutdown_behavior == "shutdown":
                 res = True
-            elif self.is_shutdown_behavior == 'raise':
+            elif self.is_shutdown_behavior == "raise":
                 exc = self.mock_obj.exceptions.ROSInterruptException
-                print(f'rospy.is_shutdown():  Raise {exc}')
-                raise exc('ROS Interrupt')
+                print(f"rospy.is_shutdown():  Raise {exc}")
+                raise exc("ROS Interrupt")
         else:
             res = False
-        print(f'rospy.is_shutdown() = {res}')
+        print(f"rospy.is_shutdown() = {res}")
         return res
 
     def set_shutdown(self):
@@ -329,7 +329,7 @@ class MockRospy(MockFixture):
     def _lookup(self, name, default=None, params=None):
         if params is None:
             params = self.params
-        split = [yaml.safe_load(s) for s in name.split('/', 1)]
+        split = [yaml.safe_load(s) for s in name.split("/", 1)]
         if split is None:
             return default
         if split[0] is None:  # Leading /
@@ -349,12 +349,12 @@ class MockRospy(MockFixture):
 
     def has_param(self, name):
         res = self._lookup(name) is not None
-        print(f'rospy.has_param({name}) -> {res}')
+        print(f"rospy.has_param({name}) -> {res}")
         return res
 
     def get_param(self, name, default=None):
         res = self._lookup(name, default)
-        print(f'rospy.get_param({name}, {default}) -> {str(res)[:30]}')
+        print(f"rospy.get_param({name}, {default}) -> {str(res)[:30]}")
         return res
 
     def logdebug(self, msg):
@@ -370,12 +370,12 @@ class MockRospy(MockFixture):
         print(f"rospy.logerr:  '{msg}'")
 
     def Publisher(self, name, msg_type, queue_size=0, latch=False):
-        print(f'rospy.Publisher({name}, {msg_type}, {queue_size}, {latch})')
-        return MagicMock(name=f'rospy.Publisher({name})')
+        print(f"rospy.Publisher({name}, {msg_type}, {queue_size}, {latch})")
+        return MagicMock(name=f"rospy.Publisher({name})")
 
     def Service(self, name, msg_type, callback):
-        print(f'rospy.Service({name}, {msg_type}, {callback})')
-        return MagicMock(name=f'rospy.Publisher({name})')
+        print(f"rospy.Service({name}, {msg_type}, {callback})")
+        return MagicMock(name=f"rospy.Publisher({name})")
 
     @classmethod
     def tweak_fixture(cls, mock_obj, obj):
@@ -420,4 +420,4 @@ def mock_rospy(ros_params, request):
     object containing parameters
     """
 
-    yield from MockRospy.fixture('mock_rospy', request, ros_params)
+    yield from MockRospy.fixture("mock_rospy", request, ros_params)

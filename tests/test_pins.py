@@ -45,11 +45,11 @@ class TestHALPin:
 
     @pytest.fixture
     def obj1(self, mock_halcomp):
-        self.name1 = 'pin-a'
+        self.name1 = "pin-a"
         self.ptype1 = self.tc.HAL_S32
-        self.ptype_raw1 = 'S32'
+        self.ptype_raw1 = "S32"
         self.pdir1 = self.tc.HAL_IN
-        self.pdir_raw1 = 'in'
+        self.pdir_raw1 = "in"
         obj1 = self.tc(
             mock_halcomp, self.name1, self.ptype_raw1, self.pdir_raw1
         )
@@ -58,9 +58,9 @@ class TestHALPin:
 
     @pytest.fixture
     def obj2(self, mock_halcomp):
-        self.name2 = 'my-hal-pin1'
+        self.name2 = "my-hal-pin1"
         self.ptype2 = self.tc.HAL_BIT
-        self.ptype_raw2 = 'bit'
+        self.ptype_raw2 = "bit"
         self.pdir_raw2 = self.pdir2 = self.tc.HAL_OUT
         obj2 = self.tc(
             mock_halcomp, self.name2, self.ptype_raw2, self.pdir_raw2
@@ -70,9 +70,9 @@ class TestHALPin:
 
     @pytest.fixture
     def obj3(self, mock_halcomp):
-        self.name3 = 'x'
+        self.name3 = "x"
         self.ptype3 = self.tc.HAL_FLOAT
-        self.ptype_raw3 = 'float'
+        self.ptype_raw3 = "float"
         self.pdir_raw3 = self.pdir3 = self.tc.HAL_IO
         obj3 = self.tc(
             mock_halcomp, self.name3, self.ptype_raw3, self.pdir_raw3
@@ -82,10 +82,10 @@ class TestHALPin:
 
     def test_init(self, obj1, obj2, obj3):
         for i in range(1, 4):
-            obj = getattr(self, f'obj{i}')
-            ptype = getattr(self, f'ptype{i}')
-            pdir = getattr(self, f'pdir{i}')
-            name = getattr(self, f'name{i}')
+            obj = getattr(self, f"obj{i}")
+            ptype = getattr(self, f"ptype{i}")
+            pdir = getattr(self, f"pdir{i}")
+            name = getattr(self, f"name{i}")
             print(obj, ptype, pdir, name)
             assert obj.comp is self.mock_halcomp
             assert obj.ptype == ptype
@@ -111,8 +111,8 @@ class TestHALPin:
 
     def test_read_write(self, obj1, obj2, obj3):
         for i in range(1, 4):
-            obj = getattr(self, f'obj{i}')
-            name = getattr(self, f'name{i}')
+            obj = getattr(self, f"obj{i}")
+            name = getattr(self, f"name{i}")
 
             # Test initial values
             assert (obj.val, obj.old_val) == (0, 0)
@@ -191,11 +191,11 @@ class TestHALPins:
     hal_enums = TestHALBase.hal_enums
 
     pin_specs = {
-        'in-s32': dict(ptype='s32', pdir='in'),
-        'out-float': dict(ptype='float', pdir='out'),
-        'io-bit': dict(ptype='bit', pdir='io'),
+        "in-s32": dict(ptype="s32", pdir="in"),
+        "out-float": dict(ptype="float", pdir="out"),
+        "io-bit": dict(ptype="bit", pdir="io"),
     }
-    pin_prefix = 'prefix-'
+    pin_prefix = "prefix-"
 
     test_cases = [
         dict(in_s32=17, out_float=True),
@@ -212,9 +212,9 @@ class TestHALPins:
 
     def test_pname_to_attr(self):
         test_cases = [
-            ('pin', 'pin'),
-            ('PIN1', 'PIN1'),
-            ('pin-x-y', 'pin_x_y'),
+            ("pin", "pin"),
+            ("PIN1", "PIN1"),
+            ("pin-x-y", "pin_x_y"),
         ]
         for pname, attr in test_cases:
             assert self.tc.pname_to_attr(pname) == attr
@@ -226,12 +226,12 @@ class TestHALPins:
         yield obj
 
     def test_init_pins(self, obj):
-        assert hasattr(obj, 'pin_dict')
+        assert hasattr(obj, "pin_dict")
         assert isinstance(obj.pin_dict, dict)
         for pname in self.pin_specs:
             data = self.pin_specs[pname]
             (ptype, pdir) = (
-                self.tc.hal_enum(data[a]) for a in ('ptype', 'pdir')
+                self.tc.hal_enum(data[a]) for a in ("ptype", "pdir")
             )
 
             assert pname in obj.pin_dict

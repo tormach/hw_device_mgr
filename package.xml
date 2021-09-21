@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>hal_402_device_mgr</name>
+  <name>hw_device_mgr</name>
   <version>0.0.1</version>
-  <description>Machinekit hal_402_device_mgr package</description>
+  <description>EtherCAT and other hardware device management</description>
   <maintainer email="john@dovetail-automata.com">John Morris</maintainer>
 
   <license>BSD</license>

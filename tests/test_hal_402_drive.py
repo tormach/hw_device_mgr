@@ -6,11 +6,11 @@ class TestDrive402Base:
     """Base class for other test classes to inherit from"""
 
     tc = Drive402
-    halcomp_name = 'mock_hal_402_mgr'
+    halcomp_name = "mock_hal_402_mgr"
     patch_mock_rospy = "hw_device_mgr.hal_402_drive.rospy"
-    ros_params_yaml = 'ros_params.yaml'
-    drive_name = 'drive_1'
-    drive_type = 'inovance_is620n'
+    ros_params_yaml = "ros_params.yaml"
+    drive_name = "drive_1"
+    drive_type = "inovance_is620n"
     init_fixture_obj = True
     sim_mode = False  # Default overridden by `sim` fixture
 
@@ -21,21 +21,21 @@ class TestDrive402Base:
 
     obj_pin_start_vals = {
         # HAL_U32
-        'error-code': 0x0000,
-        'aux-error-code': 0x0000,
-        'status-word': 0x0000,
-        'status-word-sim': 0x0000,
-        'control-word': 0x0000,
-        'control-word-fb': 0x0000,
-        'drive-mode-cmd': 0x0000,
-        'drive-mode-fb': 0x0000,
+        "error-code": 0x0000,
+        "aux-error-code": 0x0000,
+        "status-word": 0x0000,
+        "status-word-sim": 0x0000,
+        "control-word": 0x0000,
+        "control-word-fb": 0x0000,
+        "drive-mode-cmd": 0x0000,
+        "drive-mode-fb": 0x0000,
         # HAL_BIT; pretend slave starts up already online
-        'slave-online': True,
-        'slave-oper': True,
-        'slave-state-init': False,
-        'slave-state-preop': False,
-        'slave-state-safeop': False,
-        'slave-state-op': True,
+        "slave-online": True,
+        "slave-oper": True,
+        "slave-state-init": False,
+        "slave-state-preop": False,
+        "slave-state-safeop": False,
+        "slave-state-op": True,
     }
 
     @pytest.fixture
@@ -43,7 +43,7 @@ class TestDrive402Base:
         print("Fixture 'obj':  new instance")
         obj = self.tc(
             self.drive_name,
-            'inovance_is620n',
+            "inovance_is620n",
             0,
             mock_halcomp,
             sim=self.sim_mode,
@@ -65,13 +65,13 @@ class TestDrive402Base:
         yield obj
 
     def get_pin(self, pname):
-        return self.mock_halcomp.get_pin(f'{self.drive_name}.{pname}')
+        return self.mock_halcomp.get_pin(f"{self.drive_name}.{pname}")
 
     def get_pin_val(self, pname):
-        return self.mock_halcomp.get_pin_val(f'{self.drive_name}.{pname}')
+        return self.mock_halcomp.get_pin_val(f"{self.drive_name}.{pname}")
 
     def set_pin_val(self, pname, val):
-        self.mock_halcomp.set_pin_val(f'{self.drive_name}.{pname}', val)
+        self.mock_halcomp.set_pin_val(f"{self.drive_name}.{pname}", val)
 
 
 class TestDrive402Init(TestDrive402Base):
@@ -82,16 +82,16 @@ class TestDrive402Init(TestDrive402Base):
 
     def test___init__(self, mock_halcomp):
         obj = self.tc(
-            'drive_6',
-            'inovance_is620n',
+            "drive_6",
+            "inovance_is620n",
             5,
             mock_halcomp,
             transition_timeout=2.0,
             sim=False,
         )
 
-        assert obj.drive_name == 'drive_6'
-        assert obj.drive_type == 'inovance_is620n'
+        assert obj.drive_name == "drive_6"
+        assert obj.drive_type == "inovance_is620n"
         assert obj.slave_number == 5
         assert obj.comp is mock_halcomp
         assert obj.transition_timeout == 2.0
@@ -102,37 +102,37 @@ class TestDrive402Init(TestDrive402Base):
 
     def test_setup_pins(self, obj):
         obj.setup_pins()
-        assert hasattr(obj, 'pins')
+        assert hasattr(obj, "pins")
 
         for pname in [
-            'error-code',
-            'aux-error-code',
-            'status-word',
-            'control-word',
+            "error-code",
+            "aux-error-code",
+            "status-word",
+            "control-word",
         ]:
             assert pname in obj.pins.pin_dict
-            full_pname = f'{self.drive_name}.{pname}'
+            full_pname = f"{self.drive_name}.{pname}"
             assert self.mock_halcomp.get_pin(full_pname) is not None
 
     def test_read_device_error_list(self, obj, ros_params):
         err_list = obj.read_device_error_list()
-        assert err_list is ros_params['device_fault_code_list'][self.drive_type]
+        assert err_list is ros_params["device_fault_code_list"][self.drive_type]
 
-        obj.DEVICE_FAULT_CODE_PARAM = 'bogus'
+        obj.DEVICE_FAULT_CODE_PARAM = "bogus"
         err_list = obj.read_device_error_list()
         assert err_list == dict()
         self.mock_rospy.logerr.assert_called()
 
     def test_create_topics(self, obj):
         obj.create_topics()
-        assert hasattr(obj, 'topics')
-        for topic in ['error']:
+        assert hasattr(obj, "topics")
+        for topic in ["error"]:
             assert topic in obj.topics
 
     def test_init(self, obj):
         obj.init()
         # Make sure major pieces were initialized
-        for attr in ['pins', 'devices_error_list', 'topics']:
+        for attr in ["pins", "devices_error_list", "topics"]:
             assert hasattr(obj, attr)
 
 
@@ -146,29 +146,29 @@ class TestDrive402(TestDrive402Base):
     # Main logic and external interface
 
     def test_get_set_goal_state(self, obj):
-        obj.set_goal_state('OPERATION ENABLED')
-        assert obj.sm402.goal_state == 'OPERATION ENABLED'
-        assert obj.get_goal_state() == 'OPERATION ENABLED'
-        obj.set_goal_state('SWITCH ON DISABLED')
-        assert obj.sm402.goal_state == 'SWITCH ON DISABLED'
-        assert obj.get_goal_state() == 'SWITCH ON DISABLED'
+        obj.set_goal_state("OPERATION ENABLED")
+        assert obj.sm402.goal_state == "OPERATION ENABLED"
+        assert obj.get_goal_state() == "OPERATION ENABLED"
+        obj.set_goal_state("SWITCH ON DISABLED")
+        assert obj.sm402.goal_state == "SWITCH ON DISABLED"
+        assert obj.get_goal_state() == "SWITCH ON DISABLED"
 
     def test_read_halpins(self, obj):
         pin_vals = {
-            'error-code': 0x0024,
-            'aux-error-code': 0x00240024,
-            'status-word': 0x40,
-            'status-word-sim': 0x42,
-            'control-word': 0x0006,  # (Output pin)
-            'control-word-fb': 0x0021,
-            'drive-mode-cmd': 0x08,
-            'drive-mode-fb': 0x02,
-            'slave-online': False,
-            'slave-oper': False,
-            'slave-state-init': True,
-            'slave-state-preop': True,
-            'slave-state-safeop': True,
-            'slave-state-op': False,
+            "error-code": 0x0024,
+            "aux-error-code": 0x00240024,
+            "status-word": 0x40,
+            "status-word-sim": 0x42,
+            "control-word": 0x0006,  # (Output pin)
+            "control-word-fb": 0x0021,
+            "drive-mode-cmd": 0x08,
+            "drive-mode-fb": 0x02,
+            "slave-online": False,
+            "slave-oper": False,
+            "slave-state-init": True,
+            "slave-state-preop": True,
+            "slave-state-safeop": True,
+            "slave-state-op": False,
         }
         # Sanity check above list is updated
         assert set(pin_vals.keys()) == set(self.tc.pin_specs.keys())
@@ -198,7 +198,7 @@ class TestDrive402(TestDrive402Base):
 
     def test_update_state_machine(self, obj):
         # Also test obj.operational
-        assert obj.sm402.curr_state == 'START'  # Sanity
+        assert obj.sm402.curr_state == "START"  # Sanity
 
         obj.pins.slave_online.set(True)
         obj.pins.slave_oper.set(False)
@@ -207,48 +207,48 @@ class TestDrive402(TestDrive402Base):
         assert obj.sm402.slave_online is True
         assert obj.sm402.slave_oper is False
         assert not obj.operational
-        assert obj.sm402.curr_state == 'START'  # Unchanged
+        assert obj.sm402.curr_state == "START"  # Unchanged
 
         obj.pins.slave_oper.set(True)
         obj.update_state_machine()
         assert obj.operational
-        assert obj.sm402.curr_state == 'READY TO SWITCH ON'
+        assert obj.sm402.curr_state == "READY TO SWITCH ON"
 
     def test_is_goal_state_reached(self, obj):
-        assert obj.sm402.goal_state == 'SWITCH ON DISABLED'
+        assert obj.sm402.goal_state == "SWITCH ON DISABLED"
         assert not obj.is_goal_state_reached()
-        obj.sm402.curr_state = 'SWITCH ON DISABLED'
+        obj.sm402.curr_state = "SWITCH ON DISABLED"
         assert obj.is_goal_state_reached()
 
         # Three possible states to reach goal
-        obj.set_goal_state('FAULT')
-        obj.sm402.curr_state = 'SWITCH ON DISABLED'
+        obj.set_goal_state("FAULT")
+        obj.sm402.curr_state = "SWITCH ON DISABLED"
         assert obj.is_goal_state_reached()
-        obj.sm402.curr_state = 'FAULT'
+        obj.sm402.curr_state = "FAULT"
         assert obj.is_goal_state_reached()
-        obj.sm402.curr_state = 'QUICK STOP ACTIVE'
+        obj.sm402.curr_state = "QUICK STOP ACTIVE"
         # Special case:  when 605Ah <=3, auto transition to SWITCH ON DISABLED
         assert not obj.is_goal_state_reached()
-        obj.sm402.curr_state = 'OPERATION ENABLED'
+        obj.sm402.curr_state = "OPERATION ENABLED"
         assert not obj.is_goal_state_reached()
 
     def test_sim_fake_next_inputs(self, sim, obj):
         assert obj.sim
-        print('Setting up')
-        self.set_pin_val('drive-mode-cmd', 0x08)  # CSP
-        self.set_pin_val('control-word-fb', 0x0F)  # OPERATION ENABLED
-        obj.sm402.curr_state = 'SWITCHED ON'
+        print("Setting up")
+        self.set_pin_val("drive-mode-cmd", 0x08)  # CSP
+        self.set_pin_val("control-word-fb", 0x0F)  # OPERATION ENABLED
+        obj.sm402.curr_state = "SWITCHED ON"
 
-        print('Running sim_fake_next_inputs()')
+        print("Running sim_fake_next_inputs()")
         obj.sim_fake_next_inputs()
 
-        print('Running checks')
+        print("Running checks")
         # control-mode-cmd should be echoed on control-mode-fb;
-        assert self.get_pin_val('drive-mode-fb') == 0x08
+        assert self.get_pin_val("drive-mode-fb") == 0x08
         # Next state should be READY TO SWITCH ON, 0x21
-        assert self.get_pin_val('status-word-sim') == 0x37
+        assert self.get_pin_val("status-word-sim") == 0x37
 
-        assert obj.prev_fake_inputs == (0x08, 'OPERATION ENABLED', 0x37)
+        assert obj.prev_fake_inputs == (0x08, "OPERATION ENABLED", 0x37)
 
     def test_set_control_flags(self, obj):
         assert len(obj.control_flags) == 0
@@ -291,12 +291,12 @@ class TestDrive402(TestDrive402Base):
             # - write control word to HAL pin
             obj.pins.control_word.write()
             self.set_pin_val(
-                'control-word-fb', self.get_pin_val('control-word')
+                "control-word-fb", self.get_pin_val("control-word")
             )
             # - set status-word HAL pin from previous control-word
             obj.sim_fake_next_inputs()
             # - update state machine with sim status word
-            self.set_pin_val('status-word', self.get_pin_val('status-word-sim'))
+            self.set_pin_val("status-word", self.get_pin_val("status-word-sim"))
             obj.pins.status_word.read()
             # - (sim) status after state machine update
             obj.sm402.update_state(online, oper, obj.pins.status_word.get())
@@ -304,46 +304,46 @@ class TestDrive402(TestDrive402Base):
             assert obj.sm402.curr_state == next_state
 
         # Initial goal state: SWITCH ON DISABLED
-        obj.sm402.set_goal_state('SWITCH ON DISABLED')
+        obj.sm402.set_goal_state("SWITCH ON DISABLED")
         # - transition 0 (automatic)
-        helper(True, True, 0x0000, False, 'NOT READY TO SWITCH ON')
+        helper(True, True, 0x0000, False, "NOT READY TO SWITCH ON")
         # - transition 1 (automatic)
-        helper(True, True, 0x0000, False, 'SWITCH ON DISABLED')
+        helper(True, True, 0x0000, False, "SWITCH ON DISABLED")
         # - reached goal state; hold
-        helper(True, True, 0x0000, False, 'SWITCH ON DISABLED')
+        helper(True, True, 0x0000, False, "SWITCH ON DISABLED")
 
         # Next goal state:  SWITCHED ON
-        obj.sm402.set_goal_state('SWITCHED ON')
+        obj.sm402.set_goal_state("SWITCHED ON")
         # - drive not online operational; no change
-        helper(True, False, 0x0006, True, 'SWITCH ON DISABLED')
+        helper(True, False, 0x0006, True, "SWITCH ON DISABLED")
         # - recover
-        helper(True, True, 0x0000, True, 'SWITCH ON DISABLED')
+        helper(True, True, 0x0000, True, "SWITCH ON DISABLED")
         # - transition 2
-        helper(True, True, 0x0006, True, 'READY TO SWITCH ON')
+        helper(True, True, 0x0006, True, "READY TO SWITCH ON")
         # - transition 3
-        helper(True, True, 0x0007, True, 'SWITCHED ON')
+        helper(True, True, 0x0007, True, "SWITCHED ON")
         # - reached goal state; hold
-        helper(True, True, 0x0007, False, 'SWITCHED ON')
+        helper(True, True, 0x0007, False, "SWITCHED ON")
         # - reached goal state; hold; bits set
         obj.set_control_flags(HALT=True)
-        helper(True, True, 0x0107, True, 'SWITCHED ON')
+        helper(True, True, 0x0107, True, "SWITCHED ON")
         obj.set_control_flags()
 
         # Next goal state:  OPERATION ENABLED
-        obj.sm402.set_goal_state('OPERATION ENABLED')
+        obj.sm402.set_goal_state("OPERATION ENABLED")
         # - transition 4
-        helper(True, True, 0x000F, True, 'OPERATION ENABLED')
+        helper(True, True, 0x000F, True, "OPERATION ENABLED")
         # - reached goal state; hold
-        helper(True, True, 0x000F, False, 'OPERATION ENABLED')
+        helper(True, True, 0x000F, False, "OPERATION ENABLED")
 
         # New goal:  FAULT
-        obj.sm402.set_goal_state('FAULT')
+        obj.sm402.set_goal_state("FAULT")
         # - transition 11
-        helper(True, True, 0x0002, True, 'QUICK STOP ACTIVE')
+        helper(True, True, 0x0002, True, "QUICK STOP ACTIVE")
         # - transition 12 (automatic)
-        helper(True, True, 0x0000, True, 'SWITCH ON DISABLED')
+        helper(True, True, 0x0000, True, "SWITCH ON DISABLED")
         # - reached goal state; hold
-        helper(True, True, 0x0000, False, 'SWITCH ON DISABLED')
+        helper(True, True, 0x0000, False, "SWITCH ON DISABLED")
 
     def test_write_halpins(self, obj):
         obj.write_halpins()
@@ -354,15 +354,15 @@ class TestDrive402(TestDrive402Base):
                 self.mock_halcomp.get_pin(pname).set.assert_called()
 
     def test_set_get_control_mode(self, obj):
-        mode_hm = obj.normalize_control_mode('MODE_HM')
-        obj.set_control_mode('MODE_HM')
+        mode_hm = obj.normalize_control_mode("MODE_HM")
+        obj.set_control_mode("MODE_HM")
         assert obj.sm402.get_control_mode() == mode_hm
         assert obj.get_control_mode() == mode_hm
 
     def test_normalize_control_mode(self, obj):
-        for mode in ('MODE_HM', 'MODE_CSP', 'MODE_CST'):
+        for mode in ("MODE_HM", "MODE_CSP", "MODE_CST"):
             mode_num = getattr(obj.sm402, mode)
-            print('mode, mode_num:', mode, mode_num)
+            print("mode, mode_num:", mode, mode_num)
             assert obj.normalize_control_mode(mode) == mode_num
             assert obj.normalize_control_mode(mode_num) == mode_num
 
@@ -373,7 +373,7 @@ class TestDrive402(TestDrive402Base):
         # Setup:  Drive offline, not operational
         obj.sm402.slave_online = False
         obj.sm402.slave_oper = False
-        assert obj.state != 'FAULT'
+        assert obj.state != "FAULT"
 
         # Simulate offline state
         obj.sm402.update_state(False, False, 0x0000)
@@ -410,12 +410,12 @@ class TestDrive402(TestDrive402Base):
         self.mock_rospy.loginfo.assert_not_called()
 
         # Simulate FAULT state
-        assert obj.state != 'FAULT'
-        obj.sm402.set_goal_state('FAULT')
-        self.set_state(obj, 'FAULT')
+        assert obj.state != "FAULT"
+        obj.sm402.set_goal_state("FAULT")
+        self.set_state(obj, "FAULT")
 
         # Look for warning
-        print('prev, curr:', obj.sm402.prev_state, obj.sm402.curr_state)
+        print("prev, curr:", obj.sm402.prev_state, obj.sm402.curr_state)
         assert obj.sm402.drive_state_changed()
         obj.log_error_state()
         self.mock_rospy.logwarn.assert_called()
@@ -423,14 +423,14 @@ class TestDrive402(TestDrive402Base):
 
         # Don't try to recover
         obj.sm402.update_state(True, True, 0x08)
-        print('prev, curr:', obj.sm402.prev_state, obj.sm402.curr_state)
+        print("prev, curr:", obj.sm402.prev_state, obj.sm402.curr_state)
         assert not obj.sm402.drive_state_changed()
         obj.log_error_state()
         self.mock_rospy.logwarn.assert_not_called()
 
         # Recover from fault
         obj.sm402.update_state(True, True, 0x40)
-        print('prev, curr:', obj.sm402.prev_state, obj.sm402.curr_state)
+        print("prev, curr:", obj.sm402.prev_state, obj.sm402.curr_state)
         assert obj.sm402.drive_state_changed()
         obj.log_error_state()
         self.mock_rospy.loginfo.assert_called()
@@ -463,47 +463,47 @@ class TestDrive402(TestDrive402Base):
         self.mock_rospy.loginfo.assert_not_called()
 
     def test_error_code_hex(self, obj):
-        assert obj.error_code_hex(0x0040) == '0x0040'
-        assert obj.error_code_hex(0x00FF) == '0x00FF'
-        assert obj.error_code_hex(0x0000) == ''
+        assert obj.error_code_hex(0x0040) == "0x0040"
+        assert obj.error_code_hex(0x00FF) == "0x00FF"
+        assert obj.error_code_hex(0x0000) == ""
 
     def test_get_error_info(self, obj, ros_params):
-        err_info = ros_params['device_fault_code_list']['inovance_is620n'][
-            '0x0101'
+        err_info = ros_params["device_fault_code_list"]["inovance_is620n"][
+            "0x0101"
         ]
         assert (
-            obj.get_error_info(0x0101)['description'] == err_info['description']
+            obj.get_error_info(0x0101)["description"] == err_info["description"]
         )
-        assert obj.get_error_info(0x0000)['description'] == "No error"
+        assert obj.get_error_info(0x0000)["description"] == "No error"
         assert (
-            obj.get_error_info(0x0001)['description']
+            obj.get_error_info(0x0001)["description"]
             == Drive402.GENERIC_ERROR_DESCRIPTION
         )
 
     def test_publish_error(self, obj):
         # No change; returns without action
         obj.publish_error()
-        obj.topics['error'].publish.assert_not_called()
+        obj.topics["error"].publish.assert_not_called()
 
         # New error
         obj.pins.error_code.set(0x0101)
         assert obj.pins.error_code.changed
         obj.publish_error()
-        obj.topics['error'].publish.assert_called()
+        obj.topics["error"].publish.assert_called()
         self.mock_rospy.logerr.assert_called()
-        obj.topics['error'].publish.reset_mock()
+        obj.topics["error"].publish.reset_mock()
 
         # Error recovered
         obj.pins.error_code.read()
         obj.pins.error_code.set(0x0000)
         obj.publish_error()
-        obj.topics['error'].publish.assert_called()
+        obj.topics["error"].publish.assert_called()
         self.mock_rospy.loginfo.assert_called()
 
     def test_publish_status(self, obj):
         # Set FAULT state for log_error_state
-        obj.sm402.set_goal_state('FAULT')
-        self.set_state(obj, 'FAULT')
+        obj.sm402.set_goal_state("FAULT")
+        self.set_state(obj, "FAULT")
         assert obj.sm402.drive_state_changed()
 
         # Set error_code.changed for publish_error
@@ -514,7 +514,7 @@ class TestDrive402(TestDrive402Base):
         # log_error_state ran
         self.mock_rospy.logwarn.assert_called()
         # publish_error ran
-        obj.topics['error'].publish.assert_called()
+        obj.topics["error"].publish.assert_called()
 
     ########################################
     # Update

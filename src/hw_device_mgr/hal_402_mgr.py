@@ -14,27 +14,27 @@ class Hal402Timeout(RuntimeError):
 
 
 class Hal402Mgr(FysomGlobalMixin):
-    compname = 'hal_402_mgr'
-    default_control_mode = 'MODE_CSP'
+    compname = "hal_402_mgr"
+    default_control_mode = "MODE_CSP"
     ros_param_base = "hw_device_mgr"
     goal_state_timeout = 5.0  # seconds
 
     pin_specs = {
         # IO pin for command request and feedback
-        'state-cmd': dict(ptype=hal.HAL_U32, pdir=hal.HAL_IO),
+        "state-cmd": dict(ptype=hal.HAL_U32, pdir=hal.HAL_IO),
         # IN pin set high when external quick stop triggered
-        'quick_stop': dict(ptype=hal.HAL_BIT, pdir=hal.HAL_IN),
+        "quick_stop": dict(ptype=hal.HAL_BIT, pdir=hal.HAL_IN),
         # OUT pin set high for two update cycles around drive enable
         # transition
-        'reset': dict(ptype=hal.HAL_BIT, pdir=hal.HAL_OUT),
+        "reset": dict(ptype=hal.HAL_BIT, pdir=hal.HAL_OUT),
     }
 
     ####################################################
     # Initialization
 
     def __init__(self):
-        self.state = 'stop_command'
-        self.command = 'stop'
+        self.state = "stop_command"
+        self.command = "stop"
         super().__init__()
 
     # To be called by external code
@@ -53,7 +53,7 @@ class Hal402Mgr(FysomGlobalMixin):
         rospy.init_node(self.compname)
         rospy.on_shutdown(self.call_cleanup)
         self.update_rate = rospy.get_param(
-            f'{self.ros_param_base}/update_rate', 10
+            f"{self.ros_param_base}/update_rate", 10
         )
         self.rate = rospy.Rate(self.update_rate)
         rospy.loginfo(f"Initialized '{self.compname}' ROS node")
@@ -71,7 +71,7 @@ class Hal402Mgr(FysomGlobalMixin):
 
     def create_drives(self):
         self.drives = []
-        drive_config = rospy.get_param(f'{self.ros_param_base}/drives', None)
+        drive_config = rospy.get_param(f"{self.ros_param_base}/drives", None)
         if drive_config is None:
             rospy.logerr(f"No drive config in {self.ros_param_base}/drives")
             return
@@ -104,37 +104,37 @@ class Hal402Mgr(FysomGlobalMixin):
     # Drive state FSM
 
     GSM = FysomGlobal(
-        initial=dict(state='stop', event='stop_command', defer=True),
+        initial=dict(state="stop", event="stop_command", defer=True),
         events=[
             # Fault state:  From any state
             # - fault:  done
-            dict(name='fault_command', src='*', dst='fault_1'),
-            dict(name='fault_complete', src='fault_1', dst='fault_complete'),
+            dict(name="fault_command", src="*", dst="fault_1"),
+            dict(name="fault_complete", src="fault_1", dst="fault_complete"),
             # Start state:  From any state but 'start*'
             # - start_1:  Switch all drives to SWITCHED ON
             # - start_2:  Set all drive control modes to default
             # - start_3:  Switch all drives to OPERATION ENABLED
             # - start_complete:  Done
-            dict(name='start_command', src='*', dst='start_1'),
-            dict(name='start_2', src='start_1', dst='start_2'),
-            dict(name='start_3', src='start_2', dst='start_3'),
-            dict(name='start_complete', src='start_3', dst='start_complete'),
+            dict(name="start_command", src="*", dst="start_1"),
+            dict(name="start_2", src="start_1", dst="start_2"),
+            dict(name="start_3", src="start_2", dst="start_3"),
+            dict(name="start_complete", src="start_3", dst="start_complete"),
             # Stop state:  From any state but 'stop*'
             # - stop_1:  Put all drives in SWITCH ON DISABLED and CSP mode
             # - stop_complete:  Done
-            dict(name='stop_command', src='*', dst='stop_1'),
-            dict(name='stop_complete', src='stop_1', dst='stop_complete'),
+            dict(name="stop_command", src="*", dst="stop_1"),
+            dict(name="stop_complete", src="stop_1", dst="stop_complete"),
             # Home state:  From only 'stop_complete'
             # - home_1:  Set all drive control modes to HM
             # - home_2:  Switch all drives to OPERATION ENABLED
             # - home_3:  Set home flag
             # - home_complete:  Done; issue 'stop' command
-            dict(name='home_command', src='*', dst='home_1'),
-            dict(name='home_2', src='home_1', dst='home_2'),
-            dict(name='home_3', src='home_2', dst='home_3'),
-            dict(name='home_complete', src='home_3', dst='home_complete'),
+            dict(name="home_command", src="*", dst="home_1"),
+            dict(name="home_2", src="home_1", dst="home_2"),
+            dict(name="home_3", src="home_2", dst="home_3"),
+            dict(name="home_complete", src="home_3", dst="home_complete"),
         ],
-        state_field='state',
+        state_field="state",
     )
 
     #
@@ -142,16 +142,16 @@ class Hal402Mgr(FysomGlobalMixin):
     #
     def on_before_fault_command(self, e):
         if self.fsm_check_command(e):
-            rospy.logerr('Entering fault state')
+            rospy.logerr("Entering fault state")
             return True
         else:
             return False
 
     def on_enter_fault_1(self, e):
-        return self.fsm_set_drive_goal_state(e, 'FAULT')
+        return self.fsm_set_drive_goal_state(e, "FAULT")
 
     def on_before_fault_complete(self, e):
-        return self.fsm_check_drive_goal_state(e, 'FAULT')
+        return self.fsm_check_drive_goal_state(e, "FAULT")
 
     def on_enter_fault_complete(self, e):
         self.fsm_finalize_command(e)
@@ -163,13 +163,13 @@ class Hal402Mgr(FysomGlobalMixin):
         return self.fsm_check_command(e)
 
     def on_enter_start_1(self, e):
-        self.fsm_set_drive_goal_state(e, 'SWITCHED ON')
+        self.fsm_set_drive_goal_state(e, "SWITCHED ON")
 
     def on_before_start_2(self, e):
         if not self.all_drives_status_flags(VOLTAGE_ENABLED=True):
             self.timer_check_overrun("No voltage at drive motor power inputs")
             return False
-        return self.fsm_check_drive_goal_state(e, 'SWITCHED ON')
+        return self.fsm_check_drive_goal_state(e, "SWITCHED ON")
 
     def on_enter_start_2(self, e):
         mode = self.default_control_mode
@@ -182,10 +182,10 @@ class Hal402Mgr(FysomGlobalMixin):
     def on_enter_start_3(self, e):
         # Set reset pin during transition to OPERATION ENABLED
         e.reset_pin = True
-        self.fsm_set_drive_goal_state(e, 'OPERATION ENABLED')
+        self.fsm_set_drive_goal_state(e, "OPERATION ENABLED")
 
     def on_before_start_complete(self, e):
-        return self.fsm_check_drive_goal_state(e, 'OPERATION ENABLED')
+        return self.fsm_check_drive_goal_state(e, "OPERATION ENABLED")
 
     def on_enter_start_complete(self, e):
         # Clear reset pin in OPERATION ENABLED
@@ -202,10 +202,10 @@ class Hal402Mgr(FysomGlobalMixin):
         # Zero out command & feedback differences to give operator
         # confidence turning on machine
         e.reset_pin = True
-        return self.fsm_set_drive_goal_state(e, 'SWITCH ON DISABLED')
+        return self.fsm_set_drive_goal_state(e, "SWITCH ON DISABLED")
 
     def on_before_stop_complete(self, e):
-        return self.fsm_check_drive_goal_state(e, 'SWITCH ON DISABLED')
+        return self.fsm_check_drive_goal_state(e, "SWITCH ON DISABLED")
 
     def on_enter_stop_complete(self, e):
         e.reset_pin = False
@@ -215,25 +215,25 @@ class Hal402Mgr(FysomGlobalMixin):
     # Home command
     #
     def on_before_home_command(self, e):
-        if not e.src == 'stop_complete':
+        if not e.src == "stop_complete":
             rospy.logwarn("Unable to home when drives not stopped")
             return False
         return self.fsm_check_command(e)
 
     def on_enter_home_1(self, e):
-        self.fsm_set_drive_control_mode(e, 'MODE_HM')
+        self.fsm_set_drive_control_mode(e, "MODE_HM")
 
     def on_before_home_2(self, e):
-        return self.fsm_check_drive_control_mode(e, 'MODE_HM')
+        return self.fsm_check_drive_control_mode(e, "MODE_HM")
 
     def on_enter_home_2(self, e):
-        self.fsm_set_drive_goal_state(e, 'OPERATION ENABLED')
+        self.fsm_set_drive_goal_state(e, "OPERATION ENABLED")
 
     def on_before_home_3(self, e):
         if not self.all_drives_status_flags(VOLTAGE_ENABLED=True):
             self.timer_check_overrun("No voltage at drive motor power inputs")
             return False
-        return self.fsm_check_drive_goal_state(e, 'OPERATION ENABLED')
+        return self.fsm_check_drive_goal_state(e, "OPERATION ENABLED")
 
     def on_enter_home_3(self, e):
         # MODE_HM:  OPERATION_MODE_SPECIFIC_1 = HOMING_START
@@ -252,7 +252,7 @@ class Hal402Mgr(FysomGlobalMixin):
     def on_enter_home_complete(self, e):
         self.fsm_finalize_command(e)
         # Automatically return to SWITCH ON DISABLED after homing
-        self.command = 'stop'
+        self.command = "stop"
 
     #
     # All states
@@ -262,19 +262,19 @@ class Hal402Mgr(FysomGlobalMixin):
         # `on_before_*`) will be present here
 
         # Set/clear reset pin
-        self.pins.reset.set(getattr(e, 'reset_pin', False))
+        self.pins.reset.set(getattr(e, "reset_pin", False))
         if self.pins.reset.changed:
-            rospy.loginfo(f'Reset pin set to {self.pins.reset.get()}')
+            rospy.loginfo(f"Reset pin set to {self.pins.reset.get()}")
             self.pins.reset.write()  # Set now to effect reset early
 
     #
     # Helpers
     #
     cmd_name_to_int_map = {
-        'stop': 0,
-        'start': 1,
-        'home': 2,
-        'fault': 3,
+        "stop": 0,
+        "start": 1,
+        "home": 2,
+        "fault": 3,
     }
 
     cmd_int_to_name_map = {v: k for k, v in cmd_name_to_int_map.items()}
@@ -283,21 +283,21 @@ class Hal402Mgr(FysomGlobalMixin):
         self._timeout = time.time() + self.goal_state_timeout
 
     def timer_check_overrun(self, msg):
-        if not hasattr(self, '_timeout') or time.time() <= self._timeout:
+        if not hasattr(self, "_timeout") or time.time() <= self._timeout:
             return
 
-        msg = f'{self.command} timeout:  {msg}'
-        self.command = 'fault'
+        msg = f"{self.command} timeout:  {msg}"
+        self.command = "fault"
         del self._timeout
         raise Hal402Timeout(msg)
 
     @classmethod
     def fsm_command_from_event(cls, e):
-        return e.dst.split('_')[0]
+        return e.dst.split("_")[0]
 
     def fsm_check_command(self, e):
         cmd_name = self.fsm_command_from_event(e)
-        if e.src != f'{cmd_name}_command' and e.src.startswith(cmd_name):
+        if e.src != f"{cmd_name}_command" and e.src.startswith(cmd_name):
             # Already running
             rospy.logwarn(f"Ignoring {cmd_name} command from state {e.src}")
             return False
@@ -351,10 +351,10 @@ class Hal402Mgr(FysomGlobalMixin):
                 except Exception:
                     # Ignore other exceptions & enter fault mode in
                     # hopes we can recover
-                    rospy.logerr('Ignoring unexpected exception; details:')
+                    rospy.logerr("Ignoring unexpected exception; details:")
                     for line in traceback.format_exc().splitlines():
                         rospy.logerr(line)
-                    self.command = 'fault'
+                    self.command = "fault"
                 self.rate.sleep()
         except rospy.exceptions.ROSInterruptException as e:
             rospy.loginfo(f"ROSInterruptException: {e}")
@@ -368,23 +368,23 @@ class Hal402Mgr(FysomGlobalMixin):
         # Map current command to dict of {current_state:next_event}
         # names; `None` means arrived
         start=dict(
-            start_1='start_2',
-            start_2='start_3',
-            start_3='start_complete',
+            start_1="start_2",
+            start_2="start_3",
+            start_3="start_complete",
             start_complete=None,
         ),
         stop=dict(
-            stop_1='stop_complete',
+            stop_1="stop_complete",
             stop_complete=None,
         ),
         home=dict(
-            home_1='home_2',
-            home_2='home_3',
-            home_3='home_complete',
+            home_1="home_2",
+            home_2="home_3",
+            home_3="home_complete",
             home_complete=None,
         ),
         fault=dict(
-            fault_1='fault_complete',
+            fault_1="fault_complete",
             fault_complete=None,
         ),
     )
@@ -398,46 +398,46 @@ class Hal402Mgr(FysomGlobalMixin):
         if self.pins.state_cmd.changed:
             # Other commands from state-cmd pin; can't override fault
             cmd = self.cmd_int_to_name_map[self.pins.state_cmd.get()]
-            msg = 'state-cmd pin changed'
+            msg = "state-cmd pin changed"
         else:
             cmd = None
 
         # Special cases that override with 'fault' command:
         if not self.all_drives_operational():
             # Some drives not online operational
-            cmd = 'fault'
+            cmd = "fault"
             fds = self.drives_operational(negate=True)
-            fd_names = ', '.join(d.drive_name for d in fds)
-            msg = f'Drives ({fd_names}) not online and operational'
-        elif self.any_drives_in_state('FAULT') and cmd not in ('stop', 'start'):
+            fd_names = ", ".join(d.drive_name for d in fds)
+            msg = f"Drives ({fd_names}) not online and operational"
+        elif self.any_drives_in_state("FAULT") and cmd not in ("stop", "start"):
             # Some drives in FAULT but no recovery command
-            cmd = 'fault'
-            fds = self.drives_in_state('FAULT')
-            fd_names = ', '.join(d.drive_name for d in fds)
-            msg = f'Drives ({fd_names}) in FAULT state'
-        elif self.pins.quick_stop.get() and self.command != 'fault':
+            cmd = "fault"
+            fds = self.drives_in_state("FAULT")
+            fd_names = ", ".join(d.drive_name for d in fds)
+            msg = f"Drives ({fd_names}) in FAULT state"
+        elif self.pins.quick_stop.get() and self.command != "fault":
             # Quick stop pin high; treat this as a fault command
-            cmd = 'fault'
-            msg = 'quick_stop pin high'
+            cmd = "fault"
+            msg = "quick_stop pin high"
 
         if cmd is not None and cmd != self.command:
             # Received new command to stop/start/home/fault.  Try it
             # by triggering the FSM event; a Canceled exception means
             # it can't be done, so ignore it.
-            event = f'{cmd}_command'
+            event = f"{cmd}_command"
             try:
                 self.trigger(event, msg=msg)
             except Canceled:
-                rospy.loginfo(f'Unable to honor {event} command')
+                rospy.loginfo(f"Unable to honor {event} command")
 
         # Attempt automatic transition to next state; if not possible,
         # `on_before_{event}()` method will cause Canceled exception
         event = self.automatic_next_event()
         if event is not None:
             try:
-                self.trigger(event, msg='Automatic transition')
+                self.trigger(event, msg="Automatic transition")
             except Canceled:
-                rospy.logdebug(f'Cannot transition to next state {event}')
+                rospy.logdebug(f"Cannot transition to next state {event}")
 
         # Write all output pins and let drives do their thing
         self.pins.write_all()
@@ -445,7 +445,7 @@ class Hal402Mgr(FysomGlobalMixin):
 
     def automatic_next_event(self):
         state_map = self.fsm_next_state_map[self.command]
-        event = state_map.get(self.state, f'{self.command}_command')
+        event = state_map.get(self.state, f"{self.command}_command")
         return event
 
     ####################################################
