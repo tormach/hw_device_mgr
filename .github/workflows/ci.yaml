@@ -12,6 +12,7 @@ on:
     branches:
       - master
       - "*-devel"
+      - "**"
 
 jobs:
   default:
