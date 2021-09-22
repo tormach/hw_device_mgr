@@ -1,0 +1,36 @@
+# Test cases for bogus BogusCiA301Device
+#
+# CiA 301 NMT init
+#
+- desc:  "Power off -> NMT Initialisation"
+  feedback_in:
+    online:  False
+    oper:  False
+  feedback_out:
+    online:  False
+    oper:  False
+    goal_reached:  False
+    goal_reason:  Offline
+  command_in:
+    online:  True
+    oper:  True
+  sim_feedback:
+    online:  True
+    oper:  False
+- desc:  "NMT Initialisation -> Pre-operational"
+  feedback_in:
+    online:  True
+  feedback_out:
+    online:  True
+    goal_reason:  Not operational
+  sim_feedback:
+    oper:  True
+- desc:  "NMT Pre-operational -> Operational"
+  feedback_in:
+    oper:  True
+  feedback_out:
+    oper:  True
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "NMT Operational; hold state x1"
+- desc:  "NMT Operational; hold state x2"

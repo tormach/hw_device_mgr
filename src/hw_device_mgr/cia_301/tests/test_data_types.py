@@ -1,9 +1,9 @@
-from ..data_types import CiA301DataType
 from ...tests.test_data_types import TestDataType as _TestDataType
+from .base_test_class import BaseCiA301TestClass
 
 
-class TestCiA301DataType(_TestDataType):
-    tc_base = CiA301DataType
+class TestCiA301DataType(BaseCiA301TestClass, _TestDataType):
+
     defined_shared_types = {
         "bit",
         "int8",
