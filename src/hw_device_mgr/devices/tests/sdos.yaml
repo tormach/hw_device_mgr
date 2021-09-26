@@ -1,0 +1,303 @@
+# Simplified view of SDOs for each model
+elmo_gold_0x30924_0x10420:
+  6040h:
+    index:  0x6040
+    data_type:  uint16
+    name:  Control word
+    pdo_mapping:  R
+  6041h:
+    index:  0x6041
+    data_type:  uint16
+    name:  Status word
+    pdo_mapping:  T
+    ro:  True
+  605Ah:
+    index:  0x605A
+    data_type:  int16
+    name:  Quick stop mode
+    min_value:  0
+    max_value:  7
+    default_value:  2
+  6060h:
+    index:  0x6060
+    data_type:  uint8
+    name:  Control mode
+    pdo_mapping:  R
+  6061h:
+    index:  0x6061
+    data_type:  uint8
+    name:  Control mode feedback
+    pdo_mapping:  T
+    ro:  True
+  6064h:
+    index:  0x6064
+    data_type:  int32
+    name:  Position feedback
+    pdo_mapping:  T
+    ro:  True
+  607Ah:
+    index:  0x607A
+    data_type:  int32
+    name:  Position command
+    pdo_mapping:  R
+  607D-00h:
+    index:  0x607D
+    subindex:  0x00
+    data_type:  uint8
+    name:  SubIndex 000
+    index_name:  Position limit
+    default_value:  2
+    ro:  True
+  607D-01h:
+    index:  0x607D
+    subindex:  0x01
+    data_type:  int32
+    name:  Position limit min.
+    index_name:  Position limit
+    default_value:  -500000
+    pdo_mapping:  R
+  607D-02h:
+    index:  0x607D
+    subindex:  0x02
+    data_type:  int32
+    name:  Position limit max.
+    index_name:  Position limit
+    default_value:  500000
+    pdo_mapping:  R
+elmo_gold_0x30925_0x10420:
+  6040h:
+    index:  0x6040
+    data_type:  uint16
+    name:  Control word
+    pdo_mapping:  R
+  6041h:
+    index:  0x6041
+    data_type:  uint16
+    name:  Status word
+    pdo_mapping:  T
+    ro:  True
+  605Ah:
+    index:  0x605A
+    data_type:  int16
+    name:  Quick stop mode
+    min_value:  0
+    max_value:  7
+    default_value:  2
+  6060h:
+    index:  0x6060
+    data_type:  uint8
+    name:  Control mode
+    pdo_mapping:  R
+  6061h:
+    index:  0x6061
+    data_type:  uint8
+    name:  Control mode feedback
+    pdo_mapping:  T
+    ro:  True
+  6064h:
+    index:  0x6064
+    data_type:  int32
+    name:  Position feedback
+    pdo_mapping:  T
+    ro:  True
+  607Ah:
+    index:  0x607A
+    data_type:  int32
+    name:  Position command
+    pdo_mapping:  R
+  607D-00h:
+    index:  0x607D
+    subindex:  0x00
+    data_type:  uint8
+    name:  SubIndex 000
+    index_name:  Position limit
+    default_value:  2
+    ro:  True
+  607D-01h:
+    index:  0x607D
+    subindex:  0x01
+    data_type:  int32
+    name:  Position limit min.
+    index_name:  Position limit
+    default_value:  -500000
+    pdo_mapping:  R
+  607D-02h:
+    index:  0x607D
+    subindex:  0x02
+    data_type:  int32
+    name:  Position limit max.
+    index_name:  Position limit
+    default_value:  500000
+    pdo_mapping:  R
+IS620N_ECAT:
+  200C-00h:
+    index:  0x200C
+    subindex:  0x00
+    data_type:  uint8
+    name:  SubIndex 000
+    index_name:  Communication
+    default_value:  49
+    ro:  True
+  200C-0Eh:
+    index:  0x200C
+    subindex:  0x01
+    data_type:  uint16
+    name:  Update function code values written via communication to EEPROM
+    index_name:  Communication
+    min_value: 0
+    max_value: 3
+    default_value:  3
+  200C-02h:
+    index:  0x200C
+    subindex:  0x02
+    data_type:  int32
+    name:  Position limit max.
+    index_name:  Position limit
+    default_value:  500000
+    pdo_mapping:  R
+  6040h:
+    index:  0x6040
+    data_type:  uint16
+    name:  Control word
+    pdo_mapping:  R
+  6041h:
+    index:  0x6041
+    data_type:  uint16
+    name:  Status word
+    pdo_mapping:  T
+    ro:  True
+  605Ah:
+    index:  0x605A
+    data_type:  int16
+    name:  Quick stop mode
+    min_value:  0
+    max_value:  7
+    default_value:  2
+  6060h:
+    index:  0x6060
+    data_type:  uint8
+    name:  Control mode
+    pdo_mapping:  R
+  6061h:
+    index:  0x6061
+    data_type:  uint8
+    name:  Control mode feedback
+    pdo_mapping:  T
+    ro:  True
+  6064h:
+    index:  0x6064
+    data_type:  int32
+    name:  Position feedback
+    pdo_mapping:  T
+    ro:  True
+  607Ah:
+    index:  0x607A
+    data_type:  int32
+    name:  Position command
+    pdo_mapping:  R
+  607D-00h:
+    index:  0x607D
+    subindex:  0x00
+    data_type:  uint8
+    name:  SubIndex 000
+    index_name:  Position limit
+    default_value:  2
+    ro:  True
+  607D-01h:
+    index:  0x607D
+    subindex:  0x01
+    data_type:  int32
+    name:  Position limit min.
+    index_name:  Position limit
+    default_value:  -500000
+    pdo_mapping:  R
+  607D-02h:
+    index:  0x607D
+    subindex:  0x02
+    data_type:  int32
+    name:  Position limit max.
+    index_name:  Position limit
+    default_value:  500000
+    pdo_mapping:  R
+SV660_ECAT:
+  200E-00h:
+    index:  0x200E
+    subindex:  0x00
+    data_type:  uint8
+    name:  SubIndex 000
+    index_name:  Communication parameters
+    default_value:  97
+    ro:  True
+  200E-02h:
+    index:  0x200E
+    subindex:  0x02
+    data_type:  uint16
+    name:  Update function code values written via communication to EEPROM
+    index_name:  Communication parameters
+    min_value: 0
+    max_value: 3
+    default_value:  3
+  6040h:
+    index:  0x6040
+    data_type:  uint16
+    name:  Control word
+    pdo_mapping:  R
+  6041h:
+    index:  0x6041
+    data_type:  uint16
+    name:  Status word
+    pdo_mapping:  T
+    ro:  True
+  605Ah:
+    index:  0x605A
+    data_type:  int16
+    name:  Quick stop mode
+    min_value:  0
+    max_value:  7
+    default_value:  2
+  6060h:
+    index:  0x6060
+    data_type:  uint8
+    name:  Control mode
+    pdo_mapping:  R
+  6061h:
+    index:  0x6061
+    data_type:  uint8
+    name:  Control mode feedback
+    pdo_mapping:  T
+    ro:  True
+  6064h:
+    index:  0x6064
+    data_type:  int32
+    name:  Position feedback
+    pdo_mapping:  T
+    ro:  True
+  607Ah:
+    index:  0x607A
+    data_type:  int32
+    name:  Position command
+    pdo_mapping:  R
+  607D-00h:
+    index:  0x607D
+    subindex:  0x00
+    data_type:  uint8
+    name:  SubIndex 000
+    index_name:  Position limit
+    default_value:  2
+    ro:  True
+  607D-01h:
+    index:  0x607D
+    subindex:  0x01
+    data_type:  int32
+    name:  Position limit min.
+    index_name:  Position limit
+    default_value:  -500000
+    pdo_mapping:  R
+  607D-02h:
+    index:  0x607D
+    subindex:  0x02
+    data_type:  int32
+    name:  Position limit max.
+    index_name:  Position limit
+    default_value:  500000
+    pdo_mapping:  R
