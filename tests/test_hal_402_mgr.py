@@ -1,13 +1,13 @@
 import pytest
 import yaml
-from hal_402_device_mgr.hal_402_mgr import Hal402Mgr
+from hw_device_mgr.hal_402_mgr import Hal402Mgr
 
 
 class TestHal402MgrBase:
     tc = Hal402Mgr
     patch_mock_rospy = (
-        'hal_402_device_mgr.hal_402_mgr.rospy',
-        'hal_402_device_mgr.hal_402_drive.rospy',
+        "hw_device_mgr.hal_402_mgr.rospy",
+        "hw_device_mgr.hal_402_drive.rospy",
     )
     ros_params_yaml = 'ros_params.yaml'
 

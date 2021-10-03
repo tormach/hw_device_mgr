@@ -1,4 +1,4 @@
 [run]
-omit = */hal_402_device_mgr/msg/*,
-  */hal_402_device_mgr/srv/*,
-  */hal_402_device_mgr/__init__.py
+omit = */hw_device_mgr/msg/*,
+  */hw_device_mgr/srv/*,
+  */hw_device_mgr/__init__.py

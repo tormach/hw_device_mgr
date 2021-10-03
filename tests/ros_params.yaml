@@ -480,8 +480,8 @@ device_fault_code_list:
       error_code: 0x0FFF
       auxiliary_code: 0x0A400A40
 
-# Copied from za_hardware/config/hal_402_device_mgr.yaml
-hal_402_device_mgr:
+# Copied from za_hardware/config/hw_device_mgr.yaml
+hw_device_mgr:
   drives:
       drive_1:
         instance: 1

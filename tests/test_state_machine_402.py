@@ -1,10 +1,10 @@
 import pytest
-from hal_402_device_mgr.state_machine_402 import StateMachine402
+from hw_device_mgr.state_machine_402 import StateMachine402
 
 
 class TestStateMachine402:
     tc = StateMachine402
-    patch_mock_rospy = 'hal_402_device_mgr.state_machine_402.rospy'
+    patch_mock_rospy = "hw_device_mgr.state_machine_402.rospy"
 
     @pytest.fixture
     def obj(self, mock_rospy):

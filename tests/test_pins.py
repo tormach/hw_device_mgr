@@ -1,5 +1,5 @@
 import pytest
-from hal_402_device_mgr.pins import HALBase, HALPin, HALPins
+from hw_device_mgr.pins import HALBase, HALPin, HALPins
 
 
 class TestHALBase:

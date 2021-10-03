@@ -3,7 +3,7 @@ from .pins import HALPins
 from .state_machine_402 import StateMachine402
 
 # import messages from the ROS node
-from hal_402_device_mgr.msg import msg_error
+from hw_device_mgr.msg import msg_error
 
 
 class Drive402:

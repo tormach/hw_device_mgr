@@ -1,4 +1,4 @@
 <launch>
-  <param name="test_module" value="$(find hal_402_device_mgr)/tests"/>
+  <param name="test_module" value="$(find hw_device_mgr)/tests"/>
   <test test-name="tests" pkg="ros_pytest" type="ros_pytest_runner" />
 </launch>
