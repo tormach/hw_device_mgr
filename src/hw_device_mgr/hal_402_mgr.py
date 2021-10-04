@@ -6,7 +6,7 @@ from fysom import FysomGlobalMixin, FysomGlobal, Canceled
 
 from .pins import HALPins
 
-from hal_402_device_mgr.hal_402_drive import Drive402
+from hw_device_mgr.hal_402_drive import Drive402
 
 
 class Hal402Timeout(RuntimeError):
@@ -16,7 +16,7 @@ class Hal402Timeout(RuntimeError):
 class Hal402Mgr(FysomGlobalMixin):
     compname = 'hal_402_mgr'
     default_control_mode = 'MODE_CSP'
-    ros_param_base = 'hal_402_device_mgr'
+    ros_param_base = "hw_device_mgr"
     goal_state_timeout = 5.0  # seconds
 
     pin_specs = {

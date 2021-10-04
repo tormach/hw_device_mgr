@@ -1,5 +1,5 @@
 import pytest
-from hal_402_device_mgr.hal_402_drive import Drive402
+from hw_device_mgr.hal_402_drive import Drive402
 
 
 class TestDrive402Base:
@@ -7,7 +7,7 @@ class TestDrive402Base:
 
     tc = Drive402
     halcomp_name = 'mock_hal_402_mgr'
-    patch_mock_rospy = 'hal_402_device_mgr.hal_402_drive.rospy'
+    patch_mock_rospy = "hw_device_mgr.hal_402_drive.rospy"
     ros_params_yaml = 'ros_params.yaml'
     drive_name = 'drive_1'
     drive_type = 'inovance_is620n'
