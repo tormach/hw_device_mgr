@@ -87,7 +87,7 @@ class DataType:
         subtype_prefix = getattr(cls, "subtype_prefix", None)
         if subtype_prefix is None:
             return  # Nothing to do
-        # Parent class to inherit from
+        # List of parent classes to inherit from
         parent_cls = super(cls, cls)
         if not hasattr(parent_cls, "_shared_name_re_registry"):
             return  # Base `DataType` class, or unexpected MRO scheme
@@ -95,12 +95,21 @@ class DataType:
         for shared_name, attributes in cls.subtype_data.items():
             # Parent class data type (same shared_name) to inherit from
             parent_subtype = parent_cls._shared_name_registry[shared_name]
+            # Parent class subtypes to inherit from
+            parent_subtypes = []
+            for i in cls.__mro__:
+                if "_shared_name_registry" not in i.__dict__:
+                    continue
+                if shared_name not in i._shared_name_registry:
+                    continue
+                parent_subtypes.append(i._shared_name_registry[shared_name])
+            bases = tuple((cls, *parent_subtypes))
             # Create the class; __init_subclass__ will handle the rest
             type(
                 # Subtype class name
                 subtype_prefix + parent_subtype.__name__,
                 # Bases
-                (cls, parent_subtype),
+                bases,
                 # Data members + methods
                 attributes,
             )
