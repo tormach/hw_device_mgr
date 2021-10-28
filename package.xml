@@ -30,5 +30,5 @@
   <test_depend>rostest</test_depend>
   <test_depend>ros_pytest</test_depend>
   <test_depend>python3-pytest-cov</test_depend>
-
+  <test_depend>python3-pytest-mock</test_depend>
 </package>
