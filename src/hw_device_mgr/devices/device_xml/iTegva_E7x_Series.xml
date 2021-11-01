@@ -1,0 +1,1720 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--iTegva E7x Series EtherCAT Dig I/O Module ESI File, V1.4, 2016-03-17 -->
+<EtherCATInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="EtherCATInfo.xsd" Version="1.2">
+  <Vendor>
+    <Id>#x00000A09</Id>
+    <Name>Beijing iTegva Techonology Co., Ltd.</Name>
+    <URL>www.itegva.com</URL>
+    <ImageData16x14>424DE6000000000000007600000028000000100000000E000000010004000000000070000000232E0000232E000000000000000000000000000000008000008000000080800080000000800080008080000080808000C0C0C0000000FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF88F87F878888FFF878F87878778FFFF878F877887888FFFF8FFF88FF8FF8FFF778887788FFF88FF88878F8778FF88FF77888888778F78FF77888778788877FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</ImageData16x14>
+  </Vendor>
+  <Descriptions>
+    <Groups>
+      <Group>
+        <Type>E7x Series</Type>
+        <Name LcId="1033">EtherCAT Remote IO Module (E7x) </Name>
+        <Name LcId="2052">EtherCAT 远程IO模块 (E7x) </Name>
+        <ImageData16x14>424DE6000000000000007600000028000000100000000E000000010004000000000070000000232E0000232E000000000000000000000000000000008000008000000080800080000000800080008080000080808000C0C0C0000000FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00FFFFFFFFFFFFFFFFFFFFFF88FFF8FF8FF888887777777778F878F87888778888F888FF888888888FF878FFFFFFFFFFFFF708FFFFFFFFFFFFF878FFFFFFFFFFFFF778FFFFFFFFFFFFF778FF888888888FF888FF7888878888FFFFFF8888888888FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</ImageData16x14>
+      </Group>
+    </Groups>
+    <Devices>
+      <Device Physics="YY">
+        <Type ProductCode="#x00100" RevisionNo="100">E7.820.001</Type>
+        <Name LcId="1033"><![CDATA[E7.820.001 16-ch Dig.In/16-ch Relay Out(Access_Bit)]]></Name>
+        <Name LcId="2052"><![CDATA[E7.820.001 16路数字量输入/16路继电器输出(Bit访问)]]></Name>
+        <GroupType>E7x Series</GroupType>
+        <Fmmu OpOnly="1">Outputs</Fmmu>
+        <Fmmu>Inputs</Fmmu>
+        <Sm StartAddress="#x0f02" ControlByte="#x44" OpOnly="1" Enable="1">Outputs</Sm>
+        <Sm StartAddress="#x0f03" ControlByte="#x44" OpOnly="1" Enable="1">Outputs</Sm>
+        <Sm StartAddress="#x1000" ControlByte="#x0" Enable="1">Inputs</Sm>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1600</Index>
+          <Name>Dout 0</Name>
+          <Entry>
+            <Index>#x7000</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[0]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1601</Index>
+          <Name>Dout 1</Name>
+          <Entry>
+            <Index>#x7010</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[1]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1602</Index>
+          <Name>Dout 2</Name>
+          <Entry>
+            <Index>#x7020</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[2]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1603</Index>
+          <Name>Dout 3</Name>
+          <Entry>
+            <Index>#x7030</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[3]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1604</Index>
+          <Name>Dout 4</Name>
+          <Entry>
+            <Index>#x7040</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[4]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1605</Index>
+          <Name>Dout 5</Name>
+          <Entry>
+            <Index>#x7050</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[5]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1606</Index>
+          <Name>Dout 6</Name>
+          <Entry>
+            <Index>#x7060</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[6]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1607</Index>
+          <Name>Dout 7</Name>
+          <Entry>
+            <Index>#x7070</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[7]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x1608</Index>
+          <Name>Dout 8</Name>
+          <Entry>
+            <Index>#x7080</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[8]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x1609</Index>
+          <Name>Dout 9</Name>
+          <Entry>
+            <Index>#x7090</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[9]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160a</Index>
+          <Name>Dout 10</Name>
+          <Entry>
+            <Index>#x70a0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[10]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160b</Index>
+          <Name>Dout 11</Name>
+          <Entry>
+            <Index>#x70b0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[11]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160c</Index>
+          <Name>Dout 12</Name>
+          <Entry>
+            <Index>#x70c0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[12]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160d</Index>
+          <Name>Dout 13</Name>
+          <Entry>
+            <Index>#x70d0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[13]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160e</Index>
+          <Name>Dout 14</Name>
+          <Entry>
+            <Index>#x70e0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[14]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160f</Index>
+          <Name>Dout 15</Name>
+          <Entry>
+            <Index>#x70f0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[15]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a00</Index>
+          <Name>Din 0</Name>
+          <Entry>
+            <Index>#x6000</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[0]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a01</Index>
+          <Name>Din 1</Name>
+          <Entry>
+            <Index>#x6010</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[1]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a02</Index>
+          <Name>Din 2</Name>
+          <Entry>
+            <Index>#x6020</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[2]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a03</Index>
+          <Name>Din 3</Name>
+          <Entry>
+            <Index>#x6030</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[3]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a04</Index>
+          <Name>Din 4</Name>
+          <Entry>
+            <Index>#x6040</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[4]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a05</Index>
+          <Name>Din 5</Name>
+          <Entry>
+            <Index>#x6050</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[5]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a06</Index>
+          <Name>Din 6</Name>
+          <Entry>
+            <Index>#x6060</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[6]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a07</Index>
+          <Name>Din 7</Name>
+          <Entry>
+            <Index>#x6070</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[7]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a08</Index>
+          <Name>Din 8</Name>
+          <Entry>
+            <Index>#x6080</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[8]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a09</Index>
+          <Name>Din 9</Name>
+          <Entry>
+            <Index>#x6090</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[9]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0a</Index>
+          <Name>Din 10</Name>
+          <Entry>
+            <Index>#x60a0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[10]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0b</Index>
+          <Name>Din 11</Name>
+          <Entry>
+            <Index>#x60b0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[11]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0c</Index>
+          <Name>Din 12</Name>
+          <Entry>
+            <Index>#x60c0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[12]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0d</Index>
+          <Name>Din 13</Name>
+          <Entry>
+            <Index>#x60d0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[13]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0e</Index>
+          <Name>Din 14</Name>
+          <Entry>
+            <Index>#x60e0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[14]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0f</Index>
+          <Name>Din 15</Name>
+          <Entry>
+            <Index>#x60f0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[15]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <Eeprom>
+          <ByteSize>2048</ByteSize>
+          <ConfigData>040100000A0000FF</ConfigData>
+        </Eeprom>
+      </Device>
+      <Device Physics="YY">
+        <Type ProductCode="#x00200" RevisionNo="100">E7.820.003</Type>
+        <Name LcId="1033"><![CDATA[E7.820.003 16-ch Dig.In/16-ch Mosfet Out(Access_Bit)]]></Name>
+        <Name LcId="2052"><![CDATA[E7.820.003 16路数字量输入/16路Mosfet输出(Bit访问)]]></Name>
+        <GroupType>E7x Series</GroupType>
+        <Fmmu OpOnly="1">Outputs</Fmmu>
+        <Fmmu>Inputs</Fmmu>
+        <Sm StartAddress="#x0f02" ControlByte="#x44" OpOnly="1" Enable="1">Outputs</Sm>
+        <Sm StartAddress="#x0f03" ControlByte="#x44" OpOnly="1" Enable="1">Outputs</Sm>
+        <Sm StartAddress="#x1000" ControlByte="#x0" Enable="1">Inputs</Sm>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1600</Index>
+          <Name>Dout 0</Name>
+          <Entry>
+            <Index>#x7000</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[0]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1601</Index>
+          <Name>Dout 1</Name>
+          <Entry>
+            <Index>#x7010</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[1]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1602</Index>
+          <Name>Dout 2</Name>
+          <Entry>
+            <Index>#x7020</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[2]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1603</Index>
+          <Name>Dout 3</Name>
+          <Entry>
+            <Index>#x7030</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[3]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1604</Index>
+          <Name>Dout 4</Name>
+          <Entry>
+            <Index>#x7040</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[4]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1605</Index>
+          <Name>Dout 5</Name>
+          <Entry>
+            <Index>#x7050</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[5]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1606</Index>
+          <Name>Dout 6</Name>
+          <Entry>
+            <Index>#x7060</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[6]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1607</Index>
+          <Name>Dout 7</Name>
+          <Entry>
+            <Index>#x7070</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[7]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x1608</Index>
+          <Name>Dout 8</Name>
+          <Entry>
+            <Index>#x7080</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[8]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x1609</Index>
+          <Name>Dout 9</Name>
+          <Entry>
+            <Index>#x7090</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[9]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160a</Index>
+          <Name>Dout 10</Name>
+          <Entry>
+            <Index>#x70a0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[10]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160b</Index>
+          <Name>Dout 11</Name>
+          <Entry>
+            <Index>#x70b0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[11]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160c</Index>
+          <Name>Dout 12</Name>
+          <Entry>
+            <Index>#x70c0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[12]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160d</Index>
+          <Name>Dout 13</Name>
+          <Entry>
+            <Index>#x70d0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[13]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160e</Index>
+          <Name>Dout 14</Name>
+          <Entry>
+            <Index>#x70e0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[14]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x160f</Index>
+          <Name>Dout 15</Name>
+          <Entry>
+            <Index>#x70f0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[15]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a00</Index>
+          <Name>Din 0</Name>
+          <Entry>
+            <Index>#x6000</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[0]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a01</Index>
+          <Name>Din 1</Name>
+          <Entry>
+            <Index>#x6010</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[1]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a02</Index>
+          <Name>Din 2</Name>
+          <Entry>
+            <Index>#x6020</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[2]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a03</Index>
+          <Name>Din 3</Name>
+          <Entry>
+            <Index>#x6030</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[3]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a04</Index>
+          <Name>Din 4</Name>
+          <Entry>
+            <Index>#x6040</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[4]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a05</Index>
+          <Name>Din 5</Name>
+          <Entry>
+            <Index>#x6050</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[5]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a06</Index>
+          <Name>Din 6</Name>
+          <Entry>
+            <Index>#x6060</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[6]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a07</Index>
+          <Name>Din 7</Name>
+          <Entry>
+            <Index>#x6070</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[7]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a08</Index>
+          <Name>Din 8</Name>
+          <Entry>
+            <Index>#x6080</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[8]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a09</Index>
+          <Name>Din 9</Name>
+          <Entry>
+            <Index>#x6090</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[9]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0a</Index>
+          <Name>Din 10</Name>
+          <Entry>
+            <Index>#x60a0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[10]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0b</Index>
+          <Name>Din 11</Name>
+          <Entry>
+            <Index>#x60b0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[11]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0c</Index>
+          <Name>Din 12</Name>
+          <Entry>
+            <Index>#x60c0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[12]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0d</Index>
+          <Name>Din 13</Name>
+          <Entry>
+            <Index>#x60d0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[13]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0e</Index>
+          <Name>Din 14</Name>
+          <Entry>
+            <Index>#x60e0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[14]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a0f</Index>
+          <Name>Din 15</Name>
+          <Entry>
+            <Index>#x60f0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[15]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <Eeprom>
+          <ByteSize>2048</ByteSize>
+          <ConfigData>040100000A0000FF</ConfigData>
+        </Eeprom>
+      </Device>
+      <Device Physics="YY">
+        <Type ProductCode="#x00300" RevisionNo="100">E7.820.002</Type>
+        <Name LcId="1033"><![CDATA[E7.820.002 32-ch Dig.Input(Access_Bit)]]></Name>
+        <Name LcId="2052"><![CDATA[E7.820.002 32路数字量输入(Bit访问)]]></Name>
+        <GroupType>E7x Series</GroupType>
+        <Fmmu OpOnly="1">Inputs</Fmmu>
+        <Sm DefaultSize="4" StartAddress="#x1000" ControlByte="#x0" Enable="1">Inputs</Sm>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a00</Index>
+          <Name>Din 0</Name>
+          <Entry>
+            <Index>#x6000</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[0]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a01</Index>
+          <Name>Din 1</Name>
+          <Entry>
+            <Index>#x6010</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[1]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a02</Index>
+          <Name>Din 2</Name>
+          <Entry>
+            <Index>#x6020</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[2]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a03</Index>
+          <Name>Din 3</Name>
+          <Entry>
+            <Index>#x6030</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[3]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a04</Index>
+          <Name>Din 4</Name>
+          <Entry>
+            <Index>#x6040</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[4]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a05</Index>
+          <Name>Din 5</Name>
+          <Entry>
+            <Index>#x6050</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[5]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a06</Index>
+          <Name>Din 6</Name>
+          <Entry>
+            <Index>#x6060</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[6]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a07</Index>
+          <Name>Din 7</Name>
+          <Entry>
+            <Index>#x6070</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[7]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a08</Index>
+          <Name>Din 8</Name>
+          <Entry>
+            <Index>#x6080</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[8]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a09</Index>
+          <Name>Din 9</Name>
+          <Entry>
+            <Index>#x6090</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[9]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a0a</Index>
+          <Name>Din 10</Name>
+          <Entry>
+            <Index>#x60a0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[10]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a0b</Index>
+          <Name>Din 11</Name>
+          <Entry>
+            <Index>#x60b0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[11]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a0c</Index>
+          <Name>Din 12</Name>
+          <Entry>
+            <Index>#x60c0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[12]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a0d</Index>
+          <Name>Din 13</Name>
+          <Entry>
+            <Index>#x60d0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[13]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a0e</Index>
+          <Name>Din 14</Name>
+          <Entry>
+            <Index>#x60e0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[14]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a0f</Index>
+          <Name>Din 15</Name>
+          <Entry>
+            <Index>#x60f0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[15]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a10</Index>
+          <Name>Din 16</Name>
+          <Entry>
+            <Index>#x6100</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[16]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a11</Index>
+          <Name>Din 17</Name>
+          <Entry>
+            <Index>#x6110</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[17]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a12</Index>
+          <Name>Din 18</Name>
+          <Entry>
+            <Index>#x6120</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[18]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a13</Index>
+          <Name>Din 19</Name>
+          <Entry>
+            <Index>#x6130</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[19]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a14</Index>
+          <Name>Din 20</Name>
+          <Entry>
+            <Index>#x6140</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[20]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a15</Index>
+          <Name>Din 21</Name>
+          <Entry>
+            <Index>#x6150</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[21]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a16</Index>
+          <Name>Din 22</Name>
+          <Entry>
+            <Index>#x6160</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[22]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a17</Index>
+          <Name>Din 23</Name>
+          <Entry>
+            <Index>#x6170</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[23]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a18</Index>
+          <Name>Din 24</Name>
+          <Entry>
+            <Index>#x6180</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[24]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a19</Index>
+          <Name>Din 25</Name>
+          <Entry>
+            <Index>#x6190</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[25]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a20</Index>
+          <Name>Din 26</Name>
+          <Entry>
+            <Index>#x61a0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[26]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a21</Index>
+          <Name>Din 27</Name>
+          <Entry>
+            <Index>#x61b0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[27]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a22</Index>
+          <Name>Din 28</Name>
+          <Entry>
+            <Index>#x61c0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[28]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a23</Index>
+          <Name>Din 29</Name>
+          <Entry>
+            <Index>#x61d0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[29]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a24</Index>
+          <Name>Din 30</Name>
+          <Entry>
+            <Index>#x61e0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[30]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a25</Index>
+          <Name>Din 31</Name>
+          <Entry>
+            <Index>#x61f0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Input[31]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </TxPdo>
+        <Eeprom>
+          <ByteSize>2048</ByteSize>
+          <ConfigData>040100000A00</ConfigData>
+        </Eeprom>
+      </Device>
+      <Device Physics="YY">
+        <Type ProductCode="#x00400" RevisionNo="100">E7.820.004</Type>
+        <Name LcId="1033"><![CDATA[E7.820.004 32-ch Dig.Output(Access_Bit)]]></Name>
+        <Name LcId="2052"><![CDATA[E7.820.004 32路数字量输出(Bit访问)]]></Name>
+        <GroupType>E7x Series</GroupType>
+        <Fmmu OpOnly="1">Outputs</Fmmu>
+        <Sm DefaultSize="1" StartAddress="#x0f00" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm DefaultSize="1" StartAddress="#x0f01" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm DefaultSize="1" StartAddress="#x0f02" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm DefaultSize="1" StartAddress="#x0f03" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+          <Index>#x1600</Index>
+          <Name>Dout 0</Name>
+          <Entry>
+            <Index>#x7000</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[0]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+          <Index>#x1601</Index>
+          <Name>Dout 1</Name>
+          <Entry>
+            <Index>#x7010</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[1]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+          <Index>#x1602</Index>
+          <Name>Dout 2</Name>
+          <Entry>
+            <Index>#x7020</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[2]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+          <Index>#x1603</Index>
+          <Name>Dout 3</Name>
+          <Entry>
+            <Index>#x7030</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[3]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+          <Index>#x1604</Index>
+          <Name>Dout 4</Name>
+          <Entry>
+            <Index>#x7040</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[4]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+          <Index>#x1605</Index>
+          <Name>Dout 5</Name>
+          <Entry>
+            <Index>#x7050</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[5]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+          <Index>#x1606</Index>
+          <Name>Dout 6</Name>
+          <Entry>
+            <Index>#x7060</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[6]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="0">
+          <Index>#x1607</Index>
+          <Name>Dout 7</Name>
+          <Entry>
+            <Index>#x7070</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[7]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="1">
+          <Index>#x1608</Index>
+          <Name>Dout 8</Name>
+          <Entry>
+            <Index>#x7080</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[8]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="1">
+          <Index>#x1609</Index>
+          <Name>Dout 9</Name>
+          <Entry>
+            <Index>#x7090</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[9]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="1">
+          <Index>#x160a</Index>
+          <Name>Dout 10</Name>
+          <Entry>
+            <Index>#x70a0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[10]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="1">
+          <Index>#x160b</Index>
+          <Name>Dout 11</Name>
+          <Entry>
+            <Index>#x70b0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[11]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="1">
+          <Index>#x160c</Index>
+          <Name>Dout 12</Name>
+          <Entry>
+            <Index>#x70c0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[12]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="1">
+          <Index>#x160d</Index>
+          <Name>Dout 13</Name>
+          <Entry>
+            <Index>#x70d0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[13]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="1">
+          <Index>#x160e</Index>
+          <Name>Dout 14</Name>
+          <Entry>
+            <Index>#x70e0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[14]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="1">
+          <Index>#x160f</Index>
+          <Name>Dout 15</Name>
+          <Entry>
+            <Index>#x70f0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[15]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
+          <Index>#x1610</Index>
+          <Name>Dout 16</Name>
+          <Entry>
+            <Index>#x7100</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[16]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
+          <Index>#x1611</Index>
+          <Name>Dout 17</Name>
+          <Entry>
+            <Index>#x7110</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[17]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
+          <Index>#x1612</Index>
+          <Name>Dout 18</Name>
+          <Entry>
+            <Index>#x7120</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[18]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
+          <Index>#x1613</Index>
+          <Name>Dout 19</Name>
+          <Entry>
+            <Index>#x7130</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[19]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
+          <Index>#x1614</Index>
+          <Name>Dout 20</Name>
+          <Entry>
+            <Index>#x7140</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[20]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
+          <Index>#x1615</Index>
+          <Name>Dout 21</Name>
+          <Entry>
+            <Index>#x7150</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[21]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
+          <Index>#x1616</Index>
+          <Name>Dout 22</Name>
+          <Entry>
+            <Index>#x7160</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[22]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="2">
+          <Index>#x1617</Index>
+          <Name>Dout 23</Name>
+          <Entry>
+            <Index>#x7170</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[23]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x1618</Index>
+          <Name>Dout 24</Name>
+          <Entry>
+            <Index>#x7180</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[24]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x1619</Index>
+          <Name>Dout 25</Name>
+          <Entry>
+            <Index>#x7190</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[25]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x161a</Index>
+          <Name>Dout 26</Name>
+          <Entry>
+            <Index>#x71a0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[26]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x161b</Index>
+          <Name>Dout 27</Name>
+          <Entry>
+            <Index>#x71b0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[27]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x161c</Index>
+          <Name>Dout 28</Name>
+          <Entry>
+            <Index>#x71c0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[28]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x161d</Index>
+          <Name>Dout 29</Name>
+          <Entry>
+            <Index>#x71d0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[29]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x161e</Index>
+          <Name>Dout 30</Name>
+          <Entry>
+            <Index>#x71e0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[30]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Mandatory="1" Sm="3">
+          <Index>#x161f</Index>
+          <Name>Dout 31</Name>
+          <Entry>
+            <Index>#x71f0</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>1</BitLen>
+            <Name>Output[31]</Name>
+            <DataType>BOOL</DataType>
+          </Entry>
+        </RxPdo>
+        <Eeprom>
+          <ByteSize>2048</ByteSize>
+          <ConfigData>040100000A00FFFF</ConfigData>
+        </Eeprom>
+      </Device>
+      <Device Physics="YY">
+        <Type ProductCode="#x00101" RevisionNo="100">E7.820.001</Type>
+        <Name LcId="1033"><![CDATA[E7.820.001 16-ch Dig.In/16-ch Relay Out(Access_Byte)]]></Name>
+        <Name LcId="2052"><![CDATA[E7.820.001 16路数字量输入/16路继电器输出(Byte访问)]]></Name>
+        <GroupType>E7x Series</GroupType>
+        <Fmmu OpOnly="1">Outputs</Fmmu>
+        <Fmmu>Inputs</Fmmu>
+        <Sm StartAddress="#x0f02" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm StartAddress="#x0f03" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm StartAddress="#x1000" ControlByte="0" Enable="1">Inputs</Sm>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1600</Index>
+          <Name>Dout(0-7)</Name>
+          <Entry>
+            <Index>#x7001</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Output[0]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x1601</Index>
+          <Name>Dout(8-15)</Name>
+          <Entry>
+            <Index>#x7001</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Output[1]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </RxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a00</Index>
+          <Name>Din (0-7)</Name>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Input[0]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a01</Index>
+          <Name>Din (8-15)</Name>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Input[1]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </TxPdo>
+        <Eeprom>
+          <ByteSize>2048</ByteSize>
+          <ConfigData>040100000A0000FF</ConfigData>
+        </Eeprom>
+      </Device>
+      <Device Physics="YY">
+        <Type ProductCode="#x00201" RevisionNo="100">E7.820.003</Type>
+        <Name LcId="1033"><![CDATA[E7.820.003 16-ch Dig.In/16-ch Mosfet Out(Access_Byte)]]></Name>
+        <Name LcId="2052"><![CDATA[E7.820.003 16路数字量输入/16路Mosfet输出(Byte访问)]]></Name>
+        <GroupType>E7x Series</GroupType>
+        <Fmmu OpOnly="1">Outputs</Fmmu>
+        <Fmmu>Inputs</Fmmu>
+        <Sm StartAddress="#x0f02" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm StartAddress="#x0f03" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm StartAddress="#x1000" ControlByte="0" Enable="1">Inputs</Sm>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1600</Index>
+          <Name>Dout(0-7)</Name>
+          <Entry>
+            <Index>#x7001</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Output[0]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x1601</Index>
+          <Name>Dout(8-15)</Name>
+          <Entry>
+            <Index>#x7001</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Output[1]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </RxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a00</Index>
+          <Name>Din (0-7)</Name>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Input[0]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="2">
+          <Index>#x1a01</Index>
+          <Name>Din (8-15)</Name>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Input[1]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </TxPdo>
+        <Eeprom>
+          <ByteSize>2048</ByteSize>
+          <ConfigData>040100000A0000FF</ConfigData>
+        </Eeprom>
+      </Device>
+      <Device Physics="YY">
+        <Type ProductCode="#x00301" RevisionNo="100">E7.820.002</Type>
+        <Name LcId="1033"><![CDATA[E7.820.002 32-ch Dig.Input(Access_Byte)]]></Name>
+        <Name LcId="2052"><![CDATA[E7.820.002 32路数字量输入(Byte访问)]]></Name>
+        <GroupType>E7x Series</GroupType>
+        <Fmmu OpOnly="1">Inputs</Fmmu>
+        <Sm DefaultSize="4" StartAddress="#x1000" ControlByte="0" Enable="1" OpOnly="1">Inputs</Sm>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a00</Index>
+          <Name>Din (0-7)</Name>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Input[0]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a01</Index>
+          <Name>Din (8-15)</Name>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Input[1]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a02</Index>
+          <Name>Din (16-23)</Name>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Input[2]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </TxPdo>
+        <TxPdo Fixed="1" Sm="0">
+          <Index>#x1a03</Index>
+          <Name>Din (24-31)</Name>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>4</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Input[3]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </TxPdo>
+        <Eeprom>
+          <ByteSize>2048</ByteSize>
+          <ConfigData>040100000A00</ConfigData>
+        </Eeprom>
+      </Device>
+      <Device Physics="YY">
+        <Type ProductCode="#x00401" RevisionNo="100">E7.820.004</Type>
+        <Name LcId="1033"><![CDATA[E7.820.004 32-ch Dig.Output(Access_Byte)]]></Name>
+        <Name LcId="2052"><![CDATA[E7.820.004 32路数字量输出(Byte访问)]]></Name>
+        <GroupType>E7x Series</GroupType>
+        <Fmmu OpOnly="1">Outputs</Fmmu>
+        <Sm DefaultSize="1" StartAddress="#x0f00" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm DefaultSize="1" StartAddress="#x0f01" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm DefaultSize="1" StartAddress="#x0f02" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <Sm DefaultSize="1" StartAddress="#x0f03" ControlByte="#x44" Enable="1" OpOnly="1">Outputs</Sm>
+        <RxPdo Fixed="1" Sm="0">
+          <Index>#x1600</Index>
+          <Name>Dout(0-7)</Name>
+          <Entry>
+            <Index>#x7001</Index>
+            <SubIndex>1</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Output[0]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="1">
+          <Index>#x1601</Index>
+          <Name>Dout(8-15)</Name>
+          <Entry>
+            <Index>#x7001</Index>
+            <SubIndex>2</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Output[1]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="2">
+          <Index>#x1602</Index>
+          <Name>Dout(16-23)</Name>
+          <Entry>
+            <Index>#x7001</Index>
+            <SubIndex>3</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Output[2]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </RxPdo>
+        <RxPdo Fixed="1" Sm="3">
+          <Index>#x1603</Index>
+          <Name>Dout(24-31)</Name>
+          <Entry>
+            <Index>#x7001</Index>
+            <SubIndex>4</SubIndex>
+            <BitLen>8</BitLen>
+            <Name>Output[3]</Name>
+            <DataType>BITARR8</DataType>
+          </Entry>
+        </RxPdo>
+        <Eeprom>
+          <ByteSize>2048</ByteSize>
+          <ConfigData>040100000A00FFFF</ConfigData>
+        </Eeprom>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>

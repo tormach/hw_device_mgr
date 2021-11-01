@@ -1,0 +1,36 @@
+init_timeout: 30.0  # seconds
+goal_state_timeout: 5.0  # seconds
+
+devices:
+  # 6 DOF joints
+  - name:  drive_0
+    address:  [0, 0]
+    category:  cia_402
+    group:  joints
+  - name:  drive_1
+    address:  [0, 1]
+    category:  cia_402
+    group:  joints
+  - name:  drive_2
+    address:  [0, 2]
+    category:  cia_402
+    group:  joints
+  - name:  drive_3
+    address:  [0, 3]
+    category:  cia_402
+    group:  joints
+  - name:  drive_4
+    address:  [0, 4]
+    category:  cia_402
+    group:  joints
+  - name:  drive_5
+    address:  [0, 5]
+    category:  cia_402
+    group:  joints
+
+  # Optional IO module at 0,6
+  - name:  io
+    address:  [0, 6]
+    category:  cia_301
+    group:  io
+    optional:  True

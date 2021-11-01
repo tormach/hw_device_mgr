@@ -1,0 +1,531 @@
+# Test cases for bogus BogusCiA402Device
+#
+# Drive init, automatic
+# CiA 301 NMT init -> operational; CiA 402 START -> SWITCH ON DISABLED
+#
+- desc:  "Init:  301 NMT state machine init"
+  feedback_in:
+    # CiA 301
+    online:  False
+    oper:  False
+    # CiA 402:  Default values before NMT operational
+    status_word:  0x0000
+    control_mode_fb:  MODE_NA  # Undefined
+  feedback_out:
+    # CiA 301
+    online:  False
+    oper:  False
+    # CiA 402:  Default values before NMT operational
+    status_word:  0x0000
+    control_mode_fb:  MODE_NA  # Undefined
+    state:  START
+    state_flags:
+      VOLTAGE_ENABLED:  False
+      WARNING:  False
+      MANUFACTURER_SPECIFIC_1:  False
+      REMOTE:  False
+      TARGET_REACHED:  False
+      INTERNAL_LIMIT_ACTIVE:  False
+      OPERATION_MODE_SPECIFIC_1:  False
+      OPERATION_MODE_SPECIFIC_2:  False
+      MANUFACTURER_SPECIFIC_2:  False
+      HOMING_COMPLETED:  False
+    transition:  null
+    goal_reached:  False
+    goal_reason:  Offline
+  command_in:
+    # CiA 301
+    online:  True
+    oper:  True
+    # CiA 402
+    state:  SWITCH ON DISABLED
+    control_mode:  MODE_CSP
+    control_word_flags:  {}
+    state_flags:  {}
+  command_out:
+    # CiA 402
+    control_word:  0x0000
+    control_mode:  MODE_CSP
+  sim_feedback:
+    # CiA 301
+    online:  True
+    oper:  False
+    # CiA 402
+    status_word:  0x0010  # VOLTAGE_ENABLED
+    control_mode_fb:  MODE_NA  # Undefined
+- desc:  "Init:  301 NMT state machine pre-op"
+  feedback_in:
+    # CiA 301
+    online:  True
+    # CiA 402
+    status_word:  0x0010  # VOLTAGE_ENABLED
+  feedback_out:
+    # CiA 301
+    online:  True
+    goal_reason:  Not operational
+  sim_feedback:
+    # CiA 301
+    oper:  True
+- desc:  "Init:  301 NMT state machine operational; 402 state machine transition 0"
+  feedback_in:
+    # CiA 301
+    oper:  True
+  feedback_out:
+    # CiA 301
+    oper:  True
+    # CiA 402
+    status_word:  0x0010  # VOLTAGE_ENABLED
+    state_flags:  # Set VOLTAGE_ENABLED
+      VOLTAGE_ENABLED:  True
+      WARNING:  False
+      MANUFACTURER_SPECIFIC_1:  False
+      REMOTE:  False
+      TARGET_REACHED:  False
+      INTERNAL_LIMIT_ACTIVE:  False
+      OPERATION_MODE_SPECIFIC_1:  False
+      OPERATION_MODE_SPECIFIC_2:  False
+      MANUFACTURER_SPECIFIC_2:  False
+      HOMING_COMPLETED:  False
+    state:  'NOT READY TO SWITCH ON'
+    transition:  TRANSITION_0
+    goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON != SWITCH ON DISABLED
+  sim_feedback:
+    # CiA 402
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    control_mode_fb:  MODE_CSP
+- desc:  "Init:  402 state machine transition 1"
+  feedback_in:
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    control_mode_fb:  MODE_CSP
+  feedback_out:
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    control_mode_fb:  MODE_CSP
+    state:  SWITCH ON DISABLED
+    transition:  TRANSITION_1
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "Init:  Hold state x1"
+  feedback_out:
+    transition:  null
+- desc:  "Init:  Hold state x2"
+
+#
+# Enable drive
+# CiA 402 SWITCH ON DISABLED -> OPERATION ENABLED
+#
+- desc:  "Enable:  OPERATION ENABLED; 402 state machine transition hold"
+  command_in:
+    # Controller commands OPERATION ENABLED
+    state:  OPERATION ENABLED
+  command_out:
+    control_word:  0x0006
+  sim_feedback:
+    status_word:  0x0031
+- desc:  "Enable:  402 state machine transition 2"
+  feedback_in:
+    status_word:  0x0031
+  feedback_out:
+    status_word:  0x0031
+    state:  READY TO SWITCH ON
+    transition:  TRANSITION_2
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+  command_out:
+    control_word:  0x0007
+  sim_feedback:
+    status_word:  0x0033
+- desc:  "Enable:  402 state machine transition 3"
+  feedback_in:
+    status_word:  0x0033
+  feedback_out:
+    status_word:  0x0033
+    state:  SWITCHED ON
+    transition:  TRANSITION_3
+    goal_reason:  state SWITCHED ON != OPERATION ENABLED
+  command_out:
+    control_word:  0x000F
+  sim_feedback:
+    status_word:  0x0037
+- desc:  "Enable:  402 state machine transition 4"
+  feedback_in:
+    status_word:  0x0037
+  feedback_out:
+    status_word:  0x0037
+    state:  OPERATION ENABLED
+    transition:  TRANSITION_4
+    goal_reached:  True
+    goal_reason:  Reached
+
+#
+# Simulate fault and automatic recovery
+# (In real life, upper layers would hold fault)
+# OPERATION ENABLED -> FAULT -> SWITCH ON DISABLED -> (towards) OPERATION ENABLED
+#
+- desc:  "Sim fault:  Fault;  402 state machine transition 13"
+  sim_feedback_set:
+    # Simulate the fault
+    status_word:  0x001F  # FAULT REACTION ACTIVE
+  feedback_in:
+    status_word:  0x001F
+  feedback_out:
+    status_word:  0x001F
+    state:  FAULT REACTION ACTIVE
+    transition:  TRANSITION_13
+    goal_reached:  False
+    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED
+  command_out:
+    control_word:  0x0000
+  sim_feedback:
+    status_word:  0x0018
+- desc:  "Sim fault:  Recover;  402 state machine transition 14"
+  feedback_in:
+    status_word:  0x0018
+  feedback_out:
+    status_word:  0x0018
+    state:  FAULT
+    transition:  TRANSITION_14
+    goal_reason:  state FAULT != OPERATION ENABLED
+  command_out:
+    # Goal is still OPERATION ENABLED, so automatically clear fault
+    control_word:  0x0080  # Clear fault
+  sim_feedback:
+    status_word:  0x0050
+- desc:  "Sim fault:  402 state machine transition 15"
+  feedback_in:
+    status_word:  0x0050
+  feedback_out:
+    status_word:  0x0050
+    state:  SWITCH ON DISABLED
+    transition:  TRANSITION_15
+    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED
+  command_out:
+    control_word:  0x0006
+  sim_feedback:
+    status_word:  0x0031
+- desc:  "Sim fault:  402 state machine transition 2"
+  feedback_in:
+    status_word:  0x0031
+  feedback_out:
+    status_word:  0x0031
+    state:  READY TO SWITCH ON
+    transition:  TRANSITION_2
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+  command_out:
+    control_word:  0x0007
+  sim_feedback:
+    status_word:  0x0033
+
+#
+# Simulate fault during transitions to OPERATION ENABLED; command hold state
+# READY TO SWITCH ON  -> FAULT -> hold
+#
+- desc:  "Hold fault:  Fault;  402 state machine transition 13"
+  sim_feedback_set:
+    status_word:  0x001F  # FAULT REACTION ACTIVE
+  feedback_in:
+    status_word:  0x001F
+  feedback_out:
+    status_word:  0x001F
+    state:  FAULT REACTION ACTIVE
+    transition:  TRANSITION_13
+    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED
+  command_out:
+    control_word:  0x0000
+  sim_feedback:
+    status_word:  0x0018
+- desc:  "Hold fault:  Goal->FAULT;  402 state machine transition 14"
+  feedback_in:
+    status_word:  0x0018
+  feedback_out:
+    status_word:  0x0018
+    state:  FAULT
+    transition:  TRANSITION_14
+    goal_reason:  state FAULT != OPERATION ENABLED
+  command_in:
+  # Controller sees FAULT state and commands hold at that state
+    state:  FAULT
+- desc:  "Hold fault:  Hold state x1"
+  feedback_out:
+    transition:  null
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "Hold fault:  Hold state x2"
+
+#
+# Command disable drive from FAULT
+# FAULT -> SWITCH ON DISABLED
+#
+- desc:  "Disable:  Command disable;  402 state machine transition hold"
+  command_in:
+    # Controller commands disable
+    state:  SWITCH ON DISABLED
+  command_out:
+    control_word:  0x0080  # Clear fault
+  sim_feedback:
+    status_word:  0x0050
+- desc:  "Disable:  402 state machine transition 15"
+  feedback_in:
+    status_word:  0x0050
+  feedback_out:
+    status_word:  0x0050
+    state:  SWITCH ON DISABLED
+    transition:  TRANSITION_15
+  command_out:
+    control_word:  0x0000
+- desc:  "Disable:  Hold state x1"
+  feedback_out:
+    transition:  null
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "Disable:  Hold state x2"
+
+#
+# Controller commands FAULT in reaction to unrelated event; hold
+# disabled state
+#
+- desc:  "Ext fault noop:  Command FAULT"
+  command_in:
+    # Controller commands FAULT
+    state:  FAULT
+- desc:  "Ext fault noop:  Hold state x1"
+- desc:  "Ext fault noop:  Hold state x2"
+
+#
+# Controller commands SWITCHED ON to enable several drives in concert
+#
+- desc:  "Enable multi:  Command SWITCHED ON;  402 state machine transition hold"
+  command_in:
+    # Controller commands SWITCHED ON
+    state:  SWITCHED ON
+  command_out:
+    control_word:  0x0006
+  sim_feedback:
+    status_word:  0x0031
+- desc:  "Enable multi:  402 state machine transition 2"
+  feedback_in:
+    status_word:  0x0031
+  feedback_out:
+    status_word:  0x0031
+    state:  READY TO SWITCH ON
+    transition:  TRANSITION_2
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON != SWITCHED ON
+  command_out:
+    control_word:  0x0007
+  sim_feedback:
+    status_word:  0x0033
+- desc:  "Enable multi:  402 state machine transition 3"
+  feedback_in:
+    status_word:  0x0033
+  feedback_out:
+    status_word:  0x0033
+    state:  SWITCHED ON
+    transition:  TRANSITION_3
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "Enable multi:  Hold SWITCHED ON while waiting for other drives x1"
+  feedback_out:
+    transition:  null
+- desc:  "Enable multi:  Hold SWITCHED ON while waiting for other drives x2"
+
+#
+# Controller commands OPERATION ENABLED from SWITCHED ON to enable
+# several drives in concert
+#
+- desc:  "Enable multi:  Command OPERATION ENABLED;  402 state machine transition hold"
+  command_in:
+    # Controller commands OPERATION ENABLED
+    state:  OPERATION ENABLED
+  feedback_in:
+    status_word:  0x0033
+  feedback_out:
+    status_word:  0x0033
+    state:  SWITCHED ON
+  command_out:
+    control_word:  0x000F
+  sim_feedback:
+    status_word:  0x0037
+- desc:  "Enable multi:  402 state machine transition 4"
+  feedback_in:
+    status_word:  0x0037
+  feedback_out:
+    status_word:  0x0037
+    state:  OPERATION ENABLED
+    transition:  TRANSITION_4
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "Enable multi:  Hold OPERATION ENABLED x1"
+  feedback_out:
+    transition:  null
+- desc:  "Enable multi:  Hold OPERATION ENABLED x2"
+
+#
+# Controller commands FAULT in reaction to unrelated event while drive
+# enabled; command disable
+# OPERATION ENABLED -> QUICK STOP ACTIVE -> SWITCH ON DISABLED
+#
+- desc:  "Disable enabled:  Command disable;  402 state machine transition hold"
+  command_in:
+    # Controller commands FAULT in response to external event
+    state:  FAULT
+  command_out:
+    control_word:  0x0002
+  sim_feedback:
+    status_word:  0x0017
+- desc:  "Disable enabled:  Command disable;  402 state machine transition 11"
+  feedback_in:
+    status_word:  0x0017
+  feedback_out:
+    status_word:  0x0017
+    state:  QUICK STOP ACTIVE
+    transition:  TRANSITION_11
+    goal_reached:  False
+    goal_reason:  state QUICK STOP ACTIVE != FAULT
+  command_out:
+    control_word:  0x0000
+  sim_feedback:
+    status_word:  0x0050
+- desc:  "Disable enabled:  Command disable;  402 state machine transition 12"
+  feedback_in:
+    status_word:  0x0050
+  feedback_out:
+    status_word:  0x0050
+    state:  SWITCH ON DISABLED
+    transition:  TRANSITION_12
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "Disable disabled:  Hold SWITCH ON DISABLED x1"
+  feedback_out:
+    transition:  null
+- desc:  "Disable disabled:  Hold SWITCH ON DISABLED x2"
+
+#
+# Controller walks drive through homing operation
+# command_mode -> MODE_HM
+# SWITCH ON DISABLED -> OPERATION ENABLED
+# control_word set OPERATION_MODE_SPECIFIC_1 (HOMING_START) bit
+# status_word HOMING_COMPLETED bit set
+# OPERATION ENABLED -> SWITCH ON DISABLED
+- desc:  "Home:  Set MODE_HM"
+  command_in:
+    # Controller commands homing mode
+    control_mode:  MODE_HM
+  command_out:
+    control_mode:  MODE_HM
+  sim_feedback:
+    control_mode_fb:  MODE_HM
+- desc:  "Home:  Command OPERATION ENABLED;  402 state machine transition hold"
+  feedback_in:
+    control_mode_fb:  MODE_HM
+  feedback_out:
+    control_mode_fb:  MODE_HM
+  command_in:
+    # Controller commands enable
+    state:  OPERATION ENABLED
+  command_out:
+    control_word:  0x0006
+  sim_feedback:
+    status_word:  0x0031
+- desc:  "Home:  402 state machine transition 2"
+  feedback_in:
+    status_word:  0x0031
+  feedback_out:
+    status_word:  0x0031
+    state:  READY TO SWITCH ON
+    transition:  TRANSITION_2
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+  command_out:
+    control_word:  0x0007
+  sim_feedback:
+    status_word:  0x0033
+- desc:  "Home:  402 state machine transition 3"
+  feedback_in:
+    status_word:  0x0033
+  feedback_out:
+    status_word:  0x0033
+    state:  SWITCHED ON
+    transition:  TRANSITION_3
+    goal_reason:  state SWITCHED ON != OPERATION ENABLED
+  command_out:
+    control_word:  0x000F
+  sim_feedback:
+    status_word:  0x0037
+- desc:  "Home:  Command HOMING_START;  402 state machine transition 4"
+  feedback_in:
+    status_word:  0x0037
+  feedback_out:
+    status_word:  0x0037
+    state:  OPERATION ENABLED
+    transition:  TRANSITION_4
+    goal_reached:  True
+    goal_reason:  Reached
+  command_in:
+    # Controller commands homing start
+    control_word_flags:
+      OPERATION_MODE_SPECIFIC_1:  True
+  command_out:
+    control_word:  0x001F  # OPERATION ENABLED + OPERATION_MODE_SPECIFIC_1
+  sim_feedback:
+    status_word:  0x8037  # OPERATION ENABLED + HOMING_COMPLETED
+- desc:  "Home:  Homing completed; Command SWITCH ON DISABLED;  402 state machine transition hold"
+  feedback_in:
+    status_word:  0x8037
+  feedback_out:
+    status_word:  0x8037
+    state_flags:  # HOMING_COMPLETED set
+      VOLTAGE_ENABLED:  True
+      WARNING:  False
+      MANUFACTURER_SPECIFIC_1:  False
+      REMOTE:  False
+      TARGET_REACHED:  False
+      INTERNAL_LIMIT_ACTIVE:  False
+      OPERATION_MODE_SPECIFIC_1:  False
+      OPERATION_MODE_SPECIFIC_2:  False
+      MANUFACTURER_SPECIFIC_2:  False
+      HOMING_COMPLETED:  True
+    transition:  null
+  command_in:
+    state:  SWITCH ON DISABLED
+    control_word_flags:  {}  # Clear flags
+  command_out:
+    control_word:  0x0002
+  sim_feedback:
+    status_word:  0x0017
+- desc:  "Home:  Command disable;  402 state machine transition 11"
+  feedback_in:
+    status_word:  0x0017
+  feedback_out:
+    status_word:  0x0017
+    state:  QUICK STOP ACTIVE
+    transition:  TRANSITION_11
+    state_flags:  # HOMING_COMPLETED cleared
+      VOLTAGE_ENABLED:  True
+      WARNING:  False
+      MANUFACTURER_SPECIFIC_1:  False
+      REMOTE:  False
+      TARGET_REACHED:  False
+      INTERNAL_LIMIT_ACTIVE:  False
+      OPERATION_MODE_SPECIFIC_1:  False
+      OPERATION_MODE_SPECIFIC_2:  False
+      MANUFACTURER_SPECIFIC_2:  False
+      HOMING_COMPLETED:  False
+    goal_reached:  False
+    goal_reason:  state QUICK STOP ACTIVE != SWITCH ON DISABLED
+  command_out:
+    control_word:  0x0000
+  sim_feedback:
+    status_word:  0x0050
+- desc:  "Home:  402 state machine transition 12"
+  feedback_in:
+    status_word:  0x0050
+  feedback_out:
+    status_word:  0x0050
+    state:  SWITCH ON DISABLED
+    transition:  TRANSITION_12
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "Home:  Hold SWITCH ON DISABLED x1"
+  feedback_out:
+    transition:  null
+- desc:  "Home:  Hold SWITCH ON DISABLED x2"

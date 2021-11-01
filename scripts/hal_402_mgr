@@ -1,8 +1,0 @@
-#!/usr/bin/env python
-
-from hw_device_mgr.hal_402_mgr import Hal402Mgr
-
-if __name__ == "__main__":
-    hal_402_drives_mgr = Hal402Mgr()
-    hal_402_drives_mgr.init()
-    hal_402_drives_mgr.run()
