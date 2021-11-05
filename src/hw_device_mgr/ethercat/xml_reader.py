@@ -284,6 +284,14 @@ class EtherCATXMLReader:
         else:
             return True
 
+    def type_data_list(self, o):
+        type_name = o["Type"]
+        otype = self.datatypes[type_name].copy()  # Manipulated below
+        otypes = []
+        for i in range(len(otype.get("SubItems", range(1)))):
+            otypes.append(self.type_data(o, i))
+        return otypes
+
     def type_data(self, o, type_idx):
         """Return type data for an object, including `SubItem` objects if
         present
@@ -359,20 +367,20 @@ class EtherCATXMLReader:
         for obj in device.xpath("Profile/Dictionary/Objects/Object"):
             # Basic object
             o = self.read_object(obj)
+            # Type data
+            otypes = self.type_data_list(o)
 
             # pprint(o)
             # Flatten out subindexes
-            for i, subitem in enumerate(
-                o.get("Info", dict()).get("SubItems", [o])
-            ):
+            for i, otype in enumerate(otypes):
                 # Make copy and update with any Info/SubItems
                 osub = o.copy()
-                if "SubItems" in o.get("Info", dict()):
+                if len(o.get("Info", dict()).get("SubItems", [])) > i:
+                    osubupdate = o["Info"]["SubItems"][i]
                     osub.pop("Info")
-                    osub = self.safe_update(osub, subitem, "Parent")
+                    osub = self.safe_update(osub, osubupdate, "Parent")
 
                 # Add type data
-                otype = self.type_data(o, i)
                 osub = self.safe_update(osub, otype, "Parent")
                 if "ArrayType" in osub:
                     type_name = osub["ArrayType"]
