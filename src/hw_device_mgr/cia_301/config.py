@@ -94,9 +94,6 @@ class CiA301Config:
             ix = (ix, 0)
         return self._model_sdos[self.model_id][ix]
 
-    def sdo_type(self, sdo):
-        return self.data_type_class.by_shared_name(sdo.data_type)
-
     #
     # Param read/write
     #
