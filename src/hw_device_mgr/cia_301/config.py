@@ -208,7 +208,7 @@ class CiA301Config:
         return self._config
 
     def write_config_param_values(self):
-        for sdo, value in self.config["param_values"]:
+        for sdo, value in self.config["param_values"].items():
             self.download(sdo, value)
 
     #

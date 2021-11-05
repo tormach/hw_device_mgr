@@ -59,3 +59,20 @@ class TestCiA301Config(BaseCiA301TestClass):
             val = obj.upload(sdo_ix)
             obj.download(sdo_ix, val + 1)
             assert obj.upload(sdo_ix) == val + 1
+
+    def test_write_config_param_values(self, obj, sdo_data):
+        # Test fixture data:  At least one config param value should
+        # be different from default to make this test meaningful.  (IO
+        # devices have no config values, so ignore those.)
+        something_different = False
+        for sdo_ix, conf_val in obj.config["param_values"].items():
+            dev_val = obj.upload(sdo_ix)
+            print(f"SDO {sdo_ix}:  device={dev_val}, config={conf_val}")
+            if dev_val != conf_val:
+                something_different = True
+            # something_different |= (dev_val != conf_val)
+        assert something_different or not obj.config["param_values"]
+
+        obj.write_config_param_values()
+        for sdo_ix, val in obj.config["param_values"].items():
+            assert obj.upload(sdo_ix) == val
