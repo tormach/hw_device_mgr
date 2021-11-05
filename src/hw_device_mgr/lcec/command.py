@@ -20,7 +20,7 @@ class LCECCommand(EtherCATCommand):
         """
         cmd_args = ["ethercat"] + list(args)
         if dry_run:
-            getattr(self.logger, "info")("Would run:  " + " ".join(cmd_args))
+            self.logger.info("Would run:  " + " ".join(cmd_args))
             return
 
         getattr(self.logger, log_lev)(" ".join(cmd_args))
@@ -89,5 +89,6 @@ class LCECCommand(EtherCATCommand):
             f"0x{subindex:02X}",
             str(value),
             f"--type={datatype.igh_type}",
+            log_lev="info",
             dry_run=dry_run,
         )
