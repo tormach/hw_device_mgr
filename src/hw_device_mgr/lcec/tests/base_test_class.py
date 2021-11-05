@@ -41,7 +41,7 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
         """
 
         def emulate_ethercat_command(args):
-            print(f'ethercat command: {" ".join(args)}')
+            print(f'mocking ethercat command: {" ".join(args)}')
             # Parse out args, kwargs
             assert args.pop(0) == "ethercat"
             cmd = args.pop(0)
@@ -55,7 +55,6 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
                     k, v = (arg[2:], True)
                 kwargs[k] = v
                 args.pop(ix)
-            print("args:", args, "kwargs:", kwargs)
             # Emulate commands
             if cmd in ("upload", "download"):
                 ix = tuple(int(x, 16) for x in (args.pop(0), args.pop(0)))
