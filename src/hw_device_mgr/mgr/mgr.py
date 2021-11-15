@@ -102,6 +102,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def init_device_instances(self, **kwargs):
         for i, dev in enumerate(self.devices):
             dev.init(index=i, **kwargs)
+            self.logger.info(f"Adding device #{i}: {dev}")
 
     ####################################################
     # Drive state FSM

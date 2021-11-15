@@ -67,6 +67,7 @@ class BaseCiA301TestClass(BaseTestClass):
         those keys.
         """
         global_conf = self.load_yaml(self.global_config_yaml)
+        print(f"Loaded global config from {self.global_config_yaml}")
         for model_conf in global_conf:
             if "model_key" not in model_conf:
                 continue

@@ -13,8 +13,11 @@ class MockHALPin(MockFixture):
         self.pname = pname
         self.ptype = ptype
         self.pdir = pdir
+
+    def _set_storage(self, storage):
+        # Init storage outside constructor to reduce test logging mess
         self.storage = storage
-        self.storage[pname] = 0
+        self.storage[self.pname] = 0
 
     def set(self, val):
         """Emulates `hal_pin.set()`"""
@@ -67,8 +70,9 @@ class MockHALComponent(MockFixture):
 
     def newpin(self, *args):
         """Emulates `hal_comp.newpin()`"""
-        mock_obj = MockHALPin.get_mock(*args, storage=self.pin_vals)
+        mock_obj = MockHALPin.get_mock(*args)
         pin = mock_obj.obj
+        pin._set_storage(self.pin_vals)
         self.pins[pin.pname] = mock_obj
         print(f"MockHALComponent {self.name}: newpin({args})")
         return mock_obj
