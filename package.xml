@@ -1,34 +1,36 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>hw_device_mgr</name>
-  <version>0.0.1</version>
+  <version>0.2.0</version>
   <description>EtherCAT and other hardware device management</description>
   <maintainer email="john@dovetail-automata.com">John Morris</maintainer>
+  <author email="john@zultron.com">John Morris</author>
 
   <license>BSD</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
 
-  <build_depend>message_generation</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>hal_hw_interface</build_depend>
+  <depend>hal_hw_interface</depend>
 
-  <build_export_depend>rospy</build_export_depend>
-  <build_export_depend>hal_hw_interface</build_export_depend>
+  <!-- <build_export_depend>rclpy</build_export_depend> -->
 
-  <exec_depend>hal_hw_interface</exec_depend>
-  <exec_depend>message_runtime</exec_depend>
-  <exec_depend>rospy</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
   <!-- For `ethercat_utils` -->
-  <exec_depend>python3-pyparsing</exec_depend>
   <exec_depend>python3-ruamel.yaml</exec_depend>
-  <exec_depend>python3-rospkg</exec_depend>
-  <exec_depend>rosgraph</exec_depend>
+
   <exec_depend>python-fysom</exec_depend>
   <exec_depend>python3-lxml</exec_depend>
 
-  <test_depend>rostest</test_depend>
-  <test_depend>ros_pytest</test_depend>
+  <test_depend>python3-pytest</test_depend>
   <test_depend>python3-pytest-cov</test_depend>
   <test_depend>python3-pytest-mock</test_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

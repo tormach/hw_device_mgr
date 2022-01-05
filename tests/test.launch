@@ -1,4 +1,0 @@
-<launch>
-  <param name="test_module" value="$(find hw_device_mgr)/src"/>
-  <test test-name="tests" pkg="ros_pytest" type="ros_pytest_runner" />
-</launch>

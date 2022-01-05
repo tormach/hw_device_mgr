@@ -24,15 +24,9 @@ class TestROSDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
         self.obj.init_devices()
         yield self.obj
 
-    def test_mock_rospy_fixture(self, mock_rospy):
-        from ..mgr import rospy
-
-        assert rospy.get_param is mock_rospy.get_param
-        assert rospy.init_node is mock_rospy.init_node
-
     def test_ros_params(self, obj):
-        print(f"self.ros_params:\n{pformat(self.ros_params)}")
-        assert self.ros_params["hw_device_mgr"]["sim"] is True  # Fixture sanity
+        print(f"self.rosparams:\n{pformat(self.rosparams)}")
+        assert self.rosparams["sim"] is True  # Fixture sanity
         assert obj.sim is True  # Defaults to False
         assert obj.update_rate == 20  # Defaults to 10
         assert hasattr(obj, "mgr_config")

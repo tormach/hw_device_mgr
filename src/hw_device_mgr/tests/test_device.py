@@ -1,6 +1,5 @@
 import pytest
 from .base_test_class import BaseTestClass
-from ..logging import Logging
 from pprint import pformat
 import ruamel.yaml
 
@@ -8,8 +7,6 @@ import ruamel.yaml
 class TestDevice(BaseTestClass):
     # Expected class MRO
     expected_mro = ["BogusDevice", "Device", "ABC", "object"]
-
-    logger = Logging.getLogger("TestDevice")
 
     #
     # Class tests
@@ -130,7 +127,7 @@ class TestDevice(BaseTestClass):
         print("*" * 80)
         print(f"obj:  {self.obj}")
         # Throw separator into pytest log output
-        self.logger.info(f"Step -> {self.test_desc}")
+        self.obj.logger.info(f"Step -> {self.test_desc}")
 
         # Expected feedback/command in/out data:  Update values from
         # last iteration

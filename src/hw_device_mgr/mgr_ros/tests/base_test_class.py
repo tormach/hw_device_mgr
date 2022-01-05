@@ -1,7 +1,6 @@
 from ...mgr.tests.base_test_class import BaseMgrTestClass
 from .bogus_devices.mgr import BogusROSHWDeviceMgr
 import pytest
-from .mock_rospy import MockRospy
 
 
 ###############################
@@ -10,8 +9,6 @@ from .mock_rospy import MockRospy
 
 class BaseROSMgrTestClass(BaseMgrTestClass):
     """Base test class for `ROSHWDeviceMgr` class"""
-
-    patch_mock_rospy = ("hw_device_mgr.mgr_ros.mgr.rospy",)
 
     # Manager class
     device_class = BogusROSHWDeviceMgr
@@ -23,40 +20,9 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
     device_model_classes = BogusROSHWDeviceMgr.device_classes
 
     @pytest.fixture
-    def mock_rospy(self):
-        """Fixture for mocking `rospy`
-
-        Because this mocks the entire top-level `rospy` module, the test
-        object (or class) must have a `patch_rospy` attribute, a `str` or
-        `tuple` of `str`, with the object to patch, e.g. if your module
-        `mymodule` has `import rospy`, then the test object must have
-        `patch_rospy` attribute `mymodule.rospy`.
-
-        The mock object is passed as test function arg and also test
-        object `mock_rospy` attribute.  It mocks the following methods:
-
-        - `init_node()`:  Stores name for use in other methods
-        - `is_shutdown()`:  Returns `True` if accessor `set_shutdown()`
-          was called
-        - `has_param()`, `get_param()`:  See below for mocking ROS params
-        - `log*()`:  Prints log to stdout
-
-        The above methods are regular `MagicMock` objects and can be
-        tested with `assert_called()`, etc. methods.
-
-        ROS params may be mocked in two ways:
-        - The test object's 'ros_params_yaml' attribute may name a `.yaml`
-          file in the current directory from which to read parameters
-        - The test object's `ros_params` attribute may contain a `dict`
-        object containing parameters
-        """
-
-        if not hasattr(self, "ros_params"):
-            self.ros_params = dict()
-        yield from MockRospy.fixture("mock_rospy", self, self.ros_params)
-
-    @pytest.fixture
-    def manager_ros_params(self, mock_rospy, mgr_config, global_config):
+    def manager_ros_params(
+        self, mock_rclpy, mgr_config, global_config, request
+    ):
         """ROS params for the device manager"""
         hdm_params = dict(
             manager_config=mgr_config,
@@ -64,10 +30,40 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
             update_rate=20,
             sim=True,
         )
-        self.ros_params.update(dict(hw_device_mgr=hdm_params))
+        if not hasattr(request.instance, "rosparams"):
+            request.instance.rosparams = dict()
+        request.instance.rosparams.update(hdm_params)
 
     @pytest.fixture
     def device_cls(self, config_cls, manager_ros_params):
         """Fixture for ROS Device classes"""
         self.device_class.clear_devices()
         yield self.device_class
+
+    def test_mock_rclpy_fixture(self, mock_rclpy):
+        from ..mgr import rclpy
+
+        node = rclpy.create_node("foo")
+        assert node is self.node
+
+        decl = node.declare_parameter("bar", 13)
+        assert decl.value == 13
+        decl.value = 42
+        assert decl.value == 42
+
+        pub = node.create_publisher("foo_pub", "foo_pub_topic")
+        print("publishers:", self.publishers)
+        assert pub.msg_type == "foo_pub"
+        assert self.publishers["foo_pub_topic"] is pub
+
+        sub = node.create_subscription("foo_sub", "foo_sub_topic", "foo_sub_cb")
+        print("subscriptions:", self.subscriptions)
+        assert sub.msg_type == "foo_sub"
+        assert sub.cb == "foo_sub_cb"
+        assert self.subscriptions["foo_sub_topic"] is sub
+
+        srv = node.create_service("foo_srv", "foo_srv", "foo_srv_cb")
+        print("services:", self.services)
+        assert srv.srv_type == "foo_srv"
+        assert srv.cb == "foo_srv_cb"
+        assert self.services["foo_srv"] is srv

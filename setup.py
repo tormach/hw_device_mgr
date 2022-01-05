@@ -1,9 +1,7 @@
-#!/usr/bin/env python
+from setuptools import setup
 
-from distutils.core import setup
-from catkin_pkg.python_setup import generate_distutils_setup
+package_name = "hw_device_mgr"
 
-dev_data_dir = "src/hw_device_mgr/devices"
 # Packages like hw_device_mgr.{pkg}.tests.bogus_devices
 pkgs_bd = [
     "cia_301",
@@ -30,9 +28,18 @@ packages = (
     + [f"hw_device_mgr.{p}.tests.bogus_devices" for p in pkgs_bd]
 )
 
-d = generate_distutils_setup(
+setup(
+    name=package_name,
+    version="0.2.0",
     packages=packages,
     package_dir={"": "src"},
+    data_files=[
+        (
+            "share/ament_index/resource_index/packages",
+            ["resource/" + package_name],
+        ),
+        ("share/" + package_name, ["package.xml"]),
+    ],
     package_data={
         "": [  # Within any package, install:
             # ESI files
@@ -44,6 +51,16 @@ d = generate_distutils_setup(
             "bogus_devices/*.yaml",
         ],
     },
+    install_requires=["setuptools"],
+    zip_safe=True,
+    maintainer="John Morris",
+    maintainer_email="john@zultron.com",
+    description="Machinekit HAL interface to robot hardware and I/O",
+    license="BSD",
+    tests_require=["pytest"],
+    entry_points={
+        "console_scripts": [
+            "scripts/hw_device_mgr",
+        ],
+    },
 )
-
-setup(**d)
