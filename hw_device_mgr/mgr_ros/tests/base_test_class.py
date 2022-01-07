@@ -25,13 +25,11 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
     ):
         """ROS params for the device manager"""
         hdm_params = dict(
-            manager_config=mgr_config,
-            device_config=global_config,
             update_rate=20,
-            sim=True,
+            use_sim=True,
         )
-        if not hasattr(request.instance, "rosparams"):
-            request.instance.rosparams = dict()
+        hdm_params.update(mgr_config)
+        hdm_params.pop("devices")
         request.instance.rosparams.update(hdm_params)
 
     @pytest.fixture
@@ -51,19 +49,19 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         decl.value = 42
         assert decl.value == 42
 
-        pub = node.create_publisher("foo_pub", "foo_pub_topic")
+        pub = node.create_publisher(int, "foo_pub_topic", 1)
         print("publishers:", self.publishers)
-        assert pub.msg_type == "foo_pub"
+        assert pub.msg_type is int
         assert self.publishers["foo_pub_topic"] is pub
 
-        sub = node.create_subscription("foo_sub", "foo_sub_topic", "foo_sub_cb")
+        sub = node.create_subscription(float, "foo_sub_topic", "foo_sub_cb")
         print("subscriptions:", self.subscriptions)
-        assert sub.msg_type == "foo_sub"
+        assert sub.msg_type is float
         assert sub.cb == "foo_sub_cb"
         assert self.subscriptions["foo_sub_topic"] is sub
 
-        srv = node.create_service("foo_srv", "foo_srv", "foo_srv_cb")
+        srv = node.create_service(str, "foo_srv", "foo_srv_cb")
         print("services:", self.services)
-        assert srv.srv_type == "foo_srv"
+        assert srv.srv_type is str
         assert srv.cb == "foo_srv_cb"
         assert self.services["foo_srv"] is srv

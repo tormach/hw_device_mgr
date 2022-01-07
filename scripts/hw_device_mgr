@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from hw_device_mgr.mgr_ros_hal.mgr import ROSHALHWDeviceMgr
+import sys
 
 if __name__ == "__main__":
     mgr = ROSHALHWDeviceMgr()
-    mgr.init()
-    mgr.init_devices()
+    mgr.init(sys.argv[2:])
+    mgr.init_devices(device_config_path=sys.argv[1])
     mgr.run()

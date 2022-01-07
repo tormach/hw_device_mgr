@@ -20,8 +20,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     name = "hw_device_mgr"
     allow_rereg = True
-    device_config_yaml_fname = "device_config.yaml"
-    mgr_config_yaml_fname = "device_mgr_config.yaml"
 
     feedback_in_defaults = dict(state_cmd=0, quick_stop=0)
     feedback_in_data_types = dict(state_cmd="uint8", quick_stop="bit")

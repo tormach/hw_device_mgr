@@ -53,11 +53,14 @@ class BaseCiA301TestClass(BaseTestClass):
     #
 
     @pytest.fixture
-    def global_config(self):
+    def global_config(self, request):
         """Device configuration from file named in `global_config_yaml` attr
 
         Device configuration in the same format as non-test
         configuration, described in `Config` classes.
+
+        The absolute path is stored in the test object
+        `global_config_path` attribute.
 
         Optionally, to make the YAML file reusable, each
         configuration's `vendor_id` and `product_code` keys may be
@@ -66,8 +69,10 @@ class BaseCiA301TestClass(BaseTestClass):
         `device_model_classes` attribute; this fixture will re-add
         those keys.
         """
-        global_conf = self.load_yaml(self.global_config_yaml)
-        print(f"Loaded global config from {self.global_config_yaml}")
+        self.global_config_path, global_conf = self.load_yaml(
+            self.global_config_yaml, return_path=True
+        )
+        print(f"Loaded global config from {self.global_config_path}")
         for model_conf in global_conf:
             if "model_key" not in model_conf:
                 continue

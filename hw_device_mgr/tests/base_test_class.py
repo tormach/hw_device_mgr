@@ -25,10 +25,11 @@ class BaseTestClass:
     sim = True
 
     @classmethod
-    def load_yaml(cls, fname):
+    def load_yaml(cls, fname, return_path=False):
         p = Path(__file__).parent.parent.joinpath(fname)
         with p.open() as f:
-            return yaml.safe_load(f)
+            data = yaml.safe_load(f)
+        return (p, data) if return_path else data
 
     @classmethod
     def munge_device_data(cls, data):
