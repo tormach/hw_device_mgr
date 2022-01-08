@@ -1,4 +1,16 @@
 - git:
     local-name: hal_ros_control
     uri: https://github.com/zultron/hal_ros_control.git
-    version: foxy-devel
+    version: 2022-01-07-foxy-devel
+- git:
+    local-name: ros2_control_demos
+    # FIXME The rrbot demo avoids duplicating the rrbot description
+    # package URDFs, which differ only in the ros2_control hardware
+    # tag, by passing the hardware plugin through parameters.  The
+    # patch parameterizing the rrbot demos is not yet in upstream
+    # packages.
+    #
+    # uri: https://github.com/ros-controls/ros2_control_demos.git
+    # version: foxy
+    uri: https://github.com/zultron/ros2_control_demos.git
+    version: foxy-dev-parameterize-hardware-plugin
