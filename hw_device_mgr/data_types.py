@@ -59,7 +59,7 @@ class DataType:
     _shared_name_registry = dict()
     _shared_name_re_registry = dict()
 
-    def __init_subclass__(cls, /, **kwargs):
+    def __init_subclass__(cls, /, **kwargs):  # noqa:  E225
         if "subtype_prefix" in cls.__dict__:
             # Abstract (base) subclass
             cls._generate_subtypes()

@@ -152,7 +152,7 @@ class Device(abc.ABC):
     # Allow reregistering devices or not
     allow_rereg = False
 
-    def __init_subclass__(cls, /, **kwargs):
+    def __init_subclass__(cls, /, **kwargs):  # noqa:  E225
         # Add device type implementations to applicable registries
         cls._register_model()
 
