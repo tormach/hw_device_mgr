@@ -3,7 +3,7 @@ from ..cia_402.device import CiA402Device
 
 
 class ElmoGold(EtherCATDevice, CiA402Device):
-    """Base class for Elmo Motion Control Gold EtherCAT Family Devices"""
+    """Base class for Elmo Gold EtherCAT Family Devices."""
 
     vendor_id = 0x0000009A
     # FIXME The original ESI has models that differ only by revision,
@@ -36,7 +36,7 @@ class ElmoGold(EtherCATDevice, CiA402Device):
 
 
 class ElmoGold420(ElmoGold):
-    """Elmo 0x00030924 Gold EtherCAT GCON Drive Rev:0x00010420"""
+    """Elmo 0x00030924 Gold EtherCAT GCON Drive Rev:0x00010420."""
 
     product_code = 0x00030924
     revision_no = 0x00010420
@@ -44,7 +44,7 @@ class ElmoGold420(ElmoGold):
 
 
 class ElmoGold520(ElmoGold):
-    """Elmo 0x00030925 Gold EtherCAT GCON Drive ID Selector Rev:0x00010420"""
+    """Elmo 0x00030925 Gold EtherCAT GCON Drive ID Selector Rev:0x00010420."""
 
     product_code = 0x00030925
     revision_no = 0x00010420

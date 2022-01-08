@@ -2,13 +2,13 @@ from ...device import Device
 
 
 class BogusDevice(Device):
-    """Class for devices compatible with Bogus-Bus"""
+    """Class for devices compatible with Bogus-Bus."""
 
     category = "bogus_device"
 
     @classmethod
     def load_test_data(cls, data):
-        """Side-load bus scan data"""
+        """Side-load bus scan data."""
         cls._device_data = data
 
     @classmethod

@@ -2,8 +2,8 @@ from ..cia_301.device import CiA301Device, CiA301DataType
 
 
 class CiA402Device(CiA301Device):
-    """A CAN or EtherCAT motor drive implementing the CiA 402 state
-    machine
+    """
+    Manage a CiA 402 motor drive's state machine.
 
     This device will attempt to step the drive through the state
     machine to the goal `state` (e.g. `OPERATION ENABLED`), and will
@@ -39,12 +39,20 @@ class CiA402Device(CiA301Device):
 
     @classmethod
     def control_mode_int(cls, mode):
-        """Translate e.g. `MODE_CSP` to `int` `8`; pass `int` back unchanged"""
+        """
+        Translate control mode to integer value.
+
+        E.g. `MODE_CSP` to `int` `8`; pass `int` back unchanged.
+        """
         return getattr(cls, mode) if isinstance(mode, str) else mode
 
     @classmethod
     def control_mode_str(cls, mode):
-        """Translate e.g. `8` to `MODE_CSP`; pass `MODE_CSP` back unchanged"""
+        """
+        Translate control mode to string value.
+
+        E.g. `8` to `MODE_CSP`; pass `MODE_CSP` back unchanged.
+        """
         if isinstance(mode, str):
             assert mode.startswith("MODE_") and hasattr(cls, mode)
             return mode

@@ -3,7 +3,7 @@ from ..cia_402.device import CiA402Device
 
 
 class InovanceIS620N(EtherCATDevice, CiA402Device):
-    """Inovance IS620N servo drives"""
+    """Inovance IS620N servo drives."""
 
     vendor_id = 0x00100000
     product_code = 0x000C0108

@@ -10,8 +10,10 @@ class CiA301CommandException(RuntimeError):
 
 
 class CiA301Command(abc.ABC):
-    """Abstract class for CiA 301 device command interface:
-    upload/download SDOs and scan bus for device identification
+    """
+    Abstract class for CiA 301 device command interface.
+
+    Upload/download SDOs and scan bus for device identification.
     """
 
     data_type_class = CiA301DataType
@@ -20,11 +22,11 @@ class CiA301Command(abc.ABC):
 
     @abc.abstractmethod
     def scan_bus(self, bus=0):
-        """Scan bus, returning list of addresses and IDs for each device"""
+        """Scan bus, returning list of addresses and IDs for each device."""
 
     @abc.abstractmethod
     def upload(self, address=None, index=None, subindex=0, datatype=None):
-        """Upload a value from a device SDO"""
+        """Upload a value from a device SDO."""
 
     @abc.abstractmethod
     def download(
@@ -35,4 +37,4 @@ class CiA301Command(abc.ABC):
         value=None,
         datatype=None,
     ):
-        """Download a value to a device SDO"""
+        """Download a value to a device SDO."""

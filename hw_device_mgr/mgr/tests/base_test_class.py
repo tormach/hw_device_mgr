@@ -8,7 +8,7 @@ from .bogus_devices.mgr import (
 
 
 class BaseMgrTestClass(BaseEtherCATTestClass):
-    """Base test class for `HWDeviceMgr` class"""
+    """Base test class for `HWDeviceMgr` class."""
 
     # Device scan data
     device_data_yaml = "cia_402/tests/bogus_devices/device.yaml"

@@ -3,7 +3,7 @@ from ..hal.data_types import HALDataType
 
 
 class LCECDataType(EtherCATDataType, HALDataType):
-    """Data types for HAL and IgH Master"""
+    """Data types for HAL and IgH Master."""
 
     subtype_prefix = "LCEC"
     subtype_data = dict(

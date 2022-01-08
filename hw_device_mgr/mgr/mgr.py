@@ -66,13 +66,14 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.mgr_config = config
 
     def init(self, mgr_config=None, **kwargs):
-        """Initialize Manager instance"""
+        """Initialize Manager instance."""
         self.mgr_config = mgr_config
         super().init(**kwargs)
         self.logger.info("Initialization complete")
 
     def init_devices(self, device_config=None, **kwargs):
-        """Populate `HWDeviceMgr` instance `devices` attribute devices
+        """
+        Populate `HWDeviceMgr` instance `devices` attribute devices.
 
         Scan devices and configure with data in device configuration
         """
@@ -415,7 +416,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     # Execution
 
     def run(self):
-        """Program main loop"""
+        """Program main loop."""
         while not self.shutdown:
             try:
                 self.read_update_write()
@@ -436,9 +437,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             self.rate.sleep()
 
     def read_update_write(self):
-        """Read hardware, update controller, write hardware
+        """
+        Read hardware, update controller, write hardware.
 
-        Handle known exceptions"""
+        Handle known exceptions
+        """
         try:
             self.read()
             self.get_feedback()
@@ -481,13 +484,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     )
 
     def read(self):
-        """Read manager and device external feedback"""
+        """Read manager and device external feedback."""
         super().read()
         for dev in self.devices:
             dev.read()
 
     def get_feedback(self):
-        """Process manager and device external feedback"""
+        """Process manager and device external feedback."""
         fb_out = super().get_feedback()
 
         # Incoming commanded state
@@ -502,11 +505,12 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return fb_out
 
     def set_command(self):
-        """Set command for top-level manager and for drives
+        """
+        Set command for top-level manager and for drives.
 
         Manager `command_in` is derived from manager & drive
-        `feedback_out` rather than being passed down via the
-        controller API.
+        `feedback_out` rather than being passed down via the controller
+        API.
         """
         # Initialize command in/out interfaces with previous cycle values
         cmd_in = self.command_in
@@ -594,7 +598,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return cmd_out
 
     def write(self):
-        """Write manager and device external command"""
+        """Write manager and device external command."""
         super().write()
         for dev in self.devices:
             dev.write()

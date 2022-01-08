@@ -24,6 +24,12 @@ repos:
         args: [-l, "80"]
         types: [python]
 
+- repo: https://github.com/myint/docformatter
+  rev: v1.4
+  hooks:
+    - id: docformatter
+      args: [--pre-summary-newline, --in-place]
+
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.1.0
     hooks:

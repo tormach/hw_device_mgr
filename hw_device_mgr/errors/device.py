@@ -4,7 +4,8 @@ import ruamel.yaml
 
 
 class ErrorDevice(Device):
-    """Abstract class representing a device error code handling
+    """
+    Abstract class representing a device error code handling.
 
     Error code is fed into `error_code` feedback.
 
@@ -31,10 +32,11 @@ class ErrorDevice(Device):
 
     @classmethod
     def error_descriptions(cls):
-        """Return dictionary of error code data
+        """
+        Return dictionary of error code data.
 
-        Data is read from YAML file `{device_error_dir}/{name}.yaml`
-        and cached.
+        Data is read from YAML file `{device_error_dir}/{name}.yaml` and
+        cached.
         """
         if cls.name not in cls._error_descriptions:
             errs = cls._error_descriptions[cls.name] = dict()

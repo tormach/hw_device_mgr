@@ -4,7 +4,7 @@ from .data_types import HALDataType
 
 
 class HALPinDevice(Device, HALMixin):
-    """A `Device` with HAL pins attached to feedback, goal and command"""
+    """A `Device` with HAL pins attached to feedback, goal and command."""
 
     category = "HAL"
     data_type_class = HALDataType
@@ -99,7 +99,7 @@ class HALPinDevice(Device, HALMixin):
 
 
 class HALCompDevice(Device, HALMixin):
-    """A `Device` with HAL component"""
+    """A `Device` with HAL component."""
 
     def init(self, **kwargs):
         self.comp = self.hal.component(self.name)

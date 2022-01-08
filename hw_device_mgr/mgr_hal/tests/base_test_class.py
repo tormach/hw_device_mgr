@@ -5,7 +5,7 @@ import pytest
 
 
 class BaseLCEC402MgrTestClass(BaseMgrTestClass, BaseLCECTestClass):
-    """Base test class for `HALHWDeviceMgr` class"""
+    """Base test class for `HALHWDeviceMgr` class."""
 
     # Manager class
     device_class = BogusLCEC402HWDeviceMgr
@@ -18,10 +18,10 @@ class BaseLCEC402MgrTestClass(BaseMgrTestClass, BaseLCECTestClass):
 
     @pytest.fixture
     def manager_lcec(self, mock_hal, mock_ethercat_command):
-        """Mock HAL and `ethercat` command for the device manager"""
+        """Mock HAL and `ethercat` command for the device manager."""
 
     @pytest.fixture
     def device_cls(self, config_cls, manager_lcec):
-        """Fixture for HAL Device classes"""
+        """Fixture for HAL Device classes."""
         self.device_class.clear_devices()
         yield self.device_class

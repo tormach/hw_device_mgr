@@ -6,7 +6,7 @@ __all__ = ("EtherCATXMLReader",)
 
 
 class EtherCATXMLReader:
-    """Parse EtherCAT Slave Information "ESI" XML files"""
+    """Parse EtherCAT Slave Information "ESI" XML files."""
 
     sdo_class = EtherCATSDO
     _device_registry = dict()
@@ -24,13 +24,16 @@ class EtherCATXMLReader:
         return self.sdo_class.data_type_class
 
     def __init__(self, LcId="1033"):
-        """Init object with locale ID"""
+        """Init object with locale ID."""
         self.LcId = LcId  # Discard anything not in this locale
 
     def safe_set(self, dst, key, val, prefix=None):
-        """Set `dst[key]=val`, and raise an exception if the change would
+        """
+        Set dictionary key without clobbering.
+
+        Set `dst[key]=val`, and raise an exception if the change would
         clobber an old value; if `prefix` is set, prepend to `key` if
-        the change would clobber
+        the change would clobber.
         """
         if key in dst:
             if dst[key] == val:
@@ -51,9 +54,13 @@ class EtherCATXMLReader:
         dst[key] = val
 
     def safe_update(self, dst, src, prefix=None):
-        """A non-destructive version of `dict.update()`:  update a copy of
-        `dst` with `src`, raising exceptions and with `prefix` arg
-        like in the `safe_set` method.  Return the copied dict.
+        """
+        Update dict like `dict.update()` non-destructively.
+
+        Update a copy of `dst` with `src`, raising exceptions and with
+        `prefix` arg like in the `safe_set` method.
+
+        Return the copied dict.
         """
         dst_copy = dst.copy()
         for key, val in src.items():
@@ -66,8 +73,11 @@ class EtherCATXMLReader:
         return dst_copy
 
     def tree_to_obj(self, tree):
-        """Translate an XML element into a Python object that can be printed
-        and that won't lose information; used in fall-through cases
+        """
+        Translate an XML element into a Python object.
+
+        The resulting object can be printed and won't lose information;
+        used in fall-through cases.
         """
         return dict(
             tag=tree.tag,
@@ -144,7 +154,7 @@ class EtherCATXMLReader:
 
     @property
     def vendor_xml(self):
-        """Return the XML `Vendor` element"""
+        """Return the XML `Vendor` element."""
         # Main file structure:
         # <EtherCATInfo>
         #   <Vendor>
@@ -168,7 +178,7 @@ class EtherCATXMLReader:
 
     @property
     def devices_xml(self):
-        """Return the list of XML `Device` elements"""
+        """Return the list of XML `Device` elements."""
         # Main file structure:
         # <EtherCATInfo>
         #   <Vendor/>  <!-- not parsed -->
@@ -216,7 +226,7 @@ class EtherCATXMLReader:
     #   [...]
 
     def expand_subitems(self, subitems):
-        """Translate `SubItem` objects within complex `DataType` objects"""
+        """Translate `SubItem` objects within complex `DataType` objects."""
         subidx = 0
         expanded_subitems = list()
         for subitem in subitems:
@@ -254,7 +264,7 @@ class EtherCATXMLReader:
         return expanded_subitems
 
     def massage_type(self, otype):
-        """Parse a `DataType` object"""
+        """Parse a `DataType` object."""
         if "SubItems" in otype:
             otype["OldSubItems"] = old_subitems = otype.pop("SubItems")
             otype["SubItems"] = self.expand_subitems(old_subitems)
@@ -262,7 +272,7 @@ class EtherCATXMLReader:
         return otype
 
     def read_datatypes(self, device):
-        """Parse device `<DataType/>` elements into `self.datatypes` dict"""
+        """Parse device `<DataType/>` elements into `self.datatypes` dict."""
         self.datatypes = dict()
         for dt in device.xpath("Profile/Dictionary/DataTypes/DataType"):
             o = self.massage_type(self.read_object(dt))
@@ -293,8 +303,10 @@ class EtherCATXMLReader:
         return otypes
 
     def type_data(self, o, type_idx):
-        """Return type data for an object, including `SubItem` objects if
-        present
+        """
+        Return type data for an object.
+
+        Include `SubItem` objects if present.
         """
         type_name = o["Type"]
         otype = self.datatypes[type_name].copy()  # Manipulated below
@@ -355,8 +367,10 @@ class EtherCATXMLReader:
     #   [...]
 
     def read_objects(self, device):
-        """Parse a device's XML `<Object/>` tags into simple Python object,
-        populating type data
+        """
+        Parse a device's XML `<Object/>` tags into simple Python object.
+
+        Populate type data.
         """
         sdos = list()
 
@@ -471,7 +485,7 @@ class EtherCATXMLReader:
         sdos[idx, subidx] = sdo
 
     def add_device_descriptions(self, fpath):
-        """Parse ESI file and cache device information"""
+        """Parse ESI file and cache device information."""
         if fpath in self._fpath_registry:
             return self._fpath_registry[fpath]
 

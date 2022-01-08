@@ -14,7 +14,8 @@ class ROSHWDeviceMgr(HWDeviceMgr):
         return param.value
 
     def init(self, args, **kwargs):
-        """Initialize manager instance
+        """
+        Initialize manager instance.
 
         Init ROS node, shutdown callback and rate object, and read
         manager config from ROS params, in addition to base class init
@@ -57,14 +58,12 @@ class ROSHWDeviceMgr(HWDeviceMgr):
 
     def read_update_write(self):
         """
-        Add interrupt handling and fast-tracking to
-        `read_update_write()`
+        Add interrupt handling and fast-tracking to `read_update_write`.
 
         The `rclpy.node.Node` spinner can handle the main loop and
         shutdown.  This method moves generic `Exception` handling and
         fast-tracking here from the non-ROS `run` loop.
         """
-
         loop = True
         while loop:
             try:
@@ -87,9 +86,11 @@ class ROSHWDeviceMgr(HWDeviceMgr):
                 loop = False
 
     def run(self):
-        """Program main loop
+        """
+        Program main loop.
 
-        Let `rclpy.node.Node` spinner manage looping and exit"""
+        Let `rclpy.node.Node` spinner manage looping and exit
+        """
         self.ros_node.create_timer(1 / self.update_rate, self.read_update_write)
         rclpy.spin(self.ros_node)
         self.logger.info("Shutting down")

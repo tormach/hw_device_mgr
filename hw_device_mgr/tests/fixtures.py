@@ -19,7 +19,7 @@ class MockFixture:
 
     @classmethod
     def instances(cls):
-        """Returns a `WeakSet` of instances"""
+        """Return a `WeakSet` of instances."""
         if not hasattr(cls, "_instances"):
             cls._instances = WeakSet()
         return cls._instances
@@ -31,7 +31,7 @@ class MockFixture:
         cls.instances().clear()
 
     def __new__(cls, *args, **kwargs):
-        """Cache newly-created instances"""
+        """Cache newly-created instances."""
         obj = object.__new__(cls)
         cls.instances().add(obj)
         return obj
@@ -44,8 +44,12 @@ class MockFixture:
         return f"<{self.fixture_name} '{self.instance_name}'>"
 
     def _make_mock_obj(self):
-        """Build a mock object with methods and attributes named by the
-        `mock_methods` and `mock_attrs` attributes"""
+        """
+        Build a mock object.
+
+        Object has methods and attributes named by the `mock_methods`
+        and `mock_attrs` attributes.
+        """
         m = MagicMock(name=self.__repr__())
         m.obj = self
         for method in self.mock_methods:
@@ -65,22 +69,25 @@ class MockFixture:
 
     @property
     def mock_obj(self):
-        """Build and cache a mock object"""
+        """Build and cache a mock object."""
         if not hasattr(self, "_mock_obj"):
             self._mock_obj = self._make_mock_obj()
         return self._mock_obj
 
     @classmethod
     def get_mock(cls, *args, **kwargs):
-        """Factory:  Create a new instance and return the mock object"""
+        """Factory:  Create a new instance and return the mock object."""
         print(f"get_mock:  Creating {cls.fixture_name}:  args {args} {kwargs}")
         obj = cls(*args, **kwargs)
         return obj.mock_obj
 
     @classmethod
     def get_instance(cls, singleton=True):
-        """Return an arbitrary, cached instance of the class; if `singleton`
-        is set, it is an error if there is not exactly one instance
+        """
+        Return an arbitrary, cached instance of the class.
+
+        If `singleton` is set, it is an error if there is not exactly
+        one instance.
         """
         # Return an arbitrary instance; if singleton is True, must be
         # *only* instance
@@ -92,7 +99,8 @@ class MockFixture:
 
     @classmethod
     def fixture(cls, name, test_obj, *args):
-        """Main interface for fixture functions.
+        """
+        Provide a main interface for fixture functions.
 
         Factory method; creates the mock instance, applies patches,
         yields the mock object, and stops patches.
@@ -117,6 +125,9 @@ class MockFixture:
 
     @classmethod
     def tweak_fixture(cls, mock_obj, obj):
-        """A hook for subclasses to further customize fixture; called during
-        the `fixture` method."""
+        """
+        Provide hook for subclasses to further customize fixture.
+
+        Called during the `fixture` method.
+        """
         pass

@@ -4,9 +4,10 @@ from .data_types import CiA301DataType
 
 
 class CiA301Device(Device):
-    """Abstract class represting a CAN device
+    """
+    Abstract class represting a CAN device.
 
-    Implements NMT state machine
+    Implements NMT state machine.
     """
 
     category = "cia_301"
@@ -35,8 +36,12 @@ class CiA301Device(Device):
 
     @classmethod
     def device_type_key(cls):
-        """CiA 301 device models are uniquely identified by vendor ID &
-        product code"""
+        """
+        Return unique device model identifier.
+
+        CiA 301 device models are uniquely identified by vendor ID &
+        product code.
+        """
         model_id = cls.vendor_id, cls.product_code
         return cls.config_class.format_model_id(model_id)
 
@@ -86,8 +91,12 @@ class CiA301Device(Device):
 
     @classmethod
     def add_device_sdos(cls, *args, **kwargs):
-        """Pass to the `Config` class the information needed to configure SDOs
-        for this `model_id`"""
+        """
+        Configure device SDOs.
+
+        Pass to the `Config` class the information needed to configure
+        SDOs for this `model_id`.
+        """
         cls.config_class.add_device_sdos(*args, **kwargs)
 
     @classmethod
@@ -105,7 +114,7 @@ class CiA301Device(Device):
 
     @classmethod
     def scan_devices(cls, bus=0, **kwargs):
-        """Scan bus and return a list of device objects"""
+        """Scan bus and return a list of device objects."""
         devices = list()
         config_cls = cls.config_class
         for config in config_cls.scan_bus(bus=bus):

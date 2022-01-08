@@ -2,7 +2,7 @@ from ..data_types import DataType
 
 
 class EtherCATDataType(DataType):
-    """Data types defined by ETG.2000"""
+    """Data types defined by ETG.2000."""
 
     subtype_prefix = "EtherCAT"
     subtype_data = dict(

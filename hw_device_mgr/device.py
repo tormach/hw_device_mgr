@@ -6,7 +6,7 @@ from .data_types import DataType
 
 
 class Device(abc.ABC):
-    """Base device class for both device categories and device models"""
+    """Base device class for both device categories and device models."""
 
     category = "all"  # Device category sets up registry for models
     name = None  # Concrete device model subclasses must define
@@ -41,16 +41,23 @@ class Device(abc.ABC):
         self.init_interfaces()
 
     def init(self, index=None):
-        """Subclasses may implement `init()` for extra initialization outside
-        the constructor.  Implementations should always call
+        """
+        Initialize device.
+
+        Subclasses may implement `init()` for extra initialization
+        outside the constructor.  Implementations should always call
         `super().init()`.
         """
         self.index = index
 
     @classmethod
     def merge_dict_attrs(cls, attr):
-        """Scan through class and parent classes for `attr`, a `dict`, and
-        return merged `dict`"""
+        """
+        Merge `dict` attributes across class hierarchy.
+
+        Scan through class and parent classes for `attr`, a `dict`, and
+        return merged `dict`.
+        """
         res = dict()
         for c in cls.__mro__:
             c_attr = c.__dict__.get(attr, dict())
@@ -75,7 +82,7 @@ class Device(abc.ABC):
         return self._interfaces[name]
 
     def __getattr__(self, name):
-        """Provide attributes for each interface"""
+        """Provide attributes for each interface."""
         if name not in self._interfaces:
             cname = self.__class__.__name__
             raise AttributeError(f"'{cname}' object has no attribute '{name}'")
@@ -91,32 +98,31 @@ class Device(abc.ABC):
         return self._interfaces[what].changed(key, return_vals=return_vals)
 
     def read(self):
-        """Read `feedback_in` from hardware interface"""
+        """Read `feedback_in` from hardware interface."""
         if self.sim:
             sfb = self._interfaces["sim_feedback"].get()
             self._interfaces["feedback_in"].set(**sfb)
 
     def get_feedback(self):
-        """Process `feedback_in` and return `feedback_out` interface"""
+        """Process `feedback_in` and return `feedback_out` interface."""
         fb_in = self._interfaces["feedback_in"].get()
         self._interfaces["feedback_out"].set(**fb_in)
         return self._interfaces["feedback_out"]
 
     def set_command(self, **kwargs):
-        """Process `command_in` and return `command_out` interface"""
+        """Process `command_in` and return `command_out` interface."""
         self._interfaces["command_in"].set(**kwargs)
         self._interfaces["command_out"].set()  # Set defaults
         return self._interfaces["command_out"]
 
     def set_sim_feedback(self):
-        """Process any of command and feedback and set `sim_feedback`
-        interface"""
+        """Simulate feedback from command and feedback."""
         sfb = self._interfaces["sim_feedback"]
         sfb.set()
         return sfb
 
     def write(self):
-        """Write `command_out` to hardware interface"""
+        """Write `command_out` to hardware interface."""
         if self.sim:
             self.set_sim_feedback()
 
@@ -125,7 +131,7 @@ class Device(abc.ABC):
 
     @classmethod
     def pkg_path(cls, path):
-        """A `pathlib.Path` object for this package's directory"""
+        """Return `pathlib.Path` object for this package's directory."""
         # Find cls's module & package
         pkg = ".".join(cls.__module__.split(".")[:-1])
         with imp_path(pkg, path) as p:
@@ -152,8 +158,11 @@ class Device(abc.ABC):
 
     @classmethod
     def device_type_key(cls):
-        """A unique key by which a detected device's model class may be looked
-        up, e.g. `(manufacturer_id, model)`
+        """
+        Return unique device model identifier.
+
+        A unique key by which a detected device's model class may be
+        looked up, e.g. `(manufacturer_id, model)`.
         """
         return cls.name
 
@@ -213,17 +222,17 @@ class Device(abc.ABC):
 
     @classmethod
     def clear_devices(cls):
-        """Clear out device instance registry (for tests)"""
+        """Clear out device instance registry (for tests)."""
         cls._address_registry.clear()
 
     @classmethod
     @abc.abstractmethod
     def scan_devices(cls, sim=True):
-        """Scan attached devices and return a list of objects
+        """
+        Scan attached devices and return a list of objects.
 
         Typically each device on a bus is scanned for its device type
-        key and its device ID.  The type key is used by
-        `get_model(key)` to obtain the device class, and the device ID
-        is used by `get_device_obj(address)` to obtain the device
-        instance.
+        key and its device ID.  The type key is used by `get_model(key)`
+        to obtain the device class, and the device ID is used by
+        `get_device_obj(address)` to obtain the device instance.
         """

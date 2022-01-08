@@ -13,10 +13,11 @@ class LCECCommand(EtherCATCommand):
         return resp
 
     def _ethercat(self, *args, log_lev="debug", dry_run=False):
-        """Run IgH EtherCAT Master `ethercat` utility
+        """
+        Run IgH EtherCAT Master `ethercat` utility.
 
         Run `ethercat` utility with args; return minimally munged
-        output
+        output.
         """
         cmd_args = ["ethercat"] + list(args)
         if dry_run:

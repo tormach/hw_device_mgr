@@ -3,7 +3,7 @@ from .base import HALMixin
 
 
 class HALDataType(DataType, HALMixin):
-    """Data type mixin for Machinekit HAL types"""
+    """Data type mixin for Machinekit HAL types."""
 
     subtype_prefix = "HAL"
     subtype_data = dict(

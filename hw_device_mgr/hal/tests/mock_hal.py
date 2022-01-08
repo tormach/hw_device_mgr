@@ -2,14 +2,14 @@ from ...tests.fixtures import MockFixture
 
 
 class MockHALPin(MockFixture):
-    """A `MockFixture` subclass that emulates a HAL pin"""
+    """A `MockFixture` subclass that emulates a HAL pin."""
 
     fixture_name = "MockHALPin"
     instance_attr = "pname"
     mock_methods = ["get", "set"]
 
     def __init__(self, pname, ptype, pdir, storage=None):
-        """Emulates `hal_comp.newpin()`"""
+        """Emulate `hal_comp.newpin()`."""
         self.pname = pname
         self.ptype = ptype
         self.pdir = pdir
@@ -20,19 +20,19 @@ class MockHALPin(MockFixture):
         self.storage[self.pname] = 0
 
     def set(self, val):
-        """Emulates `hal_pin.set()`"""
+        """Mock HAL pin setter."""
         print(f"MockHALPin {self.pname}: set({val}/0x{val:X})")
         self.storage[self.pname] = val
 
     def get(self):
-        """Emulates `hal_pin.get()`"""
+        """Mock HAL pin getter."""
         val = self.storage[self.pname]
         print(f"MockHALPin {self.pname}: get() -> {val}/0x{val:X}")
         return val
 
 
 class MockHALComponent(MockFixture):
-    """A `MockFixture` subclass that emulates a HAL component"""
+    """A `MockFixture` subclass that emulates a HAL component."""
 
     fixture_name = "MockHALComponent"
     instance_attr = "name"
@@ -51,7 +51,7 @@ class MockHALComponent(MockFixture):
     patches = "hal.component"
 
     def __init__(self, name, pin_vals):
-        """Emulates `hal.compenent()`"""
+        """Emulate `hal.compenent()`."""
         self.name = name
         self.is_ready = False
         self.pins = {}
@@ -59,17 +59,17 @@ class MockHALComponent(MockFixture):
         print(f"Created {self}")
 
     def ready(self):
-        """Emulates `hal_comp.ready()`"""
+        """Emulate `hal_comp.ready`."""
         print(f"MockHALComponent {self.name}: ready()")
         self.is_ready = True
 
     def getprefix(self):
-        """Emulates `hal_comp.getprefix()`"""
+        """Emulate `hal_comp.getprefix`."""
         # print(f"MockHALComponent {self.name}: getprefix() -> {self.name}")
         return self.name
 
     def newpin(self, *args):
-        """Emulates `hal_comp.newpin()`"""
+        """Emulate `hal_comp.newpin`."""
         mock_obj = MockHALPin.get_mock(*args)
         pin = mock_obj.obj
         pin._set_storage(self.pin_vals)
@@ -78,35 +78,38 @@ class MockHALComponent(MockFixture):
         return mock_obj
 
     def pin_names(self):
-        """Fixture method:  Return component's pins' names"""
+        """Fixture method:  Return component's pins' names."""
         return self.pins.keys()
 
     def get_pin(self, pname):
-        """Fixture method:  Return a component's pin's object"""
+        """Fixture method:  Return a component's pin's object."""
         return self.pins.get(pname, None)
 
     def set_pin_val(self, pname, val):
-        """Fixture method:  Set a component's pin's value"""
+        """Fixture method:  Set a component's pin's value."""
         print(f"fixture set_pin_val({pname}, {val})")
         self.pin_vals[pname] = val
 
     def get_pin_val(self, pname):
-        """Fixture method:  Get a component's pin's value"""
+        """Fixture method:  Get a component's pin's value."""
         val = self.pin_vals[pname]
         print(f"fixture get_pin_val({pname}) = {val}")
         return val
 
     def get_pin_type(self, pname):
-        """Fixture method:  Get a component's pin's type"""
+        """Fixture method:  Get a component's pin's type."""
         return self.pins[pname].obj.ptype
 
     def get_pin_dir(self, pname):
-        """Fixture method:  Get a component's pin's direction"""
+        """Fixture method:  Get a component's pin's direction."""
         return self.pins[pname].obj.pdir
 
     @classmethod
     def tweak_fixture(cls, mock_obj, obj):
-        """Add `get_pin(pname)` and `set_pin(pname, val)` to test object
-        instance"""
+        """
+        Add `get_pin(pname)` and `set_pin(pname, val)`.
+
+        For testing object instance.
+        """
         obj.request_inst.get_pin = obj.get_pin_val
         obj.request_inst.set_pin = obj.set_pin_val

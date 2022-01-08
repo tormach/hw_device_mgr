@@ -7,7 +7,7 @@ from .bogus_devices.device import BogusDevice, BogusServo, BogusIO
 
 
 class BaseTestClass:
-    """Base test class providing fixtures for use with `bogus_devices`"""
+    """Base test class providing fixtures for use with `bogus_devices`."""
 
     # Device scan data; for test fixture
     device_data_yaml = "tests/bogus_devices/device.yaml"
@@ -33,7 +33,7 @@ class BaseTestClass:
 
     @classmethod
     def munge_device_data(cls, data):
-        """Massage device test data for readability"""
+        """Massage device test data for readability."""
         uint32 = cls.data_type_class.uint32
         data["model_id"] = uint32(data["model_id"])
         return data
@@ -50,7 +50,7 @@ class BaseTestClass:
 
     @pytest.fixture
     def device_cls(self, all_device_data):
-        """Fixture for configured Device class"""
+        """Fixture for configured Device class."""
         # Sideload device data into test class
         self.device_class.load_test_data(all_device_data)
         self.device_class.clear_devices()
@@ -73,7 +73,8 @@ class BaseTestClass:
 
     @pytest.fixture
     def fpath(self):
-        """Fixture that returns test directory"""
+        """Fixture that returns test directory."""
+        # This line resolves black & pep257 conflicts.  :P
 
         def func(base_name=None):
             cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

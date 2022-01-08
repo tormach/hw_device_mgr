@@ -6,8 +6,7 @@ from .command import LCECCommand
 
 
 class LCECConfig(EtherCATConfig):
-    """Concrete EtherCAT configuration interface for linuxcnc-ethercat and
-    IgH EtherCAT Master"""
+    """Configuration for linuxcnc-ethercat and IgH EtherCAT Master."""
 
     data_type_class = LCECDataType
     esi_reader_class = LCECXMLReader

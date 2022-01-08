@@ -13,7 +13,7 @@ from .bogus_devices.command import BogusCiA301Command
 
 
 class BaseCiA301TestClass(BaseTestClass):
-    """Base test class for CiA301 module"""
+    """Base test class for CiA301 module."""
 
     #
     # Configuration for test subclasses
@@ -38,9 +38,12 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @classmethod
     def model_key_to_class(cls, model_key):
-        """Return class from `device_model_classes` with matching `model_key`
-        attribute (else default to `name` attribute); used by
-        fixtures
+        """
+        Translate model key to device class.
+
+        Return class from `device_model_classes` with matching
+        `model_key` attribute (else default to `name` attribute); used
+        by fixtures.
         """
         mk_map = {
             getattr(dmc, "model_key", dmc.name): dmc
@@ -54,7 +57,11 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @pytest.fixture
     def global_config(self, request):
-        """Device configuration from file named in `global_config_yaml` attr
+        """
+        Device configuration data fixture.
+
+        Load device configuration from file named in
+        `global_config_yaml` attr.
 
         Device configuration in the same format as non-test
         configuration, described in `Config` classes.
@@ -145,9 +152,12 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @pytest.fixture
     def all_sdo_data(self):
-        """SDO data from file named in `device_sdos_yaml` attr
+        """
+        SDO data from file named in `device_sdos_yaml` attr.
 
-        SDO data is read from file and reformatted for ease of use in a `dict`:
+        SDO data is read from file and reformatted for ease of use in
+        a `dict`:
+
         `model_key`:  # `bogus_devices.device` model class attribute
           `(idx, subidx)`:  # One key (`tuple` of `int`) for each SDO of device
             `index`:  # SDO index
@@ -164,7 +174,8 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @pytest.fixture
     def sdo_data(self, _sdo_data):
-        """Parametrize test with values from `all_sdo_data` fixture
+        """
+        Parametrize test with values from `all_sdo_data` fixture.
 
         When combined with the `device_data` fixture, `sdo_data`
         values will match that fixture's device model.
@@ -181,7 +192,7 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @classmethod
     def munge_device_data(cls, data, sdo_data):
-        """Massage device test data for readability"""
+        """Massage device test data for readability."""
         # Locate device model class and SDO definitions
         model_key = data["model_key"]
         dev_cls = cls.model_key_to_class(model_key)
@@ -204,7 +215,8 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @pytest.fixture
     def all_device_data(self, all_sdo_data):
-        """Device data from file named in `device_data_yaml` attr
+        """
+        Device data from file named in `device_data_yaml` attr.
 
         Device data is reformatted for ease of use in a `list` of `dict`:
         `model_key`:   `bogus_devices.device` model class attribute
@@ -223,7 +235,8 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @pytest.fixture
     def device_data(self, _device_data, device_cls):
-        """Parametrize test with values from `all_device_data` fixture
+        """
+        Parametrize test with values from `all_device_data` fixture.
 
         When combined with the `sdo_data` fixture, `device_data`
         values will match that fixture's device model.
@@ -242,7 +255,7 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @pytest.fixture
     def command_cls(self, all_device_data, all_sdo_data):
-        """Side-load bus scan data into command class"""
+        """Side-load bus scan data into command class."""
         self.command_class.init(all_device_data, all_sdo_data)
         yield self.command_class
 

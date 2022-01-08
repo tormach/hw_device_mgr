@@ -34,11 +34,13 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
 
     @pytest.fixture
     def mock_ethercat_command(self, all_device_data):
-        """Emulate IgH EtherCAT master `ethercat` command-line utility
+        """
+        Emulate IgH EtherCAT master `ethercat` command-line utility.
 
         Realistic results from `slaves`, `upload` and `download`
         commands.  Patches `subprocess.check_output()`.
         """
+        # This line resolves black & pep257 conflicts.  :P
 
         def emulate_ethercat_command(args):
             print(f'mocking ethercat command: {" ".join(args)}')
@@ -102,8 +104,10 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
 
     @pytest.fixture
     def command_cls(self, all_device_data, all_sdo_data, mock_ethercat_command):
-        """Side-load bus scan data into command class
+        """
+        Side-load bus scan data into command class.
 
-        Emulate IgH `ethercat` utility"""
+        Emulate IgH `ethercat` utility
+        """
         self.command_class.init(all_device_data, all_sdo_data)
         yield self.command_class

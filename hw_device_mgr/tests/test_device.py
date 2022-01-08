@@ -165,11 +165,11 @@ class TestDevice(BaseTestClass):
         assert self.check_interface_values("feedback_in")
 
     def pre_read_actions(self):
-        """Hook for inserting actions before `read()`"""
+        """Provide hook for inserting actions before `read()`."""
         pass
 
     def post_read_actions(self):
-        """Hook for inserting actions after `read()`"""
+        """Provide hook for inserting actions after `read()`."""
         pass
 
     def get_feedback_and_check(self):
@@ -199,7 +199,7 @@ class TestDevice(BaseTestClass):
         self.post_write_actions()
 
     def post_write_actions(self):
-        """Hook for inserting actions after `write()`"""
+        """Provide hook for inserting actions after `write()`."""
         pass
 
     #

@@ -1,5 +1,5 @@
 class Interface:
-    """Represents an interface, e.g. feedback or command"""
+    """Represents an interface, e.g. feedback or command."""
 
     def __init__(self, name, defaults=None, data_types=None):
         self.name = name
@@ -10,7 +10,7 @@ class Interface:
         self.set(**defaults)  # Set old values to defaults
 
     def set_types(self, **values):
-        """Set data types for values if a type is defined for that value"""
+        """Set data types for values if a type is defined for that value."""
         for key, data_type in self.data_types.items():
             if key in values:
                 values[key] = data_type(values[key])

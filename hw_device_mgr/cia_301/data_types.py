@@ -2,7 +2,7 @@ from ..data_types import DataType
 
 
 class CiA301DataType(DataType):
-    """Data types defined by CiA 301"""
+    """Data types defined by CiA 301."""
 
     subtype_prefix = "CiA301"
     subtype_data = dict(

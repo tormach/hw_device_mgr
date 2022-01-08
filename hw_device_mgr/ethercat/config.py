@@ -6,7 +6,8 @@ from .command import EtherCATCommand
 
 
 class EtherCATConfig(CiA301Config):
-    """EtherCAT drive configuration interface
+    """
+    EtherCAT drive configuration interface.
 
     EtherCAT CoE shares much in common with CiA 301, and this class
     subclasses `CiA301Config`.
@@ -27,7 +28,7 @@ class EtherCATConfig(CiA301Config):
 
     @classmethod
     def add_device_sdos(cls, esi_path):
-        """Read in device configuration from ESI file at `esi_path`"""
+        """Read in device configuration from ESI file at `esi_path`."""
         esi_reader = cls.esi_reader_class()
         sdo_data = esi_reader.add_device_descriptions(esi_path)
         super().add_device_sdos(sdo_data)

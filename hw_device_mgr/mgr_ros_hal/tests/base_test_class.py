@@ -9,7 +9,7 @@ import pytest
 
 
 class BaseROSHALMgrTestClass(BaseLCEC402MgrTestClass, BaseROSMgrTestClass):
-    """Base test class for `ROSHWDeviceMgr` class"""
+    """Base test class for `ROSHWDeviceMgr` class."""
 
     # Managed device types
     device_class = ROSHALHWDeviceMgr
@@ -23,6 +23,6 @@ class BaseROSHALMgrTestClass(BaseLCEC402MgrTestClass, BaseROSMgrTestClass):
 
     @pytest.fixture
     def device_cls(self, config_cls, manager_ros_params, manager_lcec):
-        """Fixture for ROS + LCEC Device classes"""
+        """Fixture for ROS + LCEC Device classes."""
         self.device_class.clear_devices()
         yield self.device_class

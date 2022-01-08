@@ -8,7 +8,7 @@ import pytest
 
 
 class BaseROSMgrTestClass(BaseMgrTestClass):
-    """Base test class for `ROSHWDeviceMgr` class"""
+    """Base test class for `ROSHWDeviceMgr` class."""
 
     # Manager class
     device_class = BogusROSHWDeviceMgr
@@ -23,7 +23,7 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
     def manager_ros_params(
         self, mock_rclpy, mgr_config, global_config, request
     ):
-        """ROS params for the device manager"""
+        """ROS params for the device manager."""
         hdm_params = dict(
             update_rate=20,
             use_sim=True,
@@ -34,7 +34,7 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
 
     @pytest.fixture
     def device_cls(self, config_cls, manager_ros_params):
-        """Fixture for ROS Device classes"""
+        """Fixture for ROS Device classes."""
         self.device_class.clear_devices()
         yield self.device_class
 

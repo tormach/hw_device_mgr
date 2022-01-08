@@ -2,7 +2,7 @@ from rclpy import logging
 
 
 class Logging:
-    """Wrapper for `rclpy.logging` object"""
+    """Wrapper for `rclpy.logging` object."""
 
     def __init__(self, name):
         self._logger = logging.get_logger(name)

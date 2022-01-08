@@ -2,7 +2,8 @@ import hal
 
 
 class HALMixin:
-    """A Machinekit HAL-related mixin class
+    """
+    A Machinekit HAL-related mixin class.
 
     Provides `hal` enums as class attrs, e.g. `HAL_IN`, `HAL_OUT`,
     `HAL_BIT`, `HAL_U32`, and methods for smoother HAL integration.
@@ -20,7 +21,8 @@ class HALMixin:
 
     @classmethod
     def hal_enum(cls, x):
-        """Translates a `string` or `int` to a HAL enum.
+        """
+        Translate a `string` or `int` to a HAL enum.
 
         E.g. `in`, `IN` or `16` -> `hal.HAL_IN`.
         """
@@ -28,7 +30,8 @@ class HALMixin:
 
     @classmethod
     def hal_enum_str(cls, x):
-        """Translates a HAL enum to a `string`.
+        """
+        Translate a HAL enum to a `string`.
 
         E.g. `3`, `hal.HAL_S32` -> `HAL_S32`
         """
@@ -36,7 +39,8 @@ class HALMixin:
 
     @staticmethod
     def pname_to_attr(pname):
-        """Munges a HAL pin name to be suitable as a Python name.
+        """
+        Munge a HAL pin name to be suitable as a Python name.
 
         E.g. `control-word` -> `control_word`
         """

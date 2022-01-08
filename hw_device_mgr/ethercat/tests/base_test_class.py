@@ -28,12 +28,13 @@ class BaseEtherCATTestClass(BaseCiA301TestClass):
 
     @pytest.fixture
     def config_cls(self, command_cls):
-        """Configure the EtherCATConfig class
+        """
+        Configure the EtherCATConfig class.
 
-        Munge parsed ESI file with new device IDs for DRY purposes
+        Munge parsed ESI file with new device IDs for DRY purposes.
 
-        Pre-populate all model SDOs"""
-
+        Pre-populate all model SDOs.
+        """
         for dmc in self.device_model_classes:
             model_id = dmc.device_type_key()
             # Make the ESI files reusable:  munge the model ID to fit

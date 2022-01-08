@@ -4,7 +4,8 @@ from .sdo import CiA301SDO
 
 
 class CiA301Config:
-    """CiA 301 device configuration interface
+    """
+    CiA 301 device configuration interface.
 
     This class presents a high-level configuration interface to
     CiA 301 devices.  The class can scan the bus for devices and
@@ -70,7 +71,7 @@ class CiA301Config:
 
     @classmethod
     def add_device_sdos(cls, sdo_data):
-        """Add device model object dictionary descriptions"""
+        """Add device model object dictionary descriptions."""
         dtc = cls.data_type_class
         sdos = dict()
         for model_id, model_sdo_data in sdo_data.items():
@@ -138,7 +139,8 @@ class CiA301Config:
 
     @classmethod
     def set_global_device_configuration(cls, config):
-        """Set the global device configuration
+        """
+        Set the global device configuration.
 
         `config` is a `list` of configurations in a `dict`.
 
@@ -214,7 +216,7 @@ class CiA301Config:
 
     @classmethod
     def scan_bus(cls, bus=0, **kwargs):
-        """Return a `list` of configuration objects for each device"""
+        """Return a `list` of configuration objects for each device."""
         res = list()
         for address, model_id in cls.command().scan_bus(bus=bus, **kwargs):
             model_id = cls.format_model_id(model_id)

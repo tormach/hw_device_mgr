@@ -5,7 +5,8 @@ from .data_types import EtherCATDataType
 
 
 class EtherCATDevice(CiA301Device, abc.ABC):
-    """Abstract class representing an EtherCAT CoE device
+    """
+    Abstract class representing an EtherCAT CoE device.
 
     Device instances are addressed by `(master, position)`.
 
@@ -40,14 +41,16 @@ class EtherCATDevice(CiA301Device, abc.ABC):
 
     @abc.abstractmethod
     def set_params_volatile(self, nv=False):
-        """Set device params volatile or non-volatile
+        """
+        Set device params volatile or non-volatile.
 
         Concrete subclasses may optionally implement this
         """
 
     @classmethod
     def xml_description_path(cls):
-        """Return path to device ESI file
+        """
+        Return path to device ESI file.
 
         Path is under the module directory,
         `{device_xml_dir}/{xml_description_fname}`.
@@ -56,5 +59,5 @@ class EtherCATDevice(CiA301Device, abc.ABC):
 
     @classmethod
     def add_device_sdos(cls):
-        """Read device SDOs from ESI file and add to configuration"""
+        """Read device SDOs from ESI file and add to configuration."""
         cls.config_class.add_device_sdos(cls.xml_description_path())

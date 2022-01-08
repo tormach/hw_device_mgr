@@ -19,7 +19,8 @@ class BaseHALTestClass(BaseCiA301TestClass):
 
     @pytest.fixture
     def mock_halcomp(self):
-        """Fixture for mocking a HAL component
+        """
+        Fixture for mocking a HAL component.
 
         The mock object is passed as test function arg and also test
         object `mock_halcomp` attribute.  It mocks the following methods:
@@ -42,13 +43,15 @@ class BaseHALTestClass(BaseCiA301TestClass):
 
     @pytest.fixture()
     def mock_hal(self, mocker):
-        """Fixture for mocking `hal.component`
+        """
+        Fixture for mocking `hal.component`.
 
-        This fixture patches `hal.component` and returns the mock class in
-        test function `mock_hal` argument and test object `mock_hal`
+        This fixture patches `hal.component` and returns the mock class
+        in test function `mock_hal` argument and test object `mock_hal`
         attribute.  See the `mock_halcomp` fixture for more information
         about the mock instances of this mock class.
         """
+        # This line resolves black & pep257 conflicts.  :P
 
         def mock_component(comp_name):
             comp = MockHALComponent.get_mock(comp_name, self.pin_vals)
@@ -70,6 +73,6 @@ class BaseHALTestClass(BaseCiA301TestClass):
 
     @pytest.fixture
     def device_cls(self, config_cls, mock_hal):
-        """Fixture for HAL Device classes"""
+        """Fixture for HAL Device classes."""
         self.device_class.clear_devices()
         yield self.device_class

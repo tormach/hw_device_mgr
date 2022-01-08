@@ -3,7 +3,10 @@ from .data_types import CiA301DataType
 
 
 class CiA301SDO:
-    """A data class representing a dictionary object for a particular
+    """
+    CiA 301 device dictionary object.
+
+    A data class representing a dictionary object for a particular
     device model
     """
 

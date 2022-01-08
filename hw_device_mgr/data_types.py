@@ -4,7 +4,8 @@ __all__ = ("DataType",)
 
 
 class DataType:
-    """Base class for data types
+    """
+    Base class for data types.
 
     CAN 301 and ETG.2000 each define a group of standard data types:
     a bit type and various numeric and string types.  The two
