@@ -1,8 +1,8 @@
 from .sdo import EtherCATSDO
-from ..cia_301.config import CiA301Config
+from ..cia_301.config import CiA301Config, CiA301SimConfig
 from .data_types import EtherCATDataType
 from .xml_reader import EtherCATXMLReader
-from .command import EtherCATCommand
+from .command import EtherCATCommand, EtherCATSimCommand
 
 
 class EtherCATConfig(CiA301Config):
@@ -27,8 +27,11 @@ class EtherCATConfig(CiA301Config):
     #
 
     @classmethod
-    def add_device_sdos(cls, esi_path):
+    def get_device_sdos_from_esi(cls, esi_path):
         """Read in device configuration from ESI file at `esi_path`."""
         esi_reader = cls.esi_reader_class()
-        sdo_data = esi_reader.add_device_descriptions(esi_path)
-        super().add_device_sdos(sdo_data)
+        return esi_reader.add_device_descriptions(esi_path)
+
+
+class EtherCATSimConfig(EtherCATConfig, CiA301SimConfig):
+    command_class = EtherCATSimCommand
