@@ -29,7 +29,8 @@ class CiA301SDO:
     ):
         self.index = self.data_type_class.uint16(index)
         self.subindex = self.data_type_class.uint8(subindex or 0)
-        self.data_type = data_type
+        assert isinstance(data_type, str)
+        self.data_type = self.data_type_class.by_shared_name(data_type)
         self.name = name
         self.index_name = index_name
         self.ro = ro

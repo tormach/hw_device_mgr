@@ -1,5 +1,5 @@
-from ..device import Device
-from .config import CiA301Config
+from ..device import Device, SimDevice
+from .config import CiA301Config, CiA301SimConfig
 from .data_types import CiA301DataType
 
 
@@ -43,6 +43,8 @@ class CiA301Device(Device):
         product code.
         """
         model_id = cls.vendor_id, cls.product_code
+        if None in model_id:
+            return None
         return cls.config_class.format_model_id(model_id)
 
     @property
@@ -50,8 +52,8 @@ class CiA301Device(Device):
         return self.device_type_key()
 
     @classmethod
-    def set_global_device_configuration(cls, config):
-        cls.config_class.set_global_device_configuration(config)
+    def set_device_config(cls, device_config):
+        cls.config_class.set_device_config(device_config)
 
     def write_config_param_values(self):
         self.config.write_config_param_values()
@@ -90,14 +92,27 @@ class CiA301Device(Device):
             )
 
     @classmethod
-    def add_device_sdos(cls, *args, **kwargs):
+    def munge_sdo_data(cls, sdo_data):
+        # Turn per-category SDO data from sim_sdo_data.yaml into
+        # per-model_id SDO data
+        res = dict()
+        for category, sd in sdo_data.items():
+            device_cls = cls.device_category_class(category)
+            if device_cls is None:
+                continue
+            model_id = device_cls.device_type_key()
+            res[model_id] = sd
+        return res
+
+    @classmethod
+    def add_device_sdos(cls, sdo_data):
         """
         Configure device SDOs.
 
         Pass to the `Config` class the information needed to configure
         SDOs for this `model_id`.
         """
-        cls.config_class.add_device_sdos(*args, **kwargs)
+        cls.config_class.add_device_sdos(cls.munge_sdo_data(sdo_data))
 
     @classmethod
     def get_device(cls, address=None, sim=False, **kwargs):
@@ -118,10 +133,67 @@ class CiA301Device(Device):
         devices = list()
         config_cls = cls.config_class
         for config in config_cls.scan_bus(bus=bus):
-            try:
-                device_cls = cls.get_model(config.model_id)
-            except NotImplementedError as e:
-                raise NotImplementedError(f"{e} at {config.address}")
+            device_cls = cls.get_model(config.model_id, category="all")
+            if device_cls is None:
+                raise NotImplementedError(
+                    f"Unknown model {config.model_id} at {config.address}"
+                )
             dev = device_cls.get_device(config.address, **kwargs)
             devices.append(dev)
         return devices
+
+
+class CiA301SimDevice(CiA301Device, SimDevice):
+    """Simulated CAN device."""
+
+    category = "sim_cia_301"
+    config_class = CiA301SimConfig
+
+    @classmethod
+    def set_device_config(cls, config):
+        # Configs contain "category"; match those with device classes
+        # & add "vendor_id" and "product_code" model ID keys.  This
+        # used in tests, where the same device config file is reused
+        # for different classes with different model IDs.
+        uint16 = cls.data_type_class.by_shared_name("uint16")
+        for c in config:
+            if "category" not in c:
+                model_id = (uint16(c["vendor_id"]), uint16(c["product_code"]))
+                c["vendor_id"], c["product_code"] = model_id
+                c["category"] = cls.get_model(
+                    key=model_id, category="all"
+                ).category
+                config.append(c)
+                continue
+            device_cls = cls.device_category_class(c["category"])
+            if device_cls is None:
+                continue
+            # Fill in values from the device class
+            c["vendor_id"] = device_cls.vendor_id
+            c["product_code"] = device_cls.product_code
+        super().set_device_config(config)
+
+    @classmethod
+    def munge_device_data(cls, device_data):
+        res = dict()
+        for dd in device_data:
+            model_id = dd.get("model_id", (dd["vendor_id"], dd["product_code"]))
+            model_id = cls.config_class.format_model_id(model_id)
+            device_cls = cls.get_model(model_id)
+            assert device_cls
+            updates = dict(
+                model_id=model_id,
+                vendor_id=model_id[0],
+                product_code=model_id[1],
+                address=(dd["bus"], dd["position"]),
+            )
+            dd.update(updates)
+            res[dd["address"]] = dd
+        assert res
+        return res
+
+    @classmethod
+    def init_sim(cls, device_data=dict(), sdo_data=dict()):
+        cls.add_device_sdos(sdo_data)
+        device_data = cls.munge_device_data(device_data)
+        cls.config_class.init_sim(device_data=device_data)

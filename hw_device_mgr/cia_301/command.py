@@ -38,3 +38,77 @@ class CiA301Command(abc.ABC):
         datatype=None,
     ):
         """Download a value to a device SDO."""
+
+
+class CiA301SimCommand(CiA301Command):
+    """Simulated CiA 301 device."""
+
+    # Per-category sim device definitions from sim_devices.yaml:
+    # [category] = {sdo data dict}
+    sim_device_data = dict()
+    # Per-category sim device object dictionary (SDOs, PDOs)
+    sim_sdo_data = dict()
+    # Per-device param value storage:  [address][ix, subix] = value
+    sim_sdo_values = dict()
+
+    @classmethod
+    def init_sim(cls, device_data=None, sdo_data=None):
+        # Save & index device data
+        assert sdo_data
+        cls.init_device_data(device_data)
+        cls.sim_sdo_data = sdo_data
+        cls.init_sim_sdo_values()
+
+    @classmethod
+    def init_device_data(cls, device_data):
+        cls.sim_device_data.clear()
+        cls.sim_device_data.update(device_data)
+
+    @classmethod
+    def init_sim_sdo_values(cls):
+        for addr, dd in cls.sim_device_data.items():
+            sdo_vals = cls.sim_sdo_values[addr] = dict()
+            dd_params = dd.get("params", dict())
+            for ix, sdo in cls.sim_sdo_data[addr].items():
+                default = sdo.default_value
+                sdo_vals[ix] = dd_params.get(str(sdo), default)
+
+    @classmethod
+    def sdo_str_to_ix(cls, sdo_str):
+        dtc = cls.data_type_class
+        idx, subidx = (sdo_str.split("-") + ["00h"])[:2]
+        idx = dtc.uint16(int(idx[:4], 16))
+        subidx = dtc.uint8(int(subidx[:2], 16))
+        return (idx, subidx)
+
+    def scan_bus(self, bus=0):
+        res = list()
+        for dd in self.sim_device_data.values():
+            if dd["bus"] != bus:
+                continue
+            res.append([dd["address"], dd["model_id"]])
+        return res
+
+    def upload(self, address=None, index=None, subindex=0, datatype=None):
+        sdo = self.sim_sdo_data[address][index, subindex]
+        val = self.sim_sdo_values[address][index, subindex]
+        assert datatype is sdo.data_type
+        return val
+
+    def download(
+        self,
+        address=None,
+        index=None,
+        subindex=0,
+        value=None,
+        datatype=None,
+    ):
+        sdo = self.sim_sdo_data[address][index, subindex]
+        assert datatype is sdo.data_type
+        sdo_str = f"{sdo.index:04X}-{sdo.subindex:02X}h"
+        value = datatype(value)
+        print(
+            f"     set dev {address} SDO {sdo_str} ="
+            f" [{value}, {datatype.name}]"
+        )
+        self.sim_sdo_values[address][index, subindex] = value
