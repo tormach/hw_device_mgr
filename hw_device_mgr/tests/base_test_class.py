@@ -3,20 +3,25 @@ from pathlib import Path
 import os
 import yaml
 from .bogus_devices.data_types import BogusDataType
-from .bogus_devices.device import BogusDevice, BogusServo, BogusIO
+from .bogus_devices.device import (
+    BogusLowEndDevice,
+    BogusV1Servo,
+    BogusV2Servo,
+    BogusV1IO,
+)
 
 
 class BaseTestClass:
     """Base test class providing fixtures for use with `bogus_devices`."""
 
     # Device scan data; for test fixture
-    device_data_yaml = "tests/bogus_devices/device.yaml"
+    device_data_yaml = "tests/bogus_devices/sim_devices.yaml"
 
     # Data types
     # Classes under test in this module
     data_type_class = BogusDataType
-    device_class = BogusDevice
-    device_model_classes = BogusServo, BogusIO
+    device_class = BogusLowEndDevice
+    device_model_classes = BogusV1IO, BogusV2Servo, BogusV1Servo
 
     # Device class has `category` attribute
     tc_is_category = True
@@ -32,29 +37,50 @@ class BaseTestClass:
         return (p, data) if return_path else data
 
     @classmethod
-    def munge_device_data(cls, data):
-        """Massage device test data for readability."""
-        uint32 = cls.data_type_class.uint32
-        data["model_id"] = uint32(data["model_id"])
-        return data
+    def munge_device_data(cls, device_data):
+        """Massage device test data for usability."""
+        # Locate device model class
+        for dev in device_data:
+            device_cls = cls.device_class.device_category_class(dev["category"])
+            if device_cls is None:
+                continue
+
+            # Set sparse keys
+            updates = dict(
+                model_id=device_cls.device_type_key(),
+                name=device_cls.name,
+                address=dev["position"],
+            )
+            dev.update(updates)
+
+        return device_data
+
+    def init_sim(self):
+        if getattr(self, "_sim_initialized", False):
+            return
+        self.device_class.clear_devices()
+        self.dev_data_path, dev_data = self.load_yaml(
+            self.device_data_yaml, True
+        )
+        dev_data = self.munge_device_data(dev_data)
+        self.device_class.init_sim(device_data=dev_data)
+        self._sim_initialized = True
 
     @classmethod
     def load_device_data_yaml(cls):
         return cls.load_yaml(cls.device_data_yaml)
 
     @pytest.fixture
-    def all_device_data(self):
-        # All device data in a list
-        dev_data = self.load_device_data_yaml()
-        yield [self.munge_device_data(dev) for dev in dev_data]
-
-    @pytest.fixture
-    def device_cls(self, all_device_data):
+    def device_cls(self):
         """Fixture for configured Device class."""
         # Sideload device data into test class
-        self.device_class.load_test_data(all_device_data)
-        self.device_class.clear_devices()
+        self.init_sim()
         yield self.device_class
+
+    @pytest.fixture
+    def all_device_data(self, device_cls):
+        # All device data in a dict
+        yield device_cls._device_data
 
     def pytest_generate_tests(self, metafunc):
         # Dynamic test parametrization
@@ -62,14 +88,13 @@ class BaseTestClass:
         if "device_data" not in metafunc.fixturenames:
             return
 
-        device_data = self.load_device_data_yaml()
-        names = "device_data"
+        path, device_data = self.load_yaml(self.device_data_yaml, True)
+        device_data = self.munge_device_data(device_data)
         vals, ids = (list(), list())
         for dev in device_data:
-            self.munge_device_data(dev)
             ids.append(f"{dev['name']}@{dev['address']}")
             vals.append(dev)
-        metafunc.parametrize(names, vals, ids=ids, scope="class")
+        metafunc.parametrize("device_data", vals, ids=ids, scope="class")
 
     @pytest.fixture
     def fpath(self):
