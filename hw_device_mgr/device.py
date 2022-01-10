@@ -164,7 +164,9 @@ class Device(abc.ABC):
         A unique key by which a detected device's model class may be
         looked up, e.g. `(manufacturer_id, model)`.
         """
-        return cls.name
+        if not hasattr(cls, "model_id"):
+            return None
+        return cls.data_type_class.uint32(cls.model_id)
 
     # Record class registrations; for debugging registry
     _registry_log = list()
@@ -173,36 +175,45 @@ class Device(abc.ABC):
     def _register_model(cls):
         # Register model in all parent categories
         if not cls.name:
+            # Not a concrete device; skip
+            cls._registry_log.append(("no_name", cls))
             return  # Not a model
         key = cls.device_type_key()
-        for supercls in cls.__mro__:
-            if "category" not in supercls.__dict__:
-                continue
+        for supercls in cls.category_classes():
             category = supercls.category
             # Ensure category is registered
             supercls._category_registry.setdefault(category, supercls)
-            # Check & restister device type
+            # Check & register device type
             if "_model_registry" not in supercls.__dict__:
                 supercls._model_registry = dict()
             if not cls.allow_rereg and key in supercls._model_registry:
-                print(f"allow_rereg:  {cls.allow_rereg}")
                 raise KeyError(
-                    f"Attempt to re-register {cls} as {supercls.category}!"
+                    f"Cannot re-register {cls} {key} as {supercls.category}"
                 )
             supercls._model_registry[key] = cls
-            cls._registry_log.append((category, supercls, key, cls))
+            cls._registry_log.append(
+                ("cat", cls.name, key, category, cls, supercls)
+            )
+
+    @classmethod
+    def category_classes(cls, model_cls=None):
+        if model_cls is None:
+            model_cls = cls
+        return [c for c in model_cls.__mro__ if "category" in c.__dict__]
 
     @classmethod
     def category_cls(cls, category=None):
-        return cls._category_registry[category or cls.category]
+        return cls._category_registry.get(category or cls.category, None)
 
     @classmethod
     def get_model(cls, key=None, category=None):
         category_cls = cls.category_cls(category)
+        if category_cls is None:
+            return None
         if key is None:  # Return list of all model classes
-            return list(category_cls._model_registry.values())
+            return set(category_cls._model_registry.values())
         if key not in category_cls._model_registry:
-            raise NotImplementedError(f'Unrecognized device type "{key}"')
+            return None
         return category_cls._model_registry[key]
 
     ########################################
@@ -236,3 +247,35 @@ class Device(abc.ABC):
         to obtain the device class, and the device ID is used by
         `get_device_obj(address)` to obtain the device instance.
         """
+
+
+class SimDevice(Device):
+    @classmethod
+    def device_category_class(cls, category):
+        category_classes = (
+            # Intersection of devices in both sim_devices.yaml
+            # "category" and the present class
+            cls.get_model(category=category)
+            & cls.get_model()
+        )
+        assert len(category_classes) <= 1
+        return category_classes.pop() if category_classes else None
+
+    _device_data = dict()
+
+    @classmethod
+    def init_sim(cls, device_data=dict()):
+        cls._device_data.clear()
+        for d in device_data:
+            # Sanity check:  no overwrites
+            assert d["address"] not in cls._device_data
+            cls._device_data[d["address"]] = d
+
+    @classmethod
+    def scan_devices(cls, **kwargs):
+        res = list()
+        for data in cls._device_data.values():
+            dev_type = cls.device_category_class(data["category"])
+            dev = dev_type.get_device(address=data["address"], **kwargs)
+            res.append(dev)
+        return res

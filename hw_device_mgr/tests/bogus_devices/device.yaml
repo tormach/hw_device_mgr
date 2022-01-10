@@ -1,9 +1,0 @@
-- name:  bogo_servo
-  model_id:  0xB0905000
-  address:  0
-- name:  bogo_servo
-  model_id:  0xB0905000
-  address:  1
-- name:  bogo_io
-  model_id:  0xB0901000
-  address:  2
