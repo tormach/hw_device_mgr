@@ -57,9 +57,11 @@ class CiA301Config:
 
     @classmethod
     def command(cls):
-        if not hasattr(cls, "_command"):
-            cls._command = cls.command_class()
-        return cls._command
+        if not hasattr(cls, "_command_objs"):
+            cls._command_objs = dict()
+        if cls.__name__ not in cls._command_objs:
+            cls._command_objs[cls.__name__] = cls.command_class()
+        return cls._command_objs[cls.__name__]
 
     def __repr__(self):
         cname = self.__class__.__name__
