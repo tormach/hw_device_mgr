@@ -1,44 +1,337 @@
-# Test multiple drives
-- model_key:  elmo_gold_0x30924_0x10420
-  bus:  0
-  position:  10
-  params:
+#
+# Elmo Gold
+#
+# - Elmo 0x00030924 Gold EtherCAT GCON Drive Rev:0x00010420
+-
+  category:  elmo_gold_420_test
+  # vendor_id:  0x0000009A
+  # product_code:  0x00030924
+  revision_no:  0x00010420
+
+  bus: 0
+  positions: [10, 11, 12, 13, 14, 15]
+
+  # Sync manager configuration
+  sync_manager:
+    '0':
+      # Mailboxes out
+      dir: out
+    '1':
+      # Mailboxes in
+      dir: in
+    '2':
+      # RPDOs:  Receive PDOs ("out" to drive)
+      dir: out
+      pdo_mapping:
+        index: 1600h
+        entries:
+          - index: 6040h
+            name: control_word
+          - index: 607Ah
+            name: position_cmd
+    '3':
+      # TPDOs:  Transmit PDOs ("in" from drive)
+      dir: in
+      pdo_mapping:
+        index: 1A00h
+        entries:
+          - index: 6041h
+            name: status_word
+          - index: 6041h
+            bits:  # Break bits out into separate items
+              # Bit0: Ready to switch on
+              - ready_to_switch_on
+              # Bit1: Switched on
+              - switched_on
+              # Bit2: Operation enabled
+              - operation_enabled
+              # Bit3: Fault
+              - fault
+              # Bit4: Voltage enabled
+              - voltage_enabled
+              # Bit5: Quick stop
+              - quick_stop_fb
+              # Bit6: Switch on disabled
+              - switch_on_disabled
+              # Bit7: Warning bit
+              - warning
+              # Bit8: Manufacturer specific
+              - bit_len: 1
+              # Bit9: Remote
+              - remote
+              # Bit10: Goes high when target position is reached (HM, CSP modes)
+              - target_reached
+              # Bit11: Internal limit active (HM, CSP modes)
+              - internal_limit_active
+              # Bit12~Bit13 Operation mode specific
+              - status_bit12
+              - status_bit13
+              # Bit14~Bit15: Manufacturer specific
+              - status_bit14
+              - homing_done_fb
+          - index: 6064h
+            name: position_fb
+
+  # Parameter settings
+  param_values:
+    # *** Standard Device Profile Parameters ***
+    # Quick stop option code
+    # CSP mode:
+    # 3:  Stop at emergency stop torque; brake & power off
     605A-00h: 3
-    607D-01h:  -50000
-    607D-02h:  50000
-- model_key:  elmo_gold_0x30925_0x10420
-  bus:  0
-  position:  11
-  params:
+    #
+    # Position limit, min/max, per drive
+    607D-01h:  [-50000, -10000,    0, -500,  500, -3000]
+    607D-02h:  [ 50000,  10000, 1700,  500, 2000,  1000]
+#
+# - Elmo 0x00030925 Gold EtherCAT GCON Drive ID Selector Rev:0x00010420
+-
+  category:  elmo_gold_520_test
+  # vendor_id:  0x0000009A
+  # product_code:  0x00030925
+  revision_no:  0x00010520
+
+  bus: 0
+  positions: [10, 11, 12, 13, 14, 15]
+
+  # Sync manager configuration
+  sync_manager:
+    '0':
+      # Mailboxes out
+      dir: out
+    '1':
+      # Mailboxes in
+      dir: in
+    '2':
+      # RPDOs:  Receive PDOs ("out" to drive)
+      dir: out
+      pdo_mapping:
+        index: 1700h
+        entries:
+          - index: 6040h
+            name: control_word
+          - index: 607Ah
+            name: position_cmd
+    '3':
+      # TPDOs:  Transmit PDOs ("in" from drive)
+      dir: in
+      pdo_mapping:
+        index: 1B00h
+        entries:
+          - index: 6041h
+            name: status_word
+          - index: 6041h
+            bits:  # Break bits out into separate items
+              # Bit0: Ready to switch on
+              - ready_to_switch_on
+              # Bit1: Switched on
+              - switched_on
+              # Bit2: Operation enabled
+              - operation_enabled
+              # Bit3: Fault
+              - fault
+              # Bit4: Voltage enabled
+              - voltage_enabled
+              # Bit5: Quick stop
+              - quick_stop_fb
+              # Bit6: Switch on disabled
+              - switch_on_disabled
+              # Bit7: Warning bit
+              - warning
+              # Bit8: Manufacturer specific
+              - bit_len: 1
+              # Bit9: Remote
+              - remote
+              # Bit10: Goes high when target position is reached (HM, CSP modes)
+              - target_reached
+              # Bit11: Internal limit active (HM, CSP modes)
+              - internal_limit_active
+              # Bit12~Bit13 Operation mode specific
+              - status_bit12
+              - status_bit13
+              # Bit14~Bit15: Manufacturer specific
+              - status_bit14
+              - homing_done_fb
+          - index: 6064h
+            name: position_fb
+
+  # Parameter settings
+  param_values:
+    # *** Standard Device Profile Parameters ***
+    # Control mode
+    # CSP mode:  8
+    6060-00h: 8
+    #
+    # Position limit, min/max, per drive
+    607D-01h:  [-40000, -12000,    0, -300,  300, -6000]
+    607D-02h:  [ 40000,  12000, 1300,  300, 2500,  2000]
+#
+# IS620N
+#
+# - IS620N_ECAT_v2.6.7
+-
+  category:  inovance_is620n_test
+  # vendor_id:  0x00100000
+  # product_code:  0x000C0108
+  revision_no:  0x00010001
+
+  bus: 0
+  positions: [10, 11, 12, 13, 14, 15]
+
+  # Sync manager configuration
+  sync_manager:
+    '0':
+      # Mailboxes out
+      dir: out
+    '1':
+      # Mailboxes in
+      dir: in
+    '2':
+      # RPDOs:  Receive PDOs ("out" to drive)
+      dir: out
+      pdo_mapping:
+        index: 1600h
+        entries:
+          - index: 6040h
+            name: control_word
+          - index: 607Ah
+            name: position_cmd
+    '3':
+      # TPDOs:  Transmit PDOs ("in" from drive)
+      dir: in
+      pdo_mapping:
+        index: 1A00h
+        entries:
+          - index: 6041h
+            name: status_word
+          - index: 6041h
+            bits:  # Break bits out into separate items
+              # Bit0: Ready to switch on
+              - ready_to_switch_on
+              # Bit1: Switched on
+              - switched_on
+              # Bit2: Operation enabled
+              - operation_enabled
+              # Bit3: Fault
+              - fault
+              # Bit4: Voltage enabled
+              - voltage_enabled
+              # Bit5: Quick stop
+              - quick_stop_fb
+              # Bit6: Switch on disabled
+              - switch_on_disabled
+              # Bit7: Warning bit
+              - warning
+              # Bit8: Manufacturer specific
+              - bit_len: 1
+              # Bit9: Remote
+              - remote
+              # Bit10: Goes high when target position is reached (HM, CSP modes)
+              - target_reached
+              # Bit11: Internal limit active (HM, CSP modes)
+              - internal_limit_active
+              # Bit12~Bit13 Operation mode specific
+              - status_bit12
+              - status_bit13
+              # Bit14~Bit15: Manufacturer specific
+              - status_bit14
+              - homing_done_fb
+          - index: 6064h
+            name: position_fb
+
+  # Parameter settings
+  param_values:
+    # *** Standard Device Profile Parameters ***
+    # Quick stop option code
+    # CSP mode:
+    # 3:  Stop at emergency stop torque; brake & power off
     605A-00h: 3
-    607D-01h:  -40000
-    607D-02h:  40000
-- model_key:  elmo_gold_0x30924_0x10420
-  bus:  0
-  position:  12
-  params:
+    #
+    # Position limit, min/max, per drive
+    607D-01h:  [-30000, -8000,    0, -250, 1000, -1000]
+    607D-02h:  [ 30000,  8000, 1000,  250, 5000,  3000]
+#
+# SV660
+#
+# - SV660_1Axis_00912
+-
+  category:  inovance_sv660n_test
+  # vendor_id:  0x00100000
+  # product_code:  0x000C010D
+  revision_no:  0x00010000
+
+  bus: 0
+  positions: [10, 11, 12, 13, 14, 15]
+
+  # Sync manager configuration
+  sync_manager:
+    '0':
+      # Mailboxes out
+      dir: out
+    '1':
+      # Mailboxes in
+      dir: in
+    '2':
+      # RPDOs:  Receive PDOs ("out" to drive)
+      dir: out
+      pdo_mapping:
+        index: 1600h
+        entries:
+          - index: 6040h
+            name: control_word
+          - index: 607Ah
+            name: position_cmd
+    '3':
+      # TPDOs:  Transmit PDOs ("in" from drive)
+      dir: in
+      pdo_mapping:
+        index: 1A00h
+        entries:
+          - index: 6041h
+            name: status_word
+          - index: 6041h
+            bits:  # Break bits out into separate items
+              # Bit0: Ready to switch on
+              - ready_to_switch_on
+              # Bit1: Switched on
+              - switched_on
+              # Bit2: Operation enabled
+              - operation_enabled
+              # Bit3: Fault
+              - fault
+              # Bit4: Voltage enabled
+              - voltage_enabled
+              # Bit5: Quick stop
+              - quick_stop_fb
+              # Bit6: Switch on disabled
+              - switch_on_disabled
+              # Bit7: Warning bit
+              - warning
+              # Bit8: Manufacturer specific
+              - bit_len: 1
+              # Bit9: Remote
+              - remote
+              # Bit10: Goes high when target position is reached (HM, CSP modes)
+              - target_reached
+              # Bit11: Internal limit active (HM, CSP modes)
+              - internal_limit_active
+              # Bit12~Bit13 Operation mode specific
+              - status_bit12
+              - status_bit13
+              # Bit14~Bit15: Manufacturer specific
+              - status_bit14
+              - homing_done_fb
+          - index: 6064h
+            name: position_fb
+
+  # Parameter settings
+  param_values:
+    # *** Standard Device Profile Parameters ***
+    # Quick stop option code
+    # CSP mode:
+    # 3:  Stop at emergency stop torque; brake & power off
     605A-00h: 3
-    607D-01h:  -10000
-    607D-02h:  10000
-- model_key:  IS620N_ECAT
-  bus:  0
-  position:  13
-  params:
-    200C-0Eh: 3
-    605A-00h: 3
-    607D-01h:  -20000
-    607D-02h:  20000
-- model_key:  SV660_ECAT
-  bus:  0
-  position:  14
-  params:
-    605A-00h: 3
-    607D-01h:  -30000
-    607D-02h:  30000
-- model_key:  SV660_ECAT
-  bus:  0
-  position:  15
-  params:
-    605A-00h: 3
-    607D-01h:  -35000
-    607D-02h:  35000
+    #
+    # Position limit, min/max, per drive
+    607D-01h:  [-20000, -2000,    0, -450, 9000, -5000]
+    607D-02h:  [ 20000,  2000, 1500,  450, 2000,  1000]
