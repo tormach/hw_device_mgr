@@ -1,22 +1,22 @@
-from ...device import LCECDevice
-from ....ethercat.tests.bogus_devices.device_402 import (
-    BogusEtherCAT402Device,
-    BogusEtherCAT402Servo,
-    BogusOtherCAT402Servo,
+from ...device import LCECSimDevice
+from ....cia_402.tests.bogus_devices.device import (
+    BogusCiA402DeviceCategory,
+    BogusV1CiA402ServoCategory,
+    BogusV2CiA402ServoCategory,
 )
-from .config import BogusLCECConfig
 
 
-class BogusLCEC402Device(LCECDevice, BogusEtherCAT402Device):
-    config_class = BogusLCECConfig
+class BogusLCEC402Device(LCECSimDevice, BogusCiA402DeviceCategory):
     category = "bogus_lcec_402_devices"
+    xml_description_fname = "BogusServo.xml"
+    vendor_id = 0xB090C0
 
 
-class BogusLCEC402Servo(BogusLCEC402Device, BogusEtherCAT402Servo):
-    name = "bogo_lcec_402_servo"
+class BogusV1LCEC402Servo(BogusLCEC402Device, BogusV1CiA402ServoCategory):
+    name = "bogo_v1_lcec_402_servo"
     product_code = 0xB0905062
 
 
-class BogusLCEC402Servo2(BogusLCEC402Device, BogusOtherCAT402Servo):
-    name = "bogo_lcec_402_servo_2"
+class BogusV2LCEC402Servo(BogusLCEC402Device, BogusV2CiA402ServoCategory):
+    name = "bogo_v2_lcec_402_servo"
     product_code = 0xB0905063

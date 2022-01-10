@@ -4,43 +4,33 @@ from ...ethercat.tests.test_device_402 import (
 )
 from .bogus_devices.device_402 import (
     BogusLCEC402Device,
-    BogusLCEC402Servo,
-    BogusLCEC402Servo2,
+    BogusV1LCEC402Servo,
+    BogusV2LCEC402Servo,
 )
 
 
 class TestLCEC402Device(_TestLCECDevice, _TestEtherCAT402Device):
 
     device_class = BogusLCEC402Device
-    device_model_classes = (BogusLCEC402Servo, BogusLCEC402Servo2)
+    device_model_classes = (BogusV1LCEC402Servo, BogusV2LCEC402Servo)
 
     expected_mro = [
         "BogusLCEC402Device",
+        "LCECSimDevice",
         "LCECDevice",
-        "BogusEtherCAT402Device",
+        "EtherCATSimDevice",
         "EtherCATDevice",
+        "BogusCiA402DeviceCategory",
+        "CiA402SimDevice",
         "CiA402Device",
-        "BogusCiA301Device",
+        "BogusCiA301DeviceCategory",
+        "CiA301SimDevice",
         "CiA301Device",
         "HALPinDevice",
+        "BogusDevice",
+        "SimDevice",
         "Device",
         "ABC",
         "HALMixin",
         "object",
     ]
-
-
-[
-    "BogusLCEC402Device",
-    "LCECDevice",
-    "BogusEtherCAT402Device",
-    "EtherCATDevice",
-    "CiA402Device",
-    "BogusCiA301Device",
-    "CiA301Device",
-    "HALPinDevice",
-    "Device",
-    "ABC",
-    "HALMixin",
-    "object",
-]

@@ -3,13 +3,13 @@ from unittest.mock import MagicMock, patch
 from ...ethercat.tests.base_test_class import BaseEtherCATTestClass
 from ..data_types import LCECDataType
 from ..sdo import LCECSDO
-from .bogus_devices.command import BogusLCECCommand
-from .bogus_devices.config import BogusLCECConfig
+from ..command import LCECSimCommand
+from ..config import LCECSimConfig
 from .bogus_devices.device import (
     BogusLCECDevice,
-    BogusLCECServo,
-    BogusLCECServo2,
-    BogusLCECIO,
+    BogusV1LCECServo,
+    BogusV2LCECServo,
+    BogusV1LCECIO,
 )
 
 
@@ -18,10 +18,10 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
     # Classes under test in this module
     data_type_class = LCECDataType
     sdo_class = LCECSDO
-    command_class = BogusLCECCommand
-    config_class = BogusLCECConfig
+    command_class = LCECSimCommand
+    config_class = LCECSimConfig
     device_class = BogusLCECDevice
-    device_model_classes = BogusLCECServo, BogusLCECServo2, BogusLCECIO
+    device_model_classes = BogusV1LCECServo, BogusV2LCECServo, BogusV1LCECIO
 
     @classmethod
     def lcec_data_type(cls, type_str):
@@ -33,7 +33,7 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
         return cls._lcec_data_type_map[type_str]
 
     @pytest.fixture
-    def mock_ethercat_command(self, all_device_data):
+    def mock_ethercat_command(self):
         """
         Emulate IgH EtherCAT master `ethercat` command-line utility.
 
@@ -43,7 +43,7 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
         # This line resolves black & pep257 conflicts.  :P
 
         def emulate_ethercat_command(args):
-            print(f'mocking ethercat command: {" ".join(args)}')
+            print(f'mocking command: {" ".join(args)}')
             # Parse out args, kwargs
             assert args.pop(0) == "ethercat"
             cmd = args.pop(0)
@@ -63,26 +63,30 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
                 dtc = self.data_type_class
                 ix = tuple([dtc.uint16(ix[0]), dtc.uint8(ix[1])])
                 dt = self.lcec_data_type(kwargs["type"])
-                sdo = self.sdo_class(index=ix[0], subindex=ix[1], data_type=dt)
+                sdo = self.sdo_class(
+                    index=ix[0], subindex=ix[1], data_type=dt.shared_name
+                )
                 address = (int(kwargs["master"]), int(kwargs["position"]))
-                params = self.dev_data[address]["params"]
+                params = self.command_class.sim_sdo_values[address]
                 if cmd == "download":
-                    val = sdo.to_data_type_value(args.pop(0))
+                    val = args.pop(0)
+                    assert val is not None
+                    val = sdo.data_type(val)
                     print(f"  download {sdo} = {val}")
                     params[ix] = val
                     return b""
                 else:  # upload
-                    val = params[ix]
+                    val = params[ix] or 0
                     res = (
                         f"0x{val:04x} {val:d}"
-                        if val.base_type is int
+                        if isinstance(val, int)
                         else str(val)
                     )
                     print(f'  upload {sdo} = {val} "{res}"')
                     return res.encode()
             elif cmd == "slaves":
                 res = ""
-                for data in all_device_data:
+                for data in self.command_class.sim_device_data.values():
                     _res = "=== Master {bus}, Slave {position} ===\n"
                     _res += "Identity:\n"
                     _res += "  Vendor Id:       0x{vendor_id:08x}\n"
@@ -103,11 +107,5 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
         patch.stopall()
 
     @pytest.fixture
-    def command_cls(self, all_device_data, all_sdo_data, mock_ethercat_command):
-        """
-        Side-load bus scan data into command class.
-
-        Emulate IgH `ethercat` utility
-        """
-        self.command_class.init(all_device_data, all_sdo_data)
-        yield self.command_class
+    def extra_fixtures(self, mock_ethercat_command):
+        pass

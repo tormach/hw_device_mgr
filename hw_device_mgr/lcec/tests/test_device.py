@@ -12,12 +12,16 @@ class TestLCECDevice(BaseLCECTestClass, _TestEtherCATDevice, _TestHALDevice):
 
     expected_mro = [
         "BogusLCECDevice",
+        "LCECSimDevice",
         "LCECDevice",
-        "BogusEtherCATDevice",
+        "EtherCATSimDevice",
         "EtherCATDevice",
-        "BogusCiA301Device",
+        "BogusCiA301DeviceCategory",
+        "CiA301SimDevice",
         "CiA301Device",
         "HALPinDevice",
+        "BogusDevice",
+        "SimDevice",
         "Device",
         "ABC",
         "HALMixin",
