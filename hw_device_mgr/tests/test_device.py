@@ -6,7 +6,14 @@ import ruamel.yaml
 
 class TestDevice(BaseTestClass):
     # Expected class MRO
-    expected_mro = ["BogusDevice", "Device", "ABC", "object"]
+    expected_mro = [
+        "BogusLowEndDevice",
+        "BogusDevice",
+        "SimDevice",
+        "Device",
+        "ABC",
+        "object",
+    ]
 
     #
     # Class tests
@@ -14,7 +21,8 @@ class TestDevice(BaseTestClass):
 
     def test_mro(self, device_cls):
         mro = [cls.__name__ for cls in device_cls.__mro__]
-        print(mro)
+        print("actual MRO:  ", mro)
+        print("expected MRO:", self.expected_mro)
         assert mro == self.expected_mro
 
     def test_category_registry(self, device_cls):
@@ -68,7 +76,7 @@ class TestDevice(BaseTestClass):
 
     def test_scan_devices(self, device_cls, all_device_data):
         devs = device_cls.scan_devices(sim=self.sim)
-        for obj, data in zip(devs, all_device_data):
+        for obj, data in zip(devs, all_device_data.values()):
             print(f"Dev:  {obj}")
             assert obj.name == data["name"]
             assert obj.address == data["address"]
