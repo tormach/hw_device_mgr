@@ -1,5 +1,9 @@
 import re
-from ..ethercat.command import EtherCATCommand, EtherCATCommandException
+from ..ethercat.command import (
+    EtherCATCommand,
+    EtherCATSimCommand,
+    EtherCATCommandException,
+)
 from .data_types import LCECDataType
 import subprocess
 
@@ -93,3 +97,7 @@ class LCECCommand(EtherCATCommand):
             log_lev="info",
             dry_run=dry_run,
         )
+
+
+class LCECSimCommand(LCECCommand, EtherCATSimCommand):
+    """Simulated LCEC device."""
