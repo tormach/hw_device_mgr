@@ -1,13 +1,17 @@
-from ..cia_301.device import CiA301Device, CiA301DataType
+from ..cia_301.device import (
+    CiA301Device,
+    CiA301DataType,
+    CiA301SimDevice,
+)
 
 
 class CiA402Device(CiA301Device):
     """
     Manage a CiA 402 motor drive's state machine.
 
-    This device will attempt to step the drive through the state
-    machine to the goal `state` (e.g. `OPERATION ENABLED`), and will
-    manage other goals.
+    This device will attempt to step the drive through the CiA 402
+    state machine to the goal `state` (e.g. `OPERATION ENABLED`), and
+    will manage other goals.
 
     Goal parameters:
     - `state`:  The CiA 402 goal state
@@ -547,3 +551,9 @@ class CiA402Device(CiA301Device):
         for name, bitnum in cls.cw_extra_bits.items():
             flags[name] = bool(control_word & 1 << bitnum)
         return flags
+
+
+class CiA402SimDevice(CiA402Device, CiA301SimDevice):
+    """Manage a simulated CiA 402 motor drive's state machine."""
+
+    pass

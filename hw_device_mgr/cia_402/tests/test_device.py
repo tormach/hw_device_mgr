@@ -6,8 +6,10 @@ class TestCiA402Device(BaseCiA402TestClass, _TestCiA301Device):
 
     expected_mro = [
         "BogusCiA402Device",
+        "BogusCiA402DeviceCategory",
+        "CiA402SimDevice",
         "CiA402Device",
-        *_TestCiA301Device.expected_mro,
+        *_TestCiA301Device.expected_mro[1:],  # Lop off BogusCiA301Device
     ]
 
     def read_update_write_conv_test_data(self):
