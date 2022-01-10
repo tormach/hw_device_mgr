@@ -6,8 +6,10 @@ import pytest
 class TestCiA301Device(BaseCiA301TestClass, _TestDevice):
     expected_mro = [
         "BogusCiA301Device",
+        "BogusCiA301DeviceCategory",
+        "CiA301SimDevice",
         "CiA301Device",
-        *_TestDevice.expected_mro[1:],  # Chop out "BogusDevice"
+        *_TestDevice.expected_mro[1:],  # Lop off BogusLowEndDevice
     ]
 
     # Test CiA NMT init:  online & operational status

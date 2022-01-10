@@ -3,16 +3,26 @@ from .base_test_class import BaseCiA301TestClass
 
 class TestCiA301SDO(BaseCiA301TestClass):
     def test_init(self, sdo_data):
-        for sd in sdo_data.values():
-            print("SDO data:", sd)
-            obj = self.sdo_class(**sd)
-
+        for sdo in sdo_data.values():
+            print("SDO data:", sdo)
+            obj = self.sdo_class(
+                index=sdo.index,
+                subindex=sdo.subindex,
+                data_type=sdo.data_type.shared_name,
+                name=sdo.name,
+                index_name=sdo.index_name,
+                ro=sdo.ro,
+                pdo_mapping=sdo.pdo_mapping,
+                default_value=sdo.default_value,
+                min_value=sdo.min_value,
+                max_value=sdo.max_value,
+            )
             print("sdo:", repr(obj))
-            assert (sd["index"], sd["subindex"]) == (obj.index, obj.subindex)
+            assert (sdo.index, sdo.subindex) == (obj.index, obj.subindex)
             print(obj.data_type)
             assert issubclass(obj.data_type, self.data_type_class)
-            assert obj.name == sd["name"]
-            assert obj.ro == sd.get("ro", False)
+            assert obj.name == sdo.name
+            assert obj.ro == sdo.ro
 
     def test_parse_idx_str(self):
         test_data = (
