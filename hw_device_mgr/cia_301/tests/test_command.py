@@ -11,11 +11,11 @@ class TestCiA301Command(BaseCiA301TestClass):
 
     def test_scan_bus(self, obj, bus, all_device_data):
         bus_data = obj.scan_bus(bus=bus)
-        for expected, actual in zip(all_device_data, bus_data):
-            print(actual)
-            address, model_id = actual
-            assert expected["address"] == address
-            assert expected["model_id"] == model_id
+        for actual in bus_data:
+            expected = all_device_data[actual[0]]
+            actual_address, actual_model_id = actual
+            assert expected["address"] == actual_address
+            assert expected["model_id"] == actual_model_id
 
     def random(self, data_type):
         if data_type in ("float", "double"):
@@ -39,17 +39,19 @@ class TestCiA301Command(BaseCiA301TestClass):
     def test_upload_download(self, obj, bus, all_device_data, all_sdo_data):
         vals = dict()
         for address, model_id in obj.scan_bus(bus=bus):
-            for dev in all_device_data:
+            for dev in all_device_data.values():
                 if address == dev["address"]:
                     break
+            print("device data:")
             pprint(dev)
 
-            sdos = all_sdo_data[dev["model_key"]]
+            sdos = all_sdo_data[address]
+            print("device sdos:")
             pprint(sdos)
 
             # Save initial values
             for ix, sdo in sdos.items():
-                dt = sdo["data_type"]
+                dt = sdo.data_type
                 val = obj.upload(
                     address=address, index=ix[0], subindex=ix[1], datatype=dt
                 )
@@ -58,7 +60,7 @@ class TestCiA301Command(BaseCiA301TestClass):
             # Run through setting and getting random values
             for i in range(10):
                 for ix, sdo in sdos.items():
-                    dt = sdo["data_type"]
+                    dt = sdo.data_type
                     # Upload & check old value
                     val = obj.upload(
                         address=address,
