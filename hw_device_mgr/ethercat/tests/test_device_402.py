@@ -12,8 +12,9 @@ class TestEtherCAT402Device(BaseEtherCATTestClass, _TestCiA402Device):
 
     expected_mro = [
         "BogusEtherCAT402Device",
+        "EtherCATSimDevice",
         "EtherCATDevice",
-        *_TestCiA402Device.expected_mro[1:],  # Remove BogusCiA402Device
+        *_TestCiA402Device.expected_mro[1:],  # Lop off BogusCiA301Device
     ]
 
     device_class = BogusEtherCAT402Device

@@ -1,38 +1,29 @@
-from ...device import EtherCATDevice
+from ...device import EtherCATSimDevice
 from ....cia_301.tests.bogus_devices.device import (
-    BogusCiA301Device,
-    BogusCiA301Servo,
-    BogusCiA301Servo2,
-    BogusCiA301IO,
+    BogusCiA301DeviceCategory,
+    BogusV1CiA301ServoCategory,
+    BogusV2CiA301ServoCategory,
+    BogusV1CiA301IOCategory,
 )
-from .config import BogusEtherCATConfig
 
 
-class BogusEtherCATDevice(EtherCATDevice, BogusCiA301Device):
-    config_class = BogusEtherCATConfig
+class BogusEtherCATDevice(EtherCATSimDevice, BogusCiA301DeviceCategory):
     category = "bogus_ethercat_devices"
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.params_volatile = False
 
-    def set_params_volatile(self, nv=False):
-        self.params_volatile = not nv
-
-
-class BogusEtherCATServo(BogusEtherCATDevice, BogusCiA301Servo):
+class BogusEtherCATServo(BogusEtherCATDevice, BogusV1CiA301ServoCategory):
     name = "bogo_ethercat_servo"
     product_code = 0xB0905030
     xml_description_fname = "BogusServo.xml"
 
 
-class BogusOtherCATServo(BogusEtherCATDevice, BogusCiA301Servo2):
+class BogusOtherCATServo(BogusEtherCATDevice, BogusV2CiA301ServoCategory):
     name = "bogo_Othercat_servo"
     product_code = 0xB0905031
     xml_description_fname = "BogusServo.xml"
 
 
-class BogusEtherCATIO(BogusEtherCATDevice, BogusCiA301IO):
+class BogusEtherCATIO(BogusEtherCATDevice, BogusV1CiA301IOCategory):
     name = "bogo_ethercat_io"
     product_code = 0xB0901030
     xml_description_fname = "BogusIO.xml"

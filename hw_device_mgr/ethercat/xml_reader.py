@@ -474,14 +474,14 @@ class EtherCATXMLReader:
     )
 
     def add_sdo(self, sdos, data):
-        kwargs = dict()
+        sdo = dict()
         for key_src, key_dst in self.sdo_translations.items():
-            kwargs[key_dst] = data.get(key_src, None)
-        kwargs["ro"] = kwargs.pop("access", "ro") == "ro"
-        sdo = self.sdo_class(**kwargs)
+            sdo[key_dst] = data.get(key_src, None)
+        sdo["ro"] = sdo.pop("access", "ro") == "ro"
+        sdo["data_type"] = sdo["data_type"].shared_name
         dtc = self.data_type_class
-        idx = kwargs["index"] = dtc.uint16(kwargs.pop("index"))
-        subidx = kwargs["subindex"] = dtc.uint8(kwargs.pop("subindex") or 0)
+        idx = sdo["index"] = dtc.uint16(sdo.pop("index"))
+        subidx = sdo["subindex"] = dtc.uint8(sdo.pop("subindex") or 0)
         sdos[idx, subidx] = sdo
 
     def add_device_descriptions(self, fpath):
