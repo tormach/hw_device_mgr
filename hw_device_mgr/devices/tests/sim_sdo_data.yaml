@@ -1,5 +1,5 @@
 # Simplified view of SDOs for each model
-elmo_gold_0x30924_0x10420:
+elmo_gold_420_test:
   6040h:
     index:  0x6040
     data_type:  uint16
@@ -64,7 +64,7 @@ elmo_gold_0x30924_0x10420:
     index_name:  Position limit
     default_value:  500000
     pdo_mapping:  R
-elmo_gold_0x30925_0x10420:
+elmo_gold_520_test:
   6040h:
     index:  0x6040
     data_type:  uint16
@@ -129,7 +129,7 @@ elmo_gold_0x30925_0x10420:
     index_name:  Position limit
     default_value:  500000
     pdo_mapping:  R
-IS620N_ECAT:
+inovance_is620n_test:
   200C-00h:
     index:  0x200C
     subindex:  0x00
@@ -219,7 +219,7 @@ IS620N_ECAT:
     index_name:  Position limit
     default_value:  500000
     pdo_mapping:  R
-SV660_ECAT:
+inovance_sv660n_test:
   200E-00h:
     index:  0x200E
     subindex:  0x00
