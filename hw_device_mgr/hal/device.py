@@ -43,8 +43,8 @@ class HALPinDevice(Device, HALMixin):
                     continue
                 spec = all_specs[base_pname]
                 for key, new_val in new_spec.items():
-                    if key == "pdir" and spec[key] != new_val:
-                        spec[key] = self.HAL_IO
+                    if key == "pdir" and spec["pdir"] != new_val:
+                        spec["pdir"] = self.HAL_IO
                         continue
                     if spec[key] != new_val:
                         raise RuntimeError(
