@@ -10,8 +10,11 @@ class TestHALDevice(BaseHALTestClass, _TestCiA301Device):
     expected_mro = [
         "BogusHALDevice",
         "HALPinDevice",
-        "BogusCiA301Device",
+        "BogusCiA301DeviceCategory",
+        "CiA301SimDevice",
         "CiA301Device",
+        "BogusDevice",
+        "SimDevice",
         "Device",
         "ABC",
         "HALMixin",

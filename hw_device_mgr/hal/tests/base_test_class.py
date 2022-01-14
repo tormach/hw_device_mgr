@@ -3,9 +3,9 @@ from ...cia_301.tests.base_test_class import BaseCiA301TestClass
 from ..data_types import HALDataType
 from .bogus_devices.device import (
     BogusHALDevice,
-    BogusHALServo,
-    BogusHALServo2,
-    BogusHALIO,
+    BogusV1HALServo,
+    BogusV2HALServo,
+    BogusV1HALIO,
 )
 from .mock_hal import MockHALComponent
 
@@ -15,7 +15,7 @@ class BaseHALTestClass(BaseCiA301TestClass):
     # Classes under test in this module
     data_type_class = HALDataType
     device_class = BogusHALDevice
-    device_model_classes = BogusHALServo, BogusHALServo2, BogusHALIO
+    device_model_classes = BogusV1HALServo, BogusV2HALServo, BogusV1HALIO
 
     @pytest.fixture
     def mock_halcomp(self):
@@ -72,7 +72,5 @@ class BaseHALTestClass(BaseCiA301TestClass):
         MockHALComponent.clear()
 
     @pytest.fixture
-    def device_cls(self, config_cls, mock_hal):
-        """Fixture for HAL Device classes."""
-        self.device_class.clear_devices()
-        yield self.device_class
+    def extra_fixtures(self, mock_hal):
+        pass
