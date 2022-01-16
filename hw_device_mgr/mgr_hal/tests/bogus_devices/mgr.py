@@ -6,6 +6,7 @@ from ....lcec.tests.bogus_devices.device_402 import (
     BogusV2LCEC402Servo,
 )
 
+
 class BogusLCEC402HWDeviceMgr(SimHALHWDeviceMgr, BogusHWDeviceMgr):
     data_type_class = BogusLCEC402Device.data_type_class
     device_base_class = BogusLCEC402Device

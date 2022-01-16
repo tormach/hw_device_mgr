@@ -16,5 +16,6 @@ class HALHWDeviceMgr(HWDeviceMgr, HALCompDevice, HALPinDevice):
     def init_device_instances(self, **kwargs):
         super().init_device_instances(comp=self.comp, **kwargs)
 
+
 class SimHALHWDeviceMgr(HALHWDeviceMgr, SimHWDeviceMgr):
     name = "sim_hal_hw_device_mgr"
