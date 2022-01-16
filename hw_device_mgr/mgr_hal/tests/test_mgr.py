@@ -8,11 +8,15 @@ class TestHALHWDeviceMgr(
 ):
     expected_mro = [
         "BogusLCEC402HWDeviceMgr",
+        "SimHALHWDeviceMgr",
         "HALHWDeviceMgr",
+        "BogusHWDeviceMgr",
+        "SimHWDeviceMgr",
         "HWDeviceMgr",
         "FysomGlobalMixin",
         "HALCompDevice",
         "HALPinDevice",
+        "SimDevice",
         "Device",
         "ABC",
         "HALMixin",

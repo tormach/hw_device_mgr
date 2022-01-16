@@ -13,15 +13,12 @@ class BaseLCEC402MgrTestClass(BaseMgrTestClass, BaseLCECTestClass):
     # Data types
     data_type_class = BogusLCEC402HWDeviceMgr.data_type_class
 
+    # Base class for attached devices
+    device_base_class = BogusLCEC402HWDeviceMgr.device_base_class
+
     # Attached device classes
     device_model_classes = BogusLCEC402HWDeviceMgr.device_classes
 
     @pytest.fixture
-    def manager_lcec(self, mock_hal, mock_ethercat_command):
-        """Mock HAL and `ethercat` command for the device manager."""
-
-    @pytest.fixture
-    def device_cls(self, config_cls, manager_lcec):
-        """Fixture for HAL Device classes."""
-        self.device_class.clear_devices()
-        yield self.device_class
+    def extra_fixtures(self, mock_hal, mock_ethercat_command):
+        pass

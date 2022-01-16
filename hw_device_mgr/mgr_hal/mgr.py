@@ -1,4 +1,4 @@
-from ..mgr.mgr import HWDeviceMgr
+from ..mgr.mgr import HWDeviceMgr, SimHWDeviceMgr
 from ..hal.device import HALCompDevice, HALPinDevice, HALDataType
 
 
@@ -13,3 +13,6 @@ class HALHWDeviceMgr(HWDeviceMgr, HALCompDevice, HALPinDevice):
 
     def init_device_instances(self, **kwargs):
         super().init_device_instances(comp=self.comp, **kwargs)
+
+class SimHALHWDeviceMgr(HALHWDeviceMgr, SimHWDeviceMgr):
+    pass
