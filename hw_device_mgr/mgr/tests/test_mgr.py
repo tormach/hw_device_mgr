@@ -7,8 +7,10 @@ import pytest
 class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
     expected_mro = [
         "BogusHWDeviceMgr",
+        "SimHWDeviceMgr",
         "HWDeviceMgr",
         "FysomGlobalMixin",
+        "SimDevice",
         "Device",
         "ABC",
         "object",
@@ -20,13 +22,20 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
     read_update_write_yaml = "mgr/tests/read_update_write.cases.yaml"
 
     @pytest.fixture
-    def obj(self, device_cls, mgr_config, global_config):
-        self.obj = device_cls(sim=self.sim)
+    def obj(self, device_cls, mgr_config, device_config, all_device_data):
+        self.obj = device_cls(
+            sim=self.sim, device_data=all_device_data.values()
+        )
         self.obj.init(mgr_config=mgr_config)
-        self.obj.init_devices(device_config=global_config)
+        self.obj.init_devices(device_config=device_config)
         yield self.obj
 
     drive_key_re = re.compile(r"^drive_([x0-9])_(.*)$")
+
+    def test_init(self, obj, all_device_data):
+        print(obj.device_base_class.scan_devices(sim=True))
+        assert len(obj.devices) > 0
+        assert len(obj.devices) == len(obj.scan_devices(sim=True))
 
     def read_update_write_conv_test_data(self):
         uint16 = self.device_class.data_type_class.uint16
