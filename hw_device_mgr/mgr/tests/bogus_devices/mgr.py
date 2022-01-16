@@ -1,4 +1,4 @@
-from ...mgr import HWDeviceMgr
+from ...mgr import SimHWDeviceMgr
 from ....ethercat.tests.bogus_devices.device_402 import (
     BogusEtherCAT402Device,
     BogusEtherCAT402Servo,
@@ -6,7 +6,7 @@ from ....ethercat.tests.bogus_devices.device_402 import (
 )
 
 
-class BogusHWDeviceMgr(HWDeviceMgr):
+class BogusHWDeviceMgr(SimHWDeviceMgr):
     device_base_class = BogusEtherCAT402Device
     device_classes = (
         BogusEtherCAT402Servo,
