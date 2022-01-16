@@ -7,7 +7,7 @@ class TestErrorDevice(ErrorBaseTestClass, _TestDevice):
     expected_mro = [
         "BogusErrorDevice",
         "ErrorDevice",
-        *_TestDevice.expected_mro,
+        *_TestDevice.expected_mro[1:],  # Lop off BogusLowEndDevice
     ]
 
     @pytest.fixture
