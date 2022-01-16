@@ -1,5 +1,6 @@
 import pytest
 from ...ethercat.tests.base_test_class import BaseEtherCATTestClass
+from ...hal.tests.base_test_class import BaseHALTestClass
 from .bogus_devices.mgr import (
     BogusHWDeviceMgr,
     BogusEtherCAT402Device,
@@ -8,7 +9,7 @@ from .bogus_devices.mgr import (
 )
 
 
-class BaseMgrTestClass(BaseEtherCATTestClass):
+class BaseMgrTestClass(BaseEtherCATTestClass, BaseHALTestClass):
     """Base test class for `HWDeviceMgr` class."""
 
     # test_read_update_write() configuration
