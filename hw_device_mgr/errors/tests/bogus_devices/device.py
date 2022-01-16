@@ -1,5 +1,10 @@
 from ...device import ErrorDevice
-from ....tests.bogus_devices.device import BogusDevice, BogusServo, BogusIO
+from ....tests.bogus_devices.device import (
+    BogusDevice,
+    BogusV1ServoDevice,
+    BogusV2ServoDevice,
+    BogusV1IODevice,
+)
 
 
 class BogusErrorDevice(ErrorDevice, BogusDevice):
@@ -10,11 +15,16 @@ class BogusErrorDevice(ErrorDevice, BogusDevice):
         return list()
 
 
-class BogusErrorServo(BogusErrorDevice, BogusServo):
-    name = "bogus_error_servo"
-    model_id = 0xB0905001
+class BogusV1ErrorServo(BogusErrorDevice, BogusV1ServoDevice):
+    name = "bogus_v1_error_servo"
+    model_id = 0xB0905041
 
 
-class BogusErrorIO(BogusErrorDevice, BogusIO):
-    name = "bogus_error_io"
-    model_id = 0xB0901001
+class BogusV2ErrorServo(BogusErrorDevice, BogusV2ServoDevice):
+    name = "bogus_v2_error_servo"
+    model_id = 0xB0905042
+
+
+class BogusV1ErrorIO(BogusErrorDevice, BogusV1IODevice):
+    name = "bogus_v1_error_io"
+    model_id = 0xB0901041
