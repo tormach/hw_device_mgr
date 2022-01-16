@@ -5,13 +5,17 @@ from pprint import pformat
 import yaml
 
 
-class TestROSDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
+class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
 
     expected_mro = [
         "BogusROSHWDeviceMgr",
+        "SimROSHWDeviceMgr",
         "ROSHWDeviceMgr",
+        "BogusHWDeviceMgr",
+        "SimHWDeviceMgr",
         "HWDeviceMgr",
         "FysomGlobalMixin",
+        "SimDevice",
         "Device",
         "ABC",
         "object",
@@ -21,16 +25,20 @@ class TestROSDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
     ]
 
     @pytest.fixture
-    def obj(self, device_cls, global_config, tmp_path):
+    def obj(self, device_cls, device_config, tmp_path, all_device_data):
         # init() and init_devices() signatures changed, so can't use
         # parent test class obj fixture
-        tmpfile = tmp_path / "global_config.yaml"
+        tmpfile = tmp_path / "device_config.yaml"
+        # Munge data for pyyaml
+        device_config = [dc.copy() for dc in device_config]
+        for dc in device_config:
+            dc["product_code"] = int(dc["product_code"])
+            dc["vendor_id"] = int(dc["vendor_id"])
         with open(tmpfile, "w") as f:
-            f.write(yaml.dump(global_config))
-        self.obj = device_cls()
+            f.write(yaml.safe_dump(device_config))
+        self.obj = device_cls(device_data=all_device_data.values())
         self.obj.init(list())
         self.obj.init_devices(tmpfile)
-        print("device_config:", self.obj.device_config)
         yield self.obj
 
     def test_ros_params(self, obj):
@@ -42,4 +50,7 @@ class TestROSDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
         assert "init_timeout" in obj.mgr_config
         assert hasattr(obj, "device_config")
         assert isinstance(obj.device_config, list)
-        assert "param_values" in obj.device_config[0]
+        for devc in obj.device_config:
+            if devc["category"] == "bogus_v1_io":
+                continue
+            assert "param_values" in devc

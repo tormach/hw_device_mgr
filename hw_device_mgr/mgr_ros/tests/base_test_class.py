@@ -10,19 +10,26 @@ import pytest
 class BaseROSMgrTestClass(BaseMgrTestClass):
     """Base test class for `ROSHWDeviceMgr` class."""
 
+    rclpy_patches = ("hw_device_mgr.mgr_ros.mgr.rclpy", "bogus")
+
     # Manager class
     device_class = BogusROSHWDeviceMgr
 
     # Data types
     data_type_class = BogusROSHWDeviceMgr.data_type_class
 
+    # Base class for attached devices
+    device_base_class = BogusROSHWDeviceMgr.device_base_class
+
     # Attached device classes
     device_model_classes = BogusROSHWDeviceMgr.device_classes
 
     @pytest.fixture
-    def manager_ros_params(
-        self, mock_rclpy, mgr_config, global_config, request
-    ):
+    def extra_fixtures(self, manager_ros_params, mock_rclpy):
+        pass
+
+    @pytest.fixture
+    def manager_ros_params(self, mock_rclpy, mgr_config):
         """ROS params for the device manager."""
         hdm_params = dict(
             update_rate=20,
@@ -30,13 +37,7 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         )
         hdm_params.update(mgr_config)
         hdm_params.pop("devices")
-        request.instance.rosparams.update(hdm_params)
-
-    @pytest.fixture
-    def device_cls(self, config_cls, manager_ros_params):
-        """Fixture for ROS Device classes."""
-        self.device_class.clear_devices()
-        yield self.device_class
+        self.rosparams.update(hdm_params)
 
     def test_mock_rclpy_fixture(self, mock_rclpy):
         from ..mgr import rclpy

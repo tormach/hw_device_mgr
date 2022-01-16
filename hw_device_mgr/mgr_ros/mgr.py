@@ -1,4 +1,4 @@
-from ..mgr.mgr import HWDeviceMgr
+from ..mgr.mgr import HWDeviceMgr, SimHWDeviceMgr
 import rclpy
 import yaml
 import os
@@ -28,19 +28,13 @@ class ROSHWDeviceMgr(HWDeviceMgr):
 
         rclpy.init(args=args)
         self.ros_node = rclpy.create_node(self.name, **node_kwargs)
-        params = {
-            k: v.value
-            for k, v in self.ros_node.get_parameters_by_prefix("").items()
-        }
-        self.logger.info(f"Params:  {params}")
         self.ros_context = rclpy.utilities.get_default_context()
         self.logger.info(f"Initializing '{self.name}' ROS node")
         # - Sim mode
-        self.sim = self.get_param("use_sim", False)
+        # FIXME Use this ROS param when HAL ros_launch implemented
+        # self.sim = self.get_param("use_sim", False)
         # - ROS update rate
         self.update_rate = self.get_param("update_rate", 10)
-        # - ROS params
-        self.sim = self.get_param("use_sim", False)
         # - mgr_config
         mgr_config = dict(
             goal_state_timeout=self.get_param("goal_state_timeout", 2),
@@ -95,3 +89,7 @@ class ROSHWDeviceMgr(HWDeviceMgr):
         rclpy.spin(self.ros_node)
         self.logger.info("Shutting down")
         rclpy.shutdown()
+
+
+class SimROSHWDeviceMgr(ROSHWDeviceMgr, SimHWDeviceMgr):
+    pass
