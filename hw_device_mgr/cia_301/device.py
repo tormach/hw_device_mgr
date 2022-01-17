@@ -156,22 +156,24 @@ class CiA301SimDevice(CiA301Device, SimDevice):
         # used in tests, where the same device config file is reused
         # for different classes with different model IDs.
         uint16 = cls.data_type_class.by_shared_name("uint16")
+        config_cooked = list()
         for c in config:
             if "category" not in c:
                 model_id = (uint16(c["vendor_id"]), uint16(c["product_code"]))
                 c["vendor_id"], c["product_code"] = model_id
-                c["category"] = cls.get_model(
-                    key=model_id, category="all"
-                ).category
-                config.append(c)
+                device_cls = cls.get_model(key=model_id, category="all")
+                c["category"] = device_cls.category
+                config_cooked.append(c)
                 continue
             device_cls = cls.device_category_class(c["category"])
             if device_cls is None:
+                # Category may be irrelevant, e.g. IO device in servo tests
                 continue
             # Fill in values from the device class
             c["vendor_id"] = device_cls.vendor_id
             c["product_code"] = device_cls.product_code
-        super().set_device_config(config)
+            config_cooked.append(c)
+        super().set_device_config(config_cooked)
 
     @classmethod
     def munge_device_data(cls, device_data):
