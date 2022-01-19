@@ -24,8 +24,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def device_type_key(cls):
         return cls.name
 
-    feedback_in_defaults = dict(state_cmd=0, quick_stop=0)
-    feedback_in_data_types = dict(state_cmd="uint8", quick_stop="bit")
+    feedback_in_defaults = dict(state_cmd=0, quick_stop=0, reset=0)
+    feedback_in_data_types = dict(
+        state_cmd="uint8", quick_stop="bit", reset="bit"
+    )
     feedback_out_defaults = dict(
         state_cmd="init",
         quick_stop=0,

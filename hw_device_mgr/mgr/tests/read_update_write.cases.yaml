@@ -6,6 +6,7 @@
 - desc:  "Init:  301 NMT state machine init"
   feedback_in:
     # Mgr
+    reset: 0
     state_cmd: 0
     quick_stop: 0
     # Drives
@@ -17,6 +18,7 @@
     drive_x_control_mode_fb:  MODE_NA  # Undefined
   feedback_out:
     # Mgr
+    reset:  0
     state_cmd:  init
     quick_stop:  0
     goal_reached:  True
@@ -69,6 +71,7 @@
     drive_x_control_mode:  MODE_CSP
   sim_feedback:
     # Mgr
+    reset:  0
     state_cmd:  0  # init
     quick_stop:  0
     # Drives
