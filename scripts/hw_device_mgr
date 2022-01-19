@@ -1,10 +1,24 @@
 #!/usr/bin/env python3
 
-from hw_device_mgr.mgr_ros_hal.mgr import ROSHALHWDeviceMgr
+from hw_device_mgr.mgr_ros_hal.mgr import (
+    ROSHALHWDeviceMgr,
+    SimROSEtherCATHWDeviceMgr,
+)
 import sys
+import os
+import yaml
 
 if __name__ == "__main__":
-    mgr = ROSHALHWDeviceMgr()
+    if os.environ.get("USE_SIM", False).lower() in ("1", "true"):
+        # This egregious hack will go away when proper ROS param
+        # handling is implemented.
+        device_data_file = os.environ.get("SIM_DEVICE_DATA")
+        with open(device_data_file, "r") as f:
+            device_data = yaml.safe_load(f)
+        mgr = SimROSEtherCATHWDeviceMgr(device_data=device_data, sim=True)
+    else:
+        mgr = ROSHALHWDeviceMgr()
     mgr.init(sys.argv[2:])
-    mgr.init_devices(device_config_path=sys.argv[1])
+    device_config_path = sys.argv[1]
+    mgr.init_devices(device_config_path)
     mgr.run()
