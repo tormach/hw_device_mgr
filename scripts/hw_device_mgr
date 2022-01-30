@@ -5,20 +5,16 @@ from hw_device_mgr.mgr_ros_hal.mgr import (
     SimROSEtherCATHWDeviceMgr,
 )
 import sys
-import os
-import yaml
 
 if __name__ == "__main__":
-    if os.environ.get("USE_SIM", False).lower() in ("1", "true"):
-        # This egregious hack will go away when proper ROS param
-        # handling is implemented.
-        device_data_file = os.environ.get("SIM_DEVICE_DATA")
-        with open(device_data_file, "r") as f:
-            device_data = yaml.safe_load(f)
-        mgr = SimROSEtherCATHWDeviceMgr(device_data=device_data, sim=True)
+    argv = list(sys.argv[1:])  # Knock off executable name
+    sim = "--sim" in argv
+    if sim:
+        mgr = SimROSEtherCATHWDeviceMgr(sim=True)
     else:
         mgr = ROSHALHWDeviceMgr()
-    mgr.init(sys.argv[2:])
-    device_config_path = sys.argv[1]
-    mgr.init_devices(device_config_path)
+    mgr.init(argv)
+    if sim:
+        mgr.init_sim()
+    mgr.init_devices()
     mgr.run()

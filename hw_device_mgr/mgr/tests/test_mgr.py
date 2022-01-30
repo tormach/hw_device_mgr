@@ -23,10 +23,9 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
 
     @pytest.fixture
     def obj(self, device_cls, mgr_config, device_config, all_device_data):
-        self.obj = device_cls(
-            sim=self.sim, device_data=all_device_data.values()
-        )
+        self.obj = device_cls(sim=self.sim)
         self.obj.init(mgr_config=mgr_config)
+        self.obj.init_sim(device_data=all_device_data.values())
         self.obj.init_devices(device_config=device_config)
         yield self.obj
 

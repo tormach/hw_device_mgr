@@ -25,21 +25,13 @@ class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
     ]
 
     @pytest.fixture
-    def obj(self, device_cls, device_config, tmp_path, all_device_data):
-        # init() and init_devices() signatures changed, so can't use
-        # parent test class obj fixture
-        tmpfile = tmp_path / "device_config.yaml"
-        # Munge data for pyyaml
-        device_config = [dc.copy() for dc in device_config]
-        assert device_config
-        for dc in device_config:
-            dc["product_code"] = int(dc["product_code"])
-            dc["vendor_id"] = int(dc["vendor_id"])
-        with open(tmpfile, "w") as f:
-            f.write(yaml.safe_dump(device_config))
-        self.obj = device_cls(device_data=all_device_data.values())
+    def obj(self, device_cls, device_config_path, device_data_path):
+        # init_sim() and init_devices() signatures changed, so can't
+        # use parent test class obj fixture
+        self.obj = device_cls(sim=self.sim)
         self.obj.init(list())
-        self.obj.init_devices(device_config_path=tmpfile)
+        self.obj.init_sim()
+        self.obj.init_devices()
         yield self.obj
 
     def test_ros_params(self, obj):

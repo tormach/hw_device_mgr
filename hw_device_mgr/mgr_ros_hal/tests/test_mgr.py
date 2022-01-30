@@ -11,6 +11,7 @@ class TestROSHWDeviceMgr(
         "BogusHALROSHWDeviceMgr",
         "SimROSEtherCATHWDeviceMgr",
         "ROSHALHWDeviceMgr",
+        "SimROSHWDeviceMgr",
         "ROSHWDeviceMgr",
         "HALHWDeviceMgr",
         "SimHWDeviceMgr",

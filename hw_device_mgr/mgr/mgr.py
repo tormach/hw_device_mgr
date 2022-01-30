@@ -671,8 +671,3 @@ class SimHWDeviceMgr(HWDeviceMgr, SimDevice):
     def init_sim(self, device_data=dict()):
         assert device_data
         self.device_base_class.init_sim(device_data=device_data)
-
-    def __init__(self, sim=True, device_data=dict(), **kwargs):
-        # print("In SimHWDeviceMgr __init__()")
-        self.init_sim(device_data=device_data)
-        super().__init__(sim=sim, **kwargs)
