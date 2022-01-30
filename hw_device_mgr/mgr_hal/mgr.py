@@ -5,6 +5,7 @@ from ..hal.device import HALCompDevice, HALPinDevice, HALDataType
 class HALHWDeviceMgr(HWDeviceMgr, HALCompDevice, HALPinDevice):
 
     name = "hal_hw_device_mgr"
+    hal_comp_name = "hw_device_mgr"
     data_type_class = HALDataType
     device_base_class = HALPinDevice
     device_classes = (HALPinDevice,)

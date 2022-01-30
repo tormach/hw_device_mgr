@@ -19,7 +19,7 @@
     </Groups>
     <Devices>
       <Device Physics="YY">
-        <Type ProductCode="#xB09050FF" RevisionNo="13">B090.SO.3.0</Type>
+        <Type ProductCode="#xB09050F3" RevisionNo="13">B090.SO.3.0</Type>
         <Name LcId="1033"><![CDATA[B090.SO.001 Servo Drive]]></Name>
         <Name LcId="2052"><![CDATA[B090.SO.001 伺服驱动器]]></Name>
         <GroupType>B090.SO Series</GroupType>

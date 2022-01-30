@@ -61,7 +61,9 @@ class HALPinDevice(Device, HALMixin):
             try:
                 pin = comp.newpin(pname, ptype, pdir)
             except Exception as e:
-                raise RuntimeError(f"Exception creating pin {pname}:  {e}")
+                raise RuntimeError(
+                    f"Exception creating pin {comp.getprefix()}.{pname}:  {e}"
+                )
             ptypes, pdirs = (self.hal_enum_str(i) for i in (ptype, pdir))
             self.pins[base_pname] = pin
             self.logger.debug(f"Created HAL pin {pname} {ptypes} {pdirs}")
@@ -101,8 +103,10 @@ class HALPinDevice(Device, HALMixin):
 class HALCompDevice(Device, HALMixin):
     """A `Device` with HAL component."""
 
+    hal_comp_name = None
+
     def init(self, **kwargs):
-        self.comp = self.hal.component(self.name)
+        self.comp = self.hal.component(self.hal_comp_name or self.name)
         self.logger.info(f"Initialized '{self.compname}' HAL component")
         super().init(comp=self.comp, **kwargs)
 

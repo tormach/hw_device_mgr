@@ -46,7 +46,9 @@ class ROSHWDeviceMgr(HWDeviceMgr):
         super().init(mgr_config=mgr_config, **kwargs)
         self.logger.info(f"Initialized '{self.name}' ROS node")
 
-    def init_devices(self, device_config_path=None, **kwargs):
+    def init_devices(self, **kwargs):
+        device_config_path = self.get_param("device_config_path")
+        assert device_config_path, "No 'device_config_path' param defined"
         self.logger.info(f"Reading device config from '{device_config_path}'")
         assert os.path.exists(device_config_path)
         with open(device_config_path, "r") as f:
@@ -97,3 +99,14 @@ class ROSHWDeviceMgr(HWDeviceMgr):
 
 class SimROSHWDeviceMgr(ROSHWDeviceMgr, SimHWDeviceMgr):
     name = "sim_ros_hw_device_mgr"
+
+    def init_sim(self):
+        device_data_path = self.get_param("device_data_path")
+        assert device_data_path, "No 'device_data_path' param defined"
+        assert os.path.exists(
+            device_data_path
+        ), f"Device data path doesn't exist:  '{device_data_path}'"
+        self.logger.info(f"Reading sim device config from {device_data_path}")
+        with open(device_data_path, "r") as f:
+            device_data = yaml.safe_load(f)
+        super().init_sim(device_data=device_data)
