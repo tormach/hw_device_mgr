@@ -2,7 +2,6 @@ from .base_test_class import BaseROSMgrTestClass
 from ...mgr.tests.test_mgr import TestHWDeviceMgr as _TestHWDeviceMgr
 import pytest
 from pprint import pformat
-import yaml
 
 
 class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
