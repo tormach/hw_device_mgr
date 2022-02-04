@@ -5,9 +5,9 @@ from ..sdo import CiA301SDO
 from ..config import CiA301SimConfig
 from .bogus_devices.device import (
     BogusCiA301Device,
-    BogusV1CiA301Servo,
-    BogusV2CiA301Servo,
-    BogusV1CiA301IO,
+    BogusCiA301V1Servo,
+    BogusCiA301V2Servo,
+    BogusCiA301V1IO,
 )
 from ..command import CiA301SimCommand
 
@@ -32,32 +32,37 @@ class BaseCiA301TestClass(BaseTestClass):
     config_class = CiA301SimConfig
     device_class = BogusCiA301Device
     device_model_classes = (
-        BogusV1CiA301Servo,
-        BogusV2CiA301Servo,
-        BogusV1CiA301IO,
+        BogusCiA301V1Servo,
+        BogusCiA301V2Servo,
+        BogusCiA301V1IO,
     )
-    device_model_sdo_clone = None
 
-    def init_sim(self):
-        assert not getattr(self, "_sim_initialized", False)  # Run once only
-        self.device_class.clear_devices()
-        self.config_class._device_config.clear()
-        self.command_class.sim_device_data.clear()
-        path, dev_conf = self.load_yaml(self.device_config_yaml, True)
-        self.device_class.set_device_config(dev_conf)
-        path, dev_data = self.load_yaml(self.device_data_yaml, True)
-        dev_data = self.munge_device_data(dev_data)
-        path, sdo_data = self.load_yaml(self.device_sdos_yaml, True)
-        print(f"  loaded device_config from {path}")
-        self.device_class.set_device_config(dev_conf)
-        path, dev_data = self.load_yaml(self.device_data_yaml, True)
-        dev_data = self.munge_device_data(dev_data)
-        print(f"  loaded device_data from {path}")
-        path, sdo_data = self.load_yaml(self.device_sdos_yaml, True)
-        print(f"  loaded sdo_data from {path}")
-        sdo_data = self.munge_sdo_data(sdo_data)
-        self.device_class.init_sim(device_data=dev_data, sdo_data=sdo_data)
-        self._sim_initialized = True
+    # Whether to pass SDO data to device_class.init_sim()
+    pass_init_sim_device_sdos = True
+
+    @classmethod
+    def init_sim(cls, **kwargs):
+        if cls.pass_init_sim_device_sdos:
+            # Init sim SDO data
+            path, sdo_data = cls.load_yaml(cls.device_sdos_yaml, True)
+            print(f"  Raw sdo_data from {path}")
+            kwargs["sdo_data"] = cls.munge_sdo_data(sdo_data)
+        # Init sim device data
+        super().init_sim(**kwargs)
+
+    @classmethod
+    def munge_device_config(cls, device_config):
+        # Make device_config.yaml reusable by monkey-patching device vendor_id
+        # and product_code keys based on test_category key
+        new_device_config = list()
+        for conf in device_config:
+            device_cls = cls.test_category_class(conf["test_category"])
+            assert device_cls
+            new_device_config.append(conf)
+            model_id = device_cls.device_model_id()
+            conf["vendor_id"], conf["product_code"] = model_id
+        assert new_device_config  # Sanity check not empty
+        return new_device_config
 
     @pytest.fixture
     def extra_fixtures(self):
@@ -66,12 +71,13 @@ class BaseCiA301TestClass(BaseTestClass):
         pass
 
     @pytest.fixture
-    def device_cls(self, extra_fixtures):
+    def device_cls(self, device_config, extra_fixtures):
         self.init_sim()
+        self.device_class.set_device_config(device_config)
         yield self.device_class
 
     @pytest.fixture
-    def config_cls(self, device_cls):
+    def config_cls(self, device_cls, device_config):
         yield self.config_class
 
     @pytest.fixture
@@ -79,7 +85,7 @@ class BaseCiA301TestClass(BaseTestClass):
         yield self.command_class
 
     @pytest.fixture
-    def device_config(self, device_cls, request):
+    def device_config(self):
         """
         Device configuration data fixture.
 
@@ -97,13 +103,17 @@ class BaseCiA301TestClass(BaseTestClass):
         replaced with a `category` key matching a parent of classes
         listed; this fixture will re-add those keys.
         """
-        request.instance.device_config = self.config_class._device_config
-        yield request.instance.device_config
+        path, dev_conf = self.load_yaml(self.device_config_yaml, True)
+        print(f"  Raw device_config from {path}")
+        dev_conf = self.munge_device_config(dev_conf)
+        self.device_config = dev_conf
+        self.device_config_path = path
+        yield dev_conf
 
     @pytest.fixture
     def all_device_data(self, device_cls, request):
         """
-        Device data from file named in `device_data_yaml` attr.
+        Device data from file named in `sim_device_data_yaml` attr.
 
         Device data is reformatted for ease of use in a `list` of `dict`:
         `model_key`:   `bogus_devices.device` model class attribute
@@ -114,8 +124,8 @@ class BaseCiA301TestClass(BaseTestClass):
         The same data is available in the test object `dev_data` as a
         `dict` with device address key `(bus, position)`.
         """
-        request.instance.device_data = self.command_class.sim_device_data
-        yield request.instance.device_data
+        request.instance.sim_device_data = self.command_class.sim_device_data
+        yield request.instance.sim_device_data
 
     @pytest.fixture
     def all_sdo_data(self, device_cls, request):
@@ -146,26 +156,32 @@ class BaseCiA301TestClass(BaseTestClass):
     #
 
     @pytest.fixture
-    def device_data(self, _device_data, device_cls):
+    def sim_device_data(self, _sim_device_data, device_cls):
         """
         Parametrize test with values from `all_device_data` fixture.
 
-        When combined with the `sdo_data` fixture, `device_data`
+        When combined with the `sdo_data` fixture, `sim_device_data`
         values will match that fixture's device model.
 
-        The `device_data` is also available in the test instance's
-        `device_data` attribute.
+        The `sim_device_data` is also available in the test instance's
+        `sim_device_data` attribute.
         """
-        self.device_data = _device_data
-        self.device_model_cls = device_cls.get_model(_device_data["model_id"])
-        yield _device_data
+        self.sim_device_data = _sim_device_data
+        model_id = (
+            _sim_device_data["vendor_id"],
+            _sim_device_data["product_code"],
+        )
+        _sim_device_data["test_model_id"] = model_id
+        self.device_model_cls = device_cls.get_model(model_id)
+        assert self.device_model_cls
+        yield _sim_device_data
 
     @pytest.fixture
     def sdo_data(self, _sdo_data, device_cls):
         """
         Parametrize test with values from `all_sdo_data` fixture.
 
-        When combined with the `device_data` fixture, `sdo_data`
+        When combined with the `sim_device_data` fixture, `sdo_data`
         values will match that fixture's device model.
 
         The `sdo_data` is also available in the test instance's
@@ -174,58 +190,57 @@ class BaseCiA301TestClass(BaseTestClass):
         self.sdo_data = _sdo_data
         yield _sdo_data
 
-    def munge_sdo_data(self, sdo_data, conv_sdos=False):
+    @classmethod
+    def munge_sdo_data(cls, sdo_data, conv_sdos=False):
         new_sdo_data = dict()
-        for category, old_sdos in sdo_data.items():
-            sdos = new_sdo_data[category] = dict()
+        for test_category, old_sdos in sdo_data.items():
+            device_cls = cls.test_category_class(test_category)
+            assert device_cls
+            sdos = new_sdo_data[device_cls.name] = dict()
             for ix, sdo in old_sdos.items():
-                ix = self.config_class.sdo_ix(ix)
-                sdos[ix] = self.sdo_class(**sdo) if conv_sdos else sdo
+                if conv_sdos:
+                    ix = cls.config_class.sdo_ix(ix)
+                    sdos[ix] = cls.sdo_class(**sdo)
+                else:
+                    sdos[ix] = sdo
+        assert new_sdo_data
+        assert None not in new_sdo_data.keys()
         return new_sdo_data
 
-    def munge_device_data(self, device_data):
-        device_base_cls = getattr(self, "device_base_class", self.device_class)
-        device_category_class = device_base_cls.device_category_class
-        new_device_data = list()
-        for dev in device_data:
-            device_class = device_category_class(dev["category"])
-            if device_class is None:
-                continue
-            dev = dev.copy()
-            new_device_data.append(dev)
-            model_id = (device_class.vendor_id, device_class.product_code)
-            model_id = self.config_class.format_model_id(model_id)
-            dev["model_id"] = model_id
-            dev["vendor_id"], dev["product_code"] = model_id
-            dev["name"] = device_class.name
-            dev["address"] = (dev["bus"], dev["position"])
-            dev["conf_category"] = dev["category"]
-            dev["category"] = device_class.category
-            dev["cls"] = device_class
-        return new_device_data
+    @classmethod
+    def munge_sim_device_data(cls, sim_device_data):
+        sim_device_data = super().munge_sim_device_data(sim_device_data)
+        for dev in sim_device_data:
+            # Replace model_id key
+            dev["vendor_id"], dev["product_code"] = dev.pop("model_id")
+            # For test fixture
+            dev["test_address"] = (dev["bus"], dev["position"])
+        return sim_device_data
 
     def pytest_generate_tests(self, metafunc):
-        # Dynamic parametrization from device_data_yaml:
-        # - _device_data:  iterate through `device_data` list
+        # Dynamic parametrization from sim_device_data_yaml:
+        # - _sim_device_data:  iterate through `sim_device_data` list
         #   - with `_sdo_data`:  add matching entry in `sdo_data` list
         # - _sdo_data:  iterate through `sdo_data` values
-        # - bus:  iterate through `device_data` unique `bus` values
+        # - bus:  iterate through `sim_device_data` unique `bus` values
         # *Note all three cases are mutually exclusive
-        path, dev_data = self.load_yaml(self.device_data_yaml, True)
-        dev_data = self.munge_device_data(dev_data)
+        path, dev_data = self.load_yaml(self.sim_device_data_yaml, True)
+        dev_data = self.munge_sim_device_data(dev_data)
         path, sdo_data = self.load_yaml(self.device_sdos_yaml, True)
         sdo_data = self.munge_sdo_data(sdo_data, conv_sdos=True)
         names = list()
         vals, ids = (list(), list())
-        if "_device_data" in metafunc.fixturenames:
-            names.append("_device_data")
-            assert "bus" not in metafunc.fixturenames  # use device_data["bus"]
+        if "_sim_device_data" in metafunc.fixturenames:
+            names.append("_sim_device_data")
+            assert "bus" not in metafunc.fixturenames  # sim_device_data["bus"]
             if "_sdo_data" in metafunc.fixturenames:
                 names.append("_sdo_data")
             for dev in dev_data:
-                ids.append(f"{dev['name']}@{dev['address']}")
+                ids.append(f"{dev['test_name']}@{dev['test_address']}")
                 if "_sdo_data" in metafunc.fixturenames:
-                    vals.append([dev, sdo_data[dev["conf_category"]]])
+                    device_cls = self.test_category_class(dev["test_category"])
+                    assert device_cls is not None
+                    vals.append([dev, sdo_data[device_cls.name]])
                 else:
                     vals.append(dev)
         elif "_sdo_data" in metafunc.fixturenames:

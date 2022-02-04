@@ -7,36 +7,27 @@ from pprint import pformat
 class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
 
     expected_mro = [
-        "BogusROSHWDeviceMgr",
-        "SimROSHWDeviceMgr",
+        "ROSHWDeviceMgrTestCategory",
+        "ROSSimHWDeviceMgr",
         "ROSHWDeviceMgr",
-        "BogusHWDeviceMgr",
-        "SimHWDeviceMgr",
-        "HWDeviceMgr",
-        "FysomGlobalMixin",
-        "SimDevice",
-        "Device",
-        "ABC",
-        "object",
+        *_TestHWDeviceMgr.expected_mro[1:],
     ]
     rclpy_patches = [
         "hw_device_mgr.mgr_ros.mgr.rclpy",
     ]
 
     @pytest.fixture
-    def obj(self, device_cls, device_config_path, device_data_path):
+    def obj(self, device_cls):
         # init_sim() and init_devices() signatures changed, so can't
         # use parent test class obj fixture
-        self.obj = device_cls(sim=self.sim)
+        self.obj = device_cls()
         self.obj.init(list())
-        self.obj.init_sim()
+        self.obj.init_sim_from_rosparams()
         self.obj.init_devices()
         yield self.obj
 
     def test_ros_params(self, obj):
         print(f"self.rosparams:\n{pformat(self.rosparams)}")
-        assert self.rosparams["use_sim"] is True  # Fixture sanity
-        assert obj.sim is True  # Defaults to False
         assert obj.update_rate == 20  # Defaults to 10
         assert hasattr(obj, "mgr_config")
         assert "init_timeout" in obj.mgr_config

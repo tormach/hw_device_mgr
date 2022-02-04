@@ -1,27 +1,25 @@
-from ...device import HALPinDevice
-from ....cia_301.tests.bogus_devices.device import (
-    BogusCiA301DeviceCategory,
-    BogusV1CiA301ServoCategory,
-    BogusV2CiA301ServoCategory,
-    BogusV1CiA301IOCategory,
-)
+from ...device import HALPinSimDevice
+from ....cia_301.device import CiA301SimDevice
 
 
-class BogusHALDevice(HALPinDevice, BogusCiA301DeviceCategory):
+class BogusHALDevice(HALPinSimDevice, CiA301SimDevice):
     category = "bogus_hal_device"
     vendor_id = 0xB090C0
 
 
-class BogusV1HALServo(BogusHALDevice, BogusV1CiA301ServoCategory):
-    name = "bogo_v1_hal_servo"
+class BogusHALV1Servo(BogusHALDevice):
+    name = "bogo_hal_v1_servo"
+    test_category = "bogus_v1_servo"
     product_code = 0xB0905050
 
 
-class BogusV2HALServo(BogusHALDevice, BogusV2CiA301ServoCategory):
-    name = "bogo_v2_hal_servo"
+class BogusHALV2Servo(BogusHALDevice):
+    name = "bogo_hal_v2_servo"
+    test_category = "bogus_v2_servo"
     product_code = 0xB0905051
 
 
-class BogusV1HALIO(BogusHALDevice, BogusV1CiA301IOCategory):
-    name = "bogo_v1_hal_io"
+class BogusHALV1IO(BogusHALDevice):
+    name = "bogo_hal_v1_io"
+    test_category = "bogus_v1_io"
     product_code = 0xB0901050

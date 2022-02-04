@@ -121,7 +121,7 @@
       MANUFACTURER_SPECIFIC_2:  False
       HOMING_COMPLETED:  False
     drive_x_transition:  TRANSITION_0
-    drive_x_goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON != SWITCH ON DISABLED
+    drive_x_goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON (0x00000010) != SWITCH ON DISABLED
   sim_feedback:
     # - CiA 402
     drive_x_status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
@@ -152,15 +152,9 @@
     drive_x_transition:  null
   command_in:
     state_log:  "Automatic transition from init_complete state"
-    reset:  True
-  command_out:
-    reset:  1
 - desc:  "Init:  Complete"
   command_in:
     command_complete:  True
-    reset:  False
-  command_out:
-    reset:  0
 - desc:  "Init:  Hold state"
 
 #
@@ -201,7 +195,7 @@
     drive_x_state:  READY TO SWITCH ON
     drive_x_transition:  TRANSITION_2
     drive_x_goal_reached:  False
-    drive_x_goal_reason:  state READY TO SWITCH ON != SWITCHED ON
+    drive_x_goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
   command_out:
     drive_x_control_word:  0x0007  # SWITCHED ON
   sim_feedback:
@@ -262,7 +256,7 @@
     drive_1_state:  FAULT REACTION ACTIVE
     drive_1_transition:  TRANSITION_13
     drive_1_goal_reached:  False
-    drive_1_goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED
+    drive_1_goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
   command_out:
     drive_1_control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -274,7 +268,7 @@
     drive_1_status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     drive_1_state:  FAULT
     drive_1_transition:  TRANSITION_14
-    drive_1_goal_reason:  state FAULT != OPERATION ENABLED
+    drive_1_goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED
   command_in:
     # Manager reacts, setting command to 'fault'
     state_cmd:  fault
@@ -312,7 +306,7 @@
     drive_x_state:  QUICK STOP ACTIVE
     drive_x_transition:  TRANSITION_11
     drive_x_goal_reached:  False
-    drive_x_goal_reason:  state QUICK STOP ACTIVE != FAULT
+    drive_x_goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
   command_in:
     state_log:  Devices at ((0, 11)) in FAULT state
   command_out:
@@ -374,13 +368,13 @@
     drive_1_state:  SWITCH ON DISABLED
     drive_1_transition:  TRANSITION_15
     drive_1_goal_reached:  False
-    drive_1_goal_reason:  state SWITCH ON DISABLED != SWITCHED ON
+    drive_1_goal_reason:  state SWITCH ON DISABLED (0x00000050) != SWITCHED ON
     # ...while other drives are one step ahead
     drive_x_status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     drive_x_state:  READY TO SWITCH ON
     drive_x_transition:  TRANSITION_2
     drive_x_goal_reached:  False
-    drive_x_goal_reason:  state READY TO SWITCH ON != SWITCHED ON
+    drive_x_goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
   command_out:
     drive_1_control_word:  0x0006  # READY TO SWITCH ON
     drive_x_control_word:  0x0007  # SWITCHED ON
@@ -397,7 +391,7 @@
     drive_1_state:  READY TO SWITCH ON
     drive_1_transition:  TRANSITION_2
     drive_1_goal_reached:  False
-    drive_1_goal_reason:  state READY TO SWITCH ON != SWITCHED ON
+    drive_1_goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
     # ...while other drives reached SWITCHED ON
     drive_x_status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     drive_x_state:  SWITCHED ON
@@ -425,7 +419,7 @@
     drive_2_state:  FAULT REACTION ACTIVE
     drive_2_transition:  TRANSITION_13
     drive_2_goal_reached:  False
-    drive_2_goal_reason:  state FAULT REACTION ACTIVE != SWITCHED ON
+    drive_2_goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != SWITCHED ON
     drive_1_status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     drive_1_state:  SWITCHED ON
     drive_1_transition:  TRANSITION_3
@@ -446,7 +440,7 @@
     drive_2_status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     drive_2_state:  FAULT
     drive_2_transition:  TRANSITION_14
-    drive_2_goal_reason:  state FAULT != SWITCHED ON
+    drive_2_goal_reason:  state FAULT (0x00000018) != SWITCHED ON
     drive_1_transition:  null
   command_in:
   # Controller sees FAULT state and commands hold at that state
@@ -645,7 +639,7 @@
     drive_x_state:  READY TO SWITCH ON
     drive_x_transition:  TRANSITION_2
     drive_x_goal_reached:  False
-    drive_x_goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+    drive_x_goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
   command_in:
     # Controller commands enable
     drive_x_state:  OPERATION ENABLED
@@ -660,7 +654,7 @@
     drive_x_status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     drive_x_state:  SWITCHED ON
     drive_x_transition:  TRANSITION_3
-    drive_x_goal_reason:  state SWITCHED ON != OPERATION ENABLED
+    drive_x_goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
   command_out:
     drive_x_control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
@@ -753,13 +747,11 @@
     drive_x_transition:  TRANSITION_11
     drive_x_control_mode_fb:  MODE_CSP
     drive_x_goal_reached:  False
-    drive_x_goal_reason:  state QUICK STOP ACTIVE != SWITCH ON DISABLED
+    drive_x_goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED
   command_in:
     state_log:  Automatic transition from home_complete state
-    reset:  True
   command_out:
     drive_x_control_word:  0x0000  # SWITCH ON DISABLED
-    reset:  1
   sim_feedback:
     drive_x_status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
 - desc:  "Home:  402 state machine transition 12"
@@ -773,9 +765,6 @@
     drive_x_goal_reason:  Reached
   command_in:
     command_complete:  True
-    reset:  False
-  command_out:
-    reset:  0
 
 - desc:  "Home:  Hold SWITCH ON DISABLED x1"
   feedback_out:

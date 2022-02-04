@@ -1,30 +1,24 @@
-from ...mgr_hal.tests.base_test_class import BaseLCEC402MgrTestClass
+from ...mgr_hal.tests.base_test_class import BaseHALMgrTestClass
 from ...mgr_ros.tests.base_test_class import BaseROSMgrTestClass
-from .bogus_devices.mgr import BogusHALROSHWDeviceMgr
-from ...devices.tests.test_devices_402 import Test402Devices as _Test402Devices
+from .bogus_devices.mgr import ROSHWDeviceMgrTest
 import pytest
 
 
-###############################
-# Test class
+class BaseROSHALMgrTestClass(BaseROSMgrTestClass, BaseHALMgrTestClass):
+    """Base test class for `ROSHALHWDeviceMgr` class."""
 
-
-class BaseROSHALMgrTestClass(BaseLCEC402MgrTestClass, BaseROSMgrTestClass):
-    """Base test class for `ROSHWDeviceMgr` class."""
-
-    data_type_class = BogusHALROSHWDeviceMgr.data_type_class
-    device_class = BogusHALROSHWDeviceMgr
-    device_base_class = BogusHALROSHWDeviceMgr.device_base_class
-    device_model_classes = BogusHALROSHWDeviceMgr.device_classes
-
-    device_config_yaml = _Test402Devices.device_config_yaml
-    device_data_yaml = _Test402Devices.device_data_yaml
-    device_sdos_yaml = _Test402Devices.device_sdos_yaml
-
-    device_model_sdo_clone = None
+    data_type_class = ROSHWDeviceMgrTest.data_type_class
+    device_class = ROSHWDeviceMgrTest
+    device_base_class = ROSHWDeviceMgrTest.device_base_class
+    device_model_classes = ROSHWDeviceMgrTest.device_classes
 
     @pytest.fixture
     def extra_fixtures(
-        self, manager_ros_params, mock_hal, mock_ethercat_command
+        self,
+        manager_ros_params,
+        sim_device_data_path,
+        device_config_path,
+        mock_hal,
+        mock_ethercat_command,
     ):
         pass

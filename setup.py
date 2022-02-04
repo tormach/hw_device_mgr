@@ -13,9 +13,10 @@ pkgs_bd = [
     "mgr",
     "mgr_hal",
     "mgr_ros",
+    "mgr_ros_hal",
 ]
 # Packages like hw_device_mgr.{pkg}.tests
-pkgs_t = ["devices", "mgr_ros_hal"] + pkgs_bd
+pkgs_t = ["devices"] + pkgs_bd
 # Generate lists
 packages = (
     [

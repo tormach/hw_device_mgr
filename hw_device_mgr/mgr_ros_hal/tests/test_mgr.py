@@ -4,24 +4,13 @@ from ...mgr_hal.tests.test_mgr import TestHALHWDeviceMgr as _TestHALHWDeviceMgr
 
 
 class TestROSHWDeviceMgr(
-    BaseROSHALMgrTestClass, _TestROSHWDeviceMgr, _TestHALHWDeviceMgr
+    BaseROSHALMgrTestClass, _TestHALHWDeviceMgr, _TestROSHWDeviceMgr
 ):
 
     expected_mro = [
-        "BogusHALROSHWDeviceMgr",
-        "SimROSEtherCATHWDeviceMgr",
+        "ROSHWDeviceMgrTestCategory",
+        "ROSHALSimHWDeviceMgr",
         "ROSHALHWDeviceMgr",
-        "SimROSHWDeviceMgr",
-        "ROSHWDeviceMgr",
-        "HALHWDeviceMgr",
-        "SimHWDeviceMgr",
-        "HWDeviceMgr",
-        "FysomGlobalMixin",
-        "HALCompDevice",
-        "HALPinDevice",
-        "SimDevice",
-        "Device",
-        "ABC",
-        "HALMixin",
-        "object",
+        *_TestROSHWDeviceMgr.expected_mro[1:3],  # ROS{Sim...}HWDeviceMgr
+        *_TestHALHWDeviceMgr.expected_mro[1:],  # HALSimHWDeviceMgr...HALMixin
     ]

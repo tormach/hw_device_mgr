@@ -3,7 +3,7 @@
 #
 # - Elmo 0x00030924 Gold EtherCAT GCON Drive Rev:0x00010420
 -
-  category:  elmo_gold_420_test
+  test_category:  elmo_gold_420_test
   # vendor_id:  0x0000009A
   # product_code:  0x00030924
   revision_no:  0x00010420
@@ -86,7 +86,7 @@
 #
 # - Elmo 0x00030925 Gold EtherCAT GCON Drive ID Selector Rev:0x00010420
 -
-  category:  elmo_gold_520_test
+  test_category:  elmo_gold_520_test
   # vendor_id:  0x0000009A
   # product_code:  0x00030925
   revision_no:  0x00010520
@@ -170,7 +170,7 @@
 #
 # - IS620N_ECAT_v2.6.7
 -
-  category:  inovance_is620n_test
+  test_category:  inovance_is620n_test
   # vendor_id:  0x00100000
   # product_code:  0x000C0108
   revision_no:  0x00010001
@@ -255,7 +255,7 @@
 #
 # - SV660_1Axis_00912
 -
-  category:  inovance_sv660n_test
+  test_category:  inovance_sv660n_test
   # vendor_id:  0x00100000
   # product_code:  0x000C010D
   revision_no:  0x00010000

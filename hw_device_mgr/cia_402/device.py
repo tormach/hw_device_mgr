@@ -18,12 +18,8 @@ class CiA402Device(CiA301Device):
     - `control_mode`:  Drive control mode, e.g. `MODE_CSP`
     - `control_word_flags`:  Control word bits to set
     - `state_flags`:  Status word bits to match for `goal_reached` feedback
-
-    The `set_sim_feedback()` method will crudely mimic behavior of a
-    real drive.
     """
 
-    category = "cia_402"
     data_types = CiA301DataType
 
     # ------- FEEDBACK -------
@@ -64,7 +60,7 @@ class CiA402Device(CiA301Device):
             if getattr(cls, attr) == mode:
                 return attr
         else:
-            raise AttributeError(f"Unknown control mode '{mode}'")
+            return f"MODE_UNKNOWN({mode})"
 
     # Status word bits not used for CiA402 state machine operation may
     # have other purposes
@@ -92,14 +88,12 @@ class CiA402Device(CiA301Device):
         status_word="uint16",
         control_mode_fb="int8",
     )
-    sim_feedback_data_types = feedback_in_data_types
 
     # Incoming feedback from drives:  param_name : inital_value
     feedback_in_defaults = dict(
         status_word=0,
         control_mode_fb=0,
     )
-    sim_feedback_defaults = feedback_in_defaults
 
     # Outgoing feedback to controller:  param_name : inital_value
     feedback_out_defaults = dict(
@@ -146,12 +140,13 @@ class CiA402Device(CiA301Device):
         else:
             raise ValueError(
                 f"Unknown status word 0x{sw:X}; "
-                f"state {self.feedback.get('state')} unchanged"
+                f"state {self.feedback_out.get('state')} unchanged"
             )
         if self._get_next_transition() is not None:
             goal_reached = False
             state_cmd = self.command_in.get("state")
-            goal_reasons.append(f"state {state} != {state_cmd}")
+            sw = self.feedback_in.get("status_word")
+            goal_reasons.append(f"state {state} (0x{sw:08X}) != {state_cmd}")
 
         # Calculate 'transition' feedback
         new_st, old_st = self.feedback_out.changed("state", return_vals=True)
@@ -181,6 +176,7 @@ class CiA402Device(CiA301Device):
             fb_out.update(
                 goal_reached=False, goal_reason="; ".join(goal_reasons)
             )
+            self.logger.debug(f"Device {self.address}:  Goal not reached:")
         return fb_out
 
     state_bits = {
@@ -433,6 +429,18 @@ class CiA402Device(CiA301Device):
         cm = self.command_in.get("control_mode")
         return self.control_mode_int(cm)
 
+
+class CiA402SimDevice(CiA402Device, CiA301SimDevice):
+    """
+    Manage a simulated CiA 402 motor drive's state machine.
+
+    The `set_sim_feedback()` method will crudely mimic behavior of a
+    real drive.
+    """
+
+    sim_feedback_data_types = CiA402Device.feedback_in_data_types
+    sim_feedback_defaults = CiA402Device.feedback_in_defaults
+
     # ------- Sim feedback -------
 
     def set_sim_feedback(self):
@@ -480,7 +488,7 @@ class CiA402Device(CiA301Device):
             control_mode_fb=control_mode,
         )
 
-        if self.sim and self.feedback_in.get("oper"):
+        if self.feedback_in.get("oper"):
             # Log changes
             if self.sim_feedback.changed("control_mode_fb"):
                 cm = self.sim_feedback.get("control_mode_fb")
@@ -551,9 +559,3 @@ class CiA402Device(CiA301Device):
         for name, bitnum in cls.cw_extra_bits.items():
             flags[name] = bool(control_word & 1 << bitnum)
         return flags
-
-
-class CiA402SimDevice(CiA402Device, CiA301SimDevice):
-    """Manage a simulated CiA 402 motor drive's state machine."""
-
-    pass

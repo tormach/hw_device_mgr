@@ -1,32 +1,25 @@
 import pytest
 from .base_test_class import BaseHALTestClass
-from ...cia_301.tests.test_device import TestCiA301Device as _TestCiA301Device
+from ...cia_402.tests.test_device import TestCiA402Device as _TestCiA402Device
 from pprint import pformat
 
 
-class TestHALDevice(BaseHALTestClass, _TestCiA301Device):
+class TestHALDevice(BaseHALTestClass, _TestCiA402Device):
     halcomp_name = "hal_device"
 
     expected_mro = [
-        "BogusHALDevice",
+        "HALPinSimDevice",
         "HALPinDevice",
-        "BogusCiA301DeviceCategory",
-        "CiA301SimDevice",
-        "CiA301Device",
-        "BogusDevice",
-        "SimDevice",
-        "Device",
-        "ABC",
+        *_TestCiA402Device.expected_mro,
         "HALMixin",
-        "object",
     ]
 
     @pytest.fixture
-    def obj(self, device_data, mock_halcomp):
+    def obj(self, sim_device_data, mock_halcomp):
         self.obj = self.device_model_cls(
-            address=device_data["address"], sim=self.sim
+            address=sim_device_data["test_address"]
         )
-        self.obj.init(mock_halcomp)
+        self.obj.init(comp=mock_halcomp)
         yield self.obj
 
     def test_pin_interfaces(self, device_cls):

@@ -1,20 +1,13 @@
-from ...mgr import SimROSEtherCATHWDeviceMgr
-from ....devices.tests.test_devices_402 import (
-    DevicesForTest,
-    ElmoGold420ForTest,
-    ElmoGold520ForTest,
-    InovanceIS620NForTest,
-    InovanceSV660NForTest,
-)
+from ...mgr import ROSHALSimHWDeviceMgr
+from ....mgr_hal.tests.bogus_devices.mgr import HALHWDeviceMgrTestCategory
 
 
-class BogusHALROSHWDeviceMgr(SimROSEtherCATHWDeviceMgr):
-    name = "bogus_hal_ros_hw_device_mgr"
-    data_type_class = DevicesForTest.data_type_class
-    device_base_class = DevicesForTest
-    device_classes = (
-        ElmoGold420ForTest,
-        ElmoGold520ForTest,
-        InovanceIS620NForTest,
-        InovanceSV660NForTest,
-    )
+class ROSHWDeviceMgrTestCategory(ROSHALSimHWDeviceMgr):
+    category = "test_ros_hal_hw_device_mgr"
+    data_type_class = HALHWDeviceMgrTestCategory.data_type_class
+    device_base_class = HALHWDeviceMgrTestCategory.device_base_class
+    device_classes = HALHWDeviceMgrTestCategory.device_classes
+
+
+class ROSHWDeviceMgrTest(ROSHWDeviceMgrTestCategory):
+    name = "test_ros_hal_hw_device_mgr"

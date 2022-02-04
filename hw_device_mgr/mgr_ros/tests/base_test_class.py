@@ -1,5 +1,5 @@
 from ...mgr.tests.base_test_class import BaseMgrTestClass
-from .bogus_devices.mgr import BogusROSHWDeviceMgr
+from .bogus_devices.mgr import ROSHWDeviceMgrTest
 import yaml
 import pytest
 
@@ -14,19 +14,21 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
     rclpy_patches = ("hw_device_mgr.mgr_ros.mgr.rclpy", "bogus")
 
     # Manager class
-    device_class = BogusROSHWDeviceMgr
+    device_class = ROSHWDeviceMgrTest
 
     # Data types
-    data_type_class = BogusROSHWDeviceMgr.data_type_class
+    data_type_class = ROSHWDeviceMgrTest.data_type_class
 
     # Base class for attached devices
-    device_base_class = BogusROSHWDeviceMgr.device_base_class
+    device_base_class = ROSHWDeviceMgrTest.device_base_class
 
     # Attached device classes
-    device_model_classes = BogusROSHWDeviceMgr.device_classes
+    device_model_classes = ROSHWDeviceMgrTest.device_classes
 
     @pytest.fixture
-    def extra_fixtures(self, manager_ros_params, mock_rclpy):
+    def extra_fixtures(
+        self, manager_ros_params, sim_device_data_path, device_config_path
+    ):
         pass
 
     @pytest.fixture
@@ -41,22 +43,19 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         self.rosparams.update(hdm_params)
 
     @pytest.fixture
-    def device_data_path(self, tmp_path, all_device_data, mock_rclpy):
-        # Clean data types from device data to dump into YAML file &
-        # set `device_data_path` ROS param
-        device_data = [dd.copy() for dd in all_device_data.values()]
-        assert device_data
-        for dd in device_data:
-            dd["model_id"] = tuple(int(i) for i in dd["model_id"])
-            dd["vendor_id"] = int(dd["vendor_id"])
-            dd["product_code"] = int(dd["product_code"])
-            dd.pop("cls")
-            dd.pop("model_id")
+    def sim_device_data_path(self, tmp_path, mock_rclpy):
+        # Dump sim_device_data into YAML file & point `sim_device_data_path` ROS
+        # param to it
         tmpfile = tmp_path / "sim_devices.yaml"
+        print(f"Sim device data written to {tmpfile}")
+        sim_device_data = self.init_sim_device_data()
+        # Clean up for YAML dumper
+        for d in sim_device_data:
+            d["product_code"] = int(d["product_code"])
+            d["vendor_id"] = int(d["vendor_id"])
         with open(tmpfile, "w") as f:
-            f.write(yaml.safe_dump(device_data))
-        self.rosparams["device_data_path"] = tmpfile
-        print(f"Cleaned sim device data written to {tmpfile}")
+            f.write(yaml.safe_dump(sim_device_data))
+        self.rosparams["sim_device_data_path"] = tmpfile
         yield tmpfile
 
     @pytest.fixture

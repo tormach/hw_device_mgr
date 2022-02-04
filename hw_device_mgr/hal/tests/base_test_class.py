@@ -1,21 +1,21 @@
 import pytest
-from ...cia_301.tests.base_test_class import BaseCiA301TestClass
+from ...cia_402.tests.base_test_class import BaseCiA402TestClass
 from ..data_types import HALDataType
 from .bogus_devices.device import (
     BogusHALDevice,
-    BogusV1HALServo,
-    BogusV2HALServo,
-    BogusV1HALIO,
+    BogusHALV1Servo,
+    BogusHALV2Servo,
+    BogusHALV1IO,
 )
 from .mock_hal import MockHALComponent
 
 
-class BaseHALTestClass(BaseCiA301TestClass):
+class BaseHALTestClass(BaseCiA402TestClass):
 
     # Classes under test in this module
     data_type_class = HALDataType
     device_class = BogusHALDevice
-    device_model_classes = BogusV1HALServo, BogusV2HALServo, BogusV1HALIO
+    device_model_classes = BogusHALV1Servo, BogusHALV2Servo, BogusHALV1IO
 
     @pytest.fixture
     def mock_halcomp(self):

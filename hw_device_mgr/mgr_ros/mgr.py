@@ -6,9 +6,6 @@ import traceback
 
 
 class ROSHWDeviceMgr(HWDeviceMgr):
-
-    name = "ros_hw_device_mgr"
-
     def get_param(self, name, default=None):
         if self.ros_node.has_parameter(name):
             param = self.ros_node.get_parameter(name)
@@ -33,9 +30,6 @@ class ROSHWDeviceMgr(HWDeviceMgr):
         self.ros_node = rclpy.create_node(self.name, **node_kwargs)
         self.ros_context = rclpy.utilities.get_default_context()
         self.logger.info(f"Initializing '{self.name}' ROS node")
-        # - Sim mode
-        # FIXME Use this ROS param when HAL ros_launch implemented
-        # self.sim = self.get_param("use_sim", False)
         # - ROS update rate
         self.update_rate = self.get_param("update_rate", 10)
         # - mgr_config
@@ -55,6 +49,19 @@ class ROSHWDeviceMgr(HWDeviceMgr):
             device_config = yaml.safe_load(f)
         assert device_config
         super().init_devices(device_config=device_config, **kwargs)
+
+    def init_sim_from_rosparams(self, **kwargs):
+        sim_device_data_path = self.get_param("sim_device_data_path")
+        assert sim_device_data_path, "No 'sim_device_data_path' param defined"
+        assert os.path.exists(
+            sim_device_data_path
+        ), f"Device data path doesn't exist:  '{sim_device_data_path}'"
+        self.logger.info(
+            f"Reading sim device config from {sim_device_data_path}"
+        )
+        with open(sim_device_data_path, "r") as f:
+            sim_device_data = yaml.safe_load(f)
+        self.init_sim(sim_device_data=sim_device_data, **kwargs)
 
     def read_update_write(self):
         """
@@ -92,21 +99,14 @@ class ROSHWDeviceMgr(HWDeviceMgr):
         Let `rclpy.node.Node` spinner manage looping and exit
         """
         self.ros_node.create_timer(1 / self.update_rate, self.read_update_write)
-        rclpy.spin(self.ros_node)
+        try:
+            rclpy.spin(self.ros_node)
+        except KeyboardInterrupt:
+            self.logger.warning("Caught KeyboardInterrupt")
         self.logger.info("Shutting down")
         rclpy.shutdown()
 
 
-class SimROSHWDeviceMgr(ROSHWDeviceMgr, SimHWDeviceMgr):
-    name = "sim_ros_hw_device_mgr"
-
-    def init_sim(self):
-        device_data_path = self.get_param("device_data_path")
-        assert device_data_path, "No 'device_data_path' param defined"
-        assert os.path.exists(
-            device_data_path
-        ), f"Device data path doesn't exist:  '{device_data_path}'"
-        self.logger.info(f"Reading sim device config from {device_data_path}")
-        with open(device_data_path, "r") as f:
-            device_data = yaml.safe_load(f)
-        super().init_sim(device_data=device_data)
+class ROSSimHWDeviceMgr(ROSHWDeviceMgr, SimHWDeviceMgr):
+    # For tests
+    pass

@@ -1,4 +1,4 @@
-from ..device import Device
+from ..device import Device, SimDevice
 from .base import HALMixin
 from .data_types import HALDataType
 
@@ -6,18 +6,16 @@ from .data_types import HALDataType
 class HALPinDevice(Device, HALMixin):
     """A `Device` with HAL pins attached to feedback, goal and command."""
 
-    category = "HAL"
     data_type_class = HALDataType
 
     # For these interfaces, create HAL pins with (direction, prefix)
     pin_interfaces = dict(
         feedback_in=(HALMixin.HAL_IN, ""),
         command_out=(HALMixin.HAL_OUT, ""),
-        sim_feedback=(HALMixin.HAL_OUT, "sim_"),
     )
 
     # Prepend this to HAL pin names
-    dev_pin_prefix = "drive_"
+    dev_pin_prefix = "d"
 
     @property
     def compname(self):
@@ -26,7 +24,7 @@ class HALPinDevice(Device, HALMixin):
     def pin_name(self, interface, pname):
         return self.pin_prefix + self.pin_interfaces[interface][1] + pname
 
-    def init(self, comp=None, **kwargs):
+    def init(self, *, comp, **kwargs):
         super().init(**kwargs)
         self.comp = comp
 
@@ -100,7 +98,17 @@ class HALPinDevice(Device, HALMixin):
                 self.pins[pname].set(val)
 
 
-class HALCompDevice(Device, HALMixin):
+class HALPinSimDevice(HALPinDevice, SimDevice):
+    """A `HalPinDevice` with HAL pins attached to sim feedback."""
+
+    # For these interfaces, create HAL pins with (direction, prefix)
+    pin_interfaces = dict(
+        sim_feedback=(HALMixin.HAL_OUT, "sim_"),
+        **HALPinDevice.pin_interfaces,
+    )
+
+
+class HALCompDevice(HALPinDevice):
     """A `Device` with HAL component."""
 
     hal_comp_name = None

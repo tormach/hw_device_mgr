@@ -1,26 +1,18 @@
-from .base_test_class import BaseLCEC402MgrTestClass
+from .base_test_class import BaseHALMgrTestClass
 from ...mgr.tests.test_mgr import TestHWDeviceMgr as _TestHWDeviceMgr
 from ...hal.tests.test_device import TestHALDevice as _TestHALDevice
 
 
-class TestHALHWDeviceMgr(
-    BaseLCEC402MgrTestClass, _TestHWDeviceMgr, _TestHALDevice
-):
+class TestHALHWDeviceMgr(BaseHALMgrTestClass, _TestHWDeviceMgr, _TestHALDevice):
     expected_mro = [
-        "BogusLCEC402HWDeviceMgr",
-        "SimHALHWDeviceMgr",
+        "HALHWDeviceMgrTestCategory",
+        "HALSimHWDeviceMgr",
         "HALHWDeviceMgr",
-        "BogusHWDeviceMgr",
-        "SimHWDeviceMgr",
-        "HWDeviceMgr",
-        "FysomGlobalMixin",
-        "HALCompDevice",
-        "HALPinDevice",
-        "SimDevice",
-        "Device",
-        "ABC",
-        "HALMixin",
-        "object",
+        *_TestHWDeviceMgr.expected_mro[1:4],  # SimHWDeviceMgr..FysomGlobalMixin
+        "HALCompDevice",  # HAL comp (this should be tested, too!)
+        *_TestHALDevice.expected_mro[:2],  # HALPinSim...HALPin
+        *_TestHWDeviceMgr.expected_mro[4:],  # SimDevice...ABC
+        _TestHALDevice.expected_mro[-1],  # HalMixin
     ]
 
     def override_interface_param(self, interface, key, val):

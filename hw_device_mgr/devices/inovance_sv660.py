@@ -7,7 +7,6 @@ class InovanceSV660(EtherCATDevice, CiA402Device):
 
     vendor_id = 0x00100000
     product_code = 0x000C010D
-    name = "SV660_ECAT"
     xml_description_fname = "SV660_EOE_1Axis_V9.12.xml"
 
     def set_params_volatile(self, nv=False):

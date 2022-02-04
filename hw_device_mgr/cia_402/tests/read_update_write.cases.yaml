@@ -88,7 +88,7 @@
       HOMING_COMPLETED:  False
     state:  'NOT READY TO SWITCH ON'
     transition:  TRANSITION_0
-    goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON != SWITCH ON DISABLED
+    goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON (0x00000010) != SWITCH ON DISABLED
   sim_feedback:
     # CiA 402
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
@@ -129,7 +129,7 @@
     state:  READY TO SWITCH ON
     transition:  TRANSITION_2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
   command_out:
     control_word:  0x0007
   sim_feedback:
@@ -141,7 +141,7 @@
     status_word:  0x0033
     state:  SWITCHED ON
     transition:  TRANSITION_3
-    goal_reason:  state SWITCHED ON != OPERATION ENABLED
+    goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
   command_out:
     control_word:  0x000F
   sim_feedback:
@@ -172,7 +172,7 @@
     state:  FAULT REACTION ACTIVE
     transition:  TRANSITION_13
     goal_reached:  False
-    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
   command_out:
     control_word:  0x0000
   sim_feedback:
@@ -184,7 +184,7 @@
     status_word:  0x0018
     state:  FAULT
     transition:  TRANSITION_14
-    goal_reason:  state FAULT != OPERATION ENABLED
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED
   command_out:
     # Goal is still OPERATION ENABLED, so automatically clear fault
     control_word:  0x0080  # Clear fault
@@ -197,7 +197,7 @@
     status_word:  0x0050
     state:  SWITCH ON DISABLED
     transition:  TRANSITION_15
-    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED
+    goal_reason:  state SWITCH ON DISABLED (0x00000050) != OPERATION ENABLED
   command_out:
     control_word:  0x0006
   sim_feedback:
@@ -209,7 +209,7 @@
     status_word:  0x0031
     state:  READY TO SWITCH ON
     transition:  TRANSITION_2
-    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
   command_out:
     control_word:  0x0007
   sim_feedback:
@@ -228,7 +228,7 @@
     status_word:  0x001F
     state:  FAULT REACTION ACTIVE
     transition:  TRANSITION_13
-    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
   command_out:
     control_word:  0x0000
   sim_feedback:
@@ -240,7 +240,7 @@
     status_word:  0x0018
     state:  FAULT
     transition:  TRANSITION_14
-    goal_reason:  state FAULT != OPERATION ENABLED
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED
   command_in:
   # Controller sees FAULT state and commands hold at that state
     state:  FAULT
@@ -309,7 +309,7 @@
     state:  READY TO SWITCH ON
     transition:  TRANSITION_2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON != SWITCHED ON
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
   command_out:
     control_word:  0x0007
   sim_feedback:
@@ -380,7 +380,7 @@
     state:  QUICK STOP ACTIVE
     transition:  TRANSITION_11
     goal_reached:  False
-    goal_reason:  state QUICK STOP ACTIVE != FAULT
+    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
   command_out:
     control_word:  0x0000
   sim_feedback:
@@ -434,7 +434,7 @@
     state:  READY TO SWITCH ON
     transition:  TRANSITION_2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
   command_out:
     control_word:  0x0007
   sim_feedback:
@@ -446,7 +446,7 @@
     status_word:  0x0033
     state:  SWITCHED ON
     transition:  TRANSITION_3
-    goal_reason:  state SWITCHED ON != OPERATION ENABLED
+    goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
   command_out:
     control_word:  0x000F
   sim_feedback:
@@ -511,7 +511,7 @@
       MANUFACTURER_SPECIFIC_2:  False
       HOMING_COMPLETED:  False
     goal_reached:  False
-    goal_reason:  state QUICK STOP ACTIVE != SWITCH ON DISABLED
+    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED
   command_out:
     control_word:  0x0000
   sim_feedback:

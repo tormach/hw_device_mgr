@@ -25,14 +25,12 @@ class ElmoGold(EtherCATDevice, CiA402Device):
 #     """Elmo 0x00030924 Gold EtherCAT GCON Boot Rev:0x00000001"""
 #     product_code = 0x00030924
 #     revision_no = 0x00000001
-#     name = "elmo_gold_0x30924_0x0001"
 
 
 # class ElmoGold501(ElmoGold):
 #     """Elmo 0x00030925 Gold EtherCAT GCON Boot Rev:0x00000001"""
 #     product_code = 0x00030925
 #     revision_no = 0x00000001
-#     name = "elmo_gold_0x30925_0x0001"
 
 
 class ElmoGold420(ElmoGold):
@@ -40,7 +38,6 @@ class ElmoGold420(ElmoGold):
 
     product_code = 0x00030924
     revision_no = 0x00010420
-    name = "elmo_gold_0x30924_0x10420"
 
 
 class ElmoGold520(ElmoGold):
@@ -48,4 +45,3 @@ class ElmoGold520(ElmoGold):
 
     product_code = 0x00030925
     revision_no = 0x00010420
-    name = "elmo_gold_0x30925_0x10420"

@@ -19,25 +19,21 @@ class Device(abc.ABC):
     feedback_out_data_types = dict()
     command_in_data_types = dict()
     command_out_data_types = dict()
-    sim_feedback_data_types = dict()
 
     feedback_in_defaults = dict()
     feedback_out_defaults = dict(goal_reached=True, goal_reason="Reached")
     command_in_defaults = dict()
     command_out_defaults = dict()
-    sim_feedback_defaults = dict()
 
     interface_names = {
         "feedback_in",
         "feedback_out",
         "command_in",
         "command_out",
-        "sim_feedback",
     }
 
-    def __init__(self, address=None, sim=False):
+    def __init__(self, address=None):
         self.address = address
-        self.sim = sim
         self.init_interfaces()
 
     def init(self, index=None):
@@ -99,9 +95,6 @@ class Device(abc.ABC):
 
     def read(self):
         """Read `feedback_in` from hardware interface."""
-        if self.sim:
-            sfb = self._interfaces["sim_feedback"].get()
-            self._interfaces["feedback_in"].set(**sfb)
 
     def get_feedback(self):
         """Process `feedback_in` and return `feedback_out` interface."""
@@ -115,16 +108,8 @@ class Device(abc.ABC):
         self._interfaces["command_out"].set()  # Set defaults
         return self._interfaces["command_out"]
 
-    def set_sim_feedback(self):
-        """Simulate feedback from command and feedback."""
-        sfb = self._interfaces["sim_feedback"]
-        sfb.set()
-        return sfb
-
     def write(self):
         """Write `command_out` to hardware interface."""
-        if self.sim:
-            self.set_sim_feedback()
 
     def log_status(self):
         pass
@@ -157,12 +142,13 @@ class Device(abc.ABC):
         cls._register_model()
 
     @classmethod
-    def device_type_key(cls):
+    def device_model_id(cls):
         """
         Return unique device model identifier.
 
-        A unique key by which a detected device's model class may be
-        looked up, e.g. `(manufacturer_id, model)`.
+        A unique ID that may be generated from bus scan results by which
+        a detected device's model class may be looked up, e.g.
+        `(manufacturer_id, model)`.
         """
         if not hasattr(cls, "model_id"):
             return None
@@ -171,6 +157,12 @@ class Device(abc.ABC):
     # Record class registrations; for debugging registry
     _registry_log = list()
 
+    # { category : { model_id : device_class } }
+    _model_id_registry = dict()
+
+    # { category : { model_name : device_class } }
+    _model_name_registry = dict()
+
     @classmethod
     def _register_model(cls):
         # Register model in all parent categories
@@ -178,21 +170,26 @@ class Device(abc.ABC):
             # Not a concrete device; skip
             cls._registry_log.append(("no_name", cls))
             return  # Not a model
-        key = cls.device_type_key()
+        model_id = cls.device_model_id()
+        registered = False
         for supercls in cls.category_classes():
             category = supercls.category
             # Ensure category is registered
-            supercls._category_registry.setdefault(category, supercls)
-            # Check & register device type
-            if "_model_registry" not in supercls.__dict__:
-                supercls._model_registry = dict()
-            if not cls.allow_rereg and key in supercls._model_registry:
-                raise KeyError(
-                    f"Cannot re-register {cls} {key} as {supercls.category}"
-                )
-            supercls._model_registry[key] = cls
+            cls._category_registry.setdefault(category, supercls)
+            # Check & register device id
+            reg = cls._model_id_registry.setdefault(category, dict())
+            # Be sure model is registered in at least one category, but don't
+            # clobber earlier registrations
+            assert model_id not in reg or registered
+            if model_id not in reg:
+                registered = True
+                reg[model_id] = cls
+            # Register device name
+            reg = cls._model_name_registry.setdefault(category, dict())
+            assert cls.name not in reg, f"{cls.name} in {category} registry"
+            reg[cls.name] = cls
             cls._registry_log.append(
-                ("cat", cls.name, key, category, cls, supercls)
+                ("cat", cls.name, model_id, category, cls, supercls)
             )
 
     @classmethod
@@ -206,15 +203,25 @@ class Device(abc.ABC):
         return cls._category_registry.get(category or cls.category, None)
 
     @classmethod
-    def get_model(cls, key=None, category=None):
-        category_cls = cls.category_cls(category)
-        if category_cls is None:
+    def get_model(cls, model_id=None):
+        category = cls.category
+        assert (
+            category in cls._model_id_registry
+        ), f"{category} not in {cls._model_id_registry}"
+        model_registry = cls._model_id_registry[category]
+        if model_id is None:  # Return set of all model classes
+            return set(model_registry.values())
+        if model_id not in model_registry:
             return None
-        if key is None:  # Return list of all model classes
-            return set(category_cls._model_registry.values())
-        if key not in category_cls._model_registry:
-            return None
-        return category_cls._model_registry[key]
+        return model_registry[model_id]
+
+    @classmethod
+    def get_model_by_name(cls, name):
+        category = cls.category
+        assert category in cls._model_name_registry
+        model_registry = cls._model_name_registry[category]
+        assert name in model_registry, f"{name} not in {model_registry}"
+        return model_registry[name]
 
     ########################################
     # Device identifier registry and instance factory
@@ -223,11 +230,11 @@ class Device(abc.ABC):
     _address_registry = dict()
 
     @classmethod
-    def get_device(cls, address=None, sim=False, **kwargs):
+    def get_device(cls, address=None, **kwargs):
         registry = cls._address_registry.setdefault(cls.name, dict())
         if address in registry:
             return registry[address]
-        device_obj = cls(address=address, sim=sim, **kwargs)
+        device_obj = cls(address=address, **kwargs)
         registry[address] = device_obj
         return device_obj
 
@@ -238,7 +245,7 @@ class Device(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def scan_devices(cls, sim=True):
+    def scan_devices(cls):
         """
         Scan attached devices and return a list of objects.
 
@@ -248,34 +255,127 @@ class Device(abc.ABC):
         `get_device_obj(address)` to obtain the device instance.
         """
 
+    @classmethod
+    def dot(cls):
+        classes = set()
+        links = set()
+        for dev_cls in cls.get_model():
+            cls.dot_link(dev_cls, classes, links)
+        rank_same_node = "; ".join(
+            c.dot_str()
+            for c in classes
+            if "category" in c.__dict__ and c.category != "all"
+        )
+        rank_same_leaf = "; ".join(c.dot_str() for c in classes if c.name)
+        gv = "strict digraph Devices {\n"
+        gv += "  rankdir=LR\n"
+        gv += "  subgraph {\n"
+        for dev_cls in classes:
+            gv += f"    {dev_cls.dot_str()}"
+            gv += f"      [style=filled, fillcolor={dev_cls.dot_color()}];\n"
+        for parent, child in links:
+            gv += f"    {parent.dot_str()} -> {child.dot_str()};\n"
+        gv += f"  {{rank = same; {rank_same_leaf};}}\n"
+        gv += f"  {{rank = same; {rank_same_node};}}\n"
+        gv += "  }\n"
+        gv += "}\n"
+        return gv
+
+    @classmethod
+    def dot_link(cls, dev_cls, classes, links):
+        classes.add(dev_cls)
+        for base in dev_cls.__bases__:
+            if not issubclass(base, Device):
+                continue  # Ignore non-Device subclasses
+            classes.add(base)
+            links.add((base, dev_cls))
+            cls.dot_link(base, classes, links)
+
+    @classmethod
+    def dot_str(cls):
+        if cls.name:
+            type_name = f"{cls.name}\\n"
+        elif "category" in cls.__dict__:
+            type_name = f"{cls.category}\\n"
+        else:
+            type_name = ""
+        return f'"{type_name}{cls.__name__}"'
+
+    @classmethod
+    def dot_color(cls):
+        if cls.name:
+            return "green"
+        elif "category" in cls.__dict__:
+            return "white"
+        else:
+            return "lightblue"
+
 
 class SimDevice(Device):
-    @classmethod
-    def device_category_class(cls, category):
-        category_classes = (
-            # Intersection of devices in both sim_devices.yaml
-            # "category" and the present class
-            cls.get_model(category=category)
-            & cls.get_model()
-        )
-        assert len(category_classes) <= 1
-        return category_classes.pop() if category_classes else None
 
-    _device_data = dict()
+    sim_feedback_data_types = dict()
+    sim_feedback_defaults = dict()
+
+    interface_names = {
+        "feedback_in",
+        "feedback_out",
+        "command_in",
+        "command_out",
+        "sim_feedback",
+    }
+
+    _sim_device_data = dict()
 
     @classmethod
-    def init_sim(cls, device_data=dict()):
-        cls._device_data.clear()
-        for d in device_data:
-            # Sanity check:  no overwrites
-            assert d["address"] not in cls._device_data
-            cls._device_data[d["address"]] = d
+    def sim_device_data_class(cls, sim_device_data):
+        return cls.get_model(sim_device_data["model_id"])
+
+    @classmethod
+    def sim_device_data_address(cls, sim_device_data):
+        return sim_device_data["position"]
+
+    @classmethod
+    def init_sim(cls, *, sim_device_data):
+        """Massage device test data for usability."""
+        cls_sim_data = cls._sim_device_data[cls.category] = dict()
+
+        for dev in sim_device_data:
+            device_cls = cls.sim_device_data_class(dev)
+            address = cls.sim_device_data_address(dev)
+
+            # Set sparse keys
+            updates = dict(
+                model_id=device_cls.device_model_id(),
+                name=device_cls.name,
+                address=address,
+            )
+            cls_sim_data[address] = {**dev, **updates}
+
+        assert cls_sim_data
 
     @classmethod
     def scan_devices(cls, **kwargs):
         res = list()
-        for data in cls._device_data.values():
-            dev_type = cls.device_category_class(data["category"])
+        cls_sim_data = cls._sim_device_data[cls.category]
+        for data in cls_sim_data.values():
+            dev_type = cls.get_model(data["model_id"])
             dev = dev_type.get_device(address=data["address"], **kwargs)
             res.append(dev)
         return res
+
+    def read(self):
+        """Read `feedback_in` from hardware interface."""
+        super().read()
+        sfb = self._interfaces["sim_feedback"].get()
+        self._interfaces["feedback_in"].set(**sfb)
+
+    def set_sim_feedback(self):
+        """Simulate feedback from command and feedback."""
+        sfb = self._interfaces["sim_feedback"]
+        sfb.set()
+        return sfb
+
+    def write(self):
+        """Write `command_out` to hardware interface."""
+        super().write()
+        self.set_sim_feedback()

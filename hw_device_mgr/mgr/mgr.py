@@ -1,6 +1,4 @@
 from ..device import Device, SimDevice
-from ..cia_301.data_types import CiA301DataType
-from ..logging import Logging
 from ..cia_402.device import CiA402Device, CiA402SimDevice
 
 
@@ -14,14 +12,12 @@ class HWDeviceTimeout(RuntimeError):
 
 
 class HWDeviceMgr(FysomGlobalMixin, Device):
-    data_type_class = CiA301DataType
+    data_type_class = CiA402Device.data_type_class
     device_base_class = CiA402Device
-    device_classes = (CiA402Device,)
-
-    name = "hw_device_mgr"
+    device_classes = None
 
     @classmethod
-    def device_type_key(cls):
+    def device_model_id(cls):
         return cls.name
 
     feedback_in_defaults = dict(state_cmd=0, quick_stop=0, reset=0)
@@ -53,14 +49,12 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     update_rate = 10  # Hz
 
-    logger = Logging.getLogger(name)
-
     ####################################################
     # Initialization
 
-    def __init__(self, sim=False):
+    def __init__(self):
         self.state = "init_command"  # Used by FysomGlobalMixin
-        super().__init__(sim=sim)
+        super().__init__()
         self.fast_track = False
         self.mgr_config = None
         self.device_config = None
@@ -72,21 +66,19 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         super().init(**kwargs)
         self.logger.info("Initialization complete")
 
-    def init_devices(self, device_config=None, **kwargs):
+    def init_devices(
+        self, *, device_config, device_init_kwargs=dict(), **kwargs
+    ):
         """
         Populate `HWDeviceMgr` instance `devices` attribute devices.
 
         Scan devices and configure with data in device configuration
         """
-        mode = "sim" if self.sim else "real-hardware"
-        self.logger.info(f"Configuring devices in {mode} mode")
-
         # Pass config to Config class and scan devices
         assert device_config
         self.init_device_classes(device_config=device_config)
-        kwargs.setdefault("sim", self.sim)
         self.devices = self.scan_devices(**kwargs)
-        self.init_device_instances()
+        self.init_device_instances(**device_init_kwargs)
 
     def init_device_classes(self, device_config=None):
         assert device_config
@@ -94,8 +86,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.device_base_class.set_device_config(device_config)
 
     @classmethod
-    def scan_devices(cls, sim=False, **kwargs):
-        return cls.device_base_class.scan_devices(sim=sim, **kwargs)
+    def scan_devices(cls, **kwargs):
+        return cls.device_base_class.scan_devices(**kwargs)
 
     def init_device_instances(self, **kwargs):
         for i, dev in enumerate(self.devices):
@@ -237,9 +229,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_command(e)
 
     def on_enter_stop_1(self, e):
-        # Zero out command & feedback differences to give operator
-        # confidence turning on machine
-        e.reset = True
         self.fsm_set_required_status_word_flags(e, all_clear=True)
         return self.fsm_set_drive_state_cmd(e, "SWITCH ON DISABLED")
 
@@ -247,7 +236,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_drive_goal_state(e)
 
     def on_enter_stop_complete(self, e):
-        e.reset = False
         self.fsm_finalize_command(e)
 
     #
@@ -611,16 +599,12 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         event = state_map.get(self.state, f"{state_cmd}_command")
         return event
 
-    def set_sim_feedback(self):
-        sfb = super().set_sim_feedback()
-        sfb.update(
-            state_cmd=self.command_out.get("state_cmd"),
-            quick_stop=self.feedback_in.get("quick_stop"),
-        )
-        return sfb
-
     ####################################################
     # Drive helpers
+
+    @classmethod
+    def init_sim(cls, *, sim_device_data):
+        cls.device_base_class.init_sim(sim_device_data=sim_device_data)
 
     def initialize_devices(self):
         # Ensure drive parameters are up to date
@@ -663,11 +647,12 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
 class SimHWDeviceMgr(HWDeviceMgr, SimDevice):
 
-    name = "sim_hw_device_mgr"
-    data_type_class = CiA402SimDevice.data_type_class
     device_base_class = CiA402SimDevice
-    device_classes = CiA402SimDevice.get_model()
 
-    def init_sim(self, device_data=dict()):
-        assert device_data
-        self.device_base_class.init_sim(device_data=device_data)
+    def set_sim_feedback(self):
+        sfb = super().set_sim_feedback()
+        sfb.update(
+            state_cmd=self.command_out.get("state_cmd"),
+            quick_stop=self.feedback_in.get("quick_stop"),
+        )
+        return sfb

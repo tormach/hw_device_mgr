@@ -1,80 +1,60 @@
 # Real devices under LCEC
-from ..hal.device import HALPinDevice, HALDataType
-from ..lcec.device import LCECDevice, LCECSimDevice
-from ..ethercat.device import EtherCATSimDevice
+from ..hal.device import HALPinSimDevice
+from ..lcec.device import LCECDevice, LCECDataType
 from ..cia_402.device import CiA402Device, CiA402SimDevice
+from ..ethercat.device import EtherCATSimDevice
 from ..devices.elmo_gold import ElmoGold420, ElmoGold520
 from ..devices.inovance_is620n import InovanceIS620N
 from ..devices.inovance_sv660 import InovanceSV660
-from ..devices.bogus import BogusServo
+from ..devices.bogus import BogusV1Servo, BogusV2Servo
 
 
-class ManagedDevices(LCECDevice, CiA402Device, HALPinDevice):
+class ManagedDevices(LCECDevice, CiA402Device):
     category = "managed_lcec_devices"
 
 
-class ElmoGold420LCEC(ElmoGold420, ManagedDevices):
-    product_code = 0x20030924
+class ElmoGold420LCEC(ManagedDevices, ElmoGold420):
+    name = "elmo_gold_420_lcec"
 
 
-class ElmoGold520LCEC(ElmoGold520, ManagedDevices):
-    product_code = 0x20030925
+class ElmoGold520LCEC(ManagedDevices, ElmoGold520):
+    name = "elmo_gold_520_lcec"
 
 
-class InovanceIS620NLCEC(InovanceIS620N, ManagedDevices):
-    product_code = 0x200C0108
+class InovanceIS620NLCEC(ManagedDevices, InovanceIS620N):
+    name = "inovance_is620n_lcec"
 
 
-class InovanceSV660LCEC(InovanceSV660, ManagedDevices):
-    product_code = 0x200C010D
+class InovanceSV660LCEC(ManagedDevices, InovanceSV660):
+    name = "inovance_sv660n_lcec"
 
 
-class SimManagedLCECDevices(LCECSimDevice, CiA402SimDevice, HALPinDevice):
-    category = "sim_lcec_managed_devices"
-
-
-class BogusServoSimLCEC(BogusServo, SimManagedLCECDevices):
-    product_code = 0xB09050F2
-
-
-class ElmoGold420SimLCEC(ElmoGold420, SimManagedLCECDevices):
-    product_code = 0x30030924
-
-
-class ElmoGold520SimLCEC(ElmoGold520, SimManagedLCECDevices):
-    product_code = 0x30030925
-
-
-class InovanceIS620NSimLCEC(InovanceIS620N, SimManagedLCECDevices):
-    product_code = 0x300C0108
-
-
-class InovanceSV660SimLCEC(InovanceSV660, SimManagedLCECDevices):
-    product_code = 0x300C010D
-
-
-class SimManagedEtherCATDevices(
-    EtherCATSimDevice, CiA402SimDevice, HALPinDevice
+class ManagedEtherCATSimDevices(
+    EtherCATSimDevice, CiA402SimDevice, HALPinSimDevice
 ):
     category = "sim_ethercat_managed_devices"
-    data_type_class = HALDataType
+    data_type_class = LCECDataType
 
 
-class BogusServoSimEtherCAT(BogusServo, SimManagedEtherCATDevices):
-    product_code = 0xB09050F3
+class BogusV1ServoSimLCEC(ManagedEtherCATSimDevices, BogusV1Servo):
+    name = "bogus_v1_servo_drive_sim_ethercat"
 
 
-class ElmoGold420SimEtherCAT(ElmoGold420, SimManagedEtherCATDevices):
-    product_code = 0x40030924
+class BogusV2ServoSimLCEC(ManagedEtherCATSimDevices, BogusV2Servo):
+    name = "bogus_v2_servo_drive_sim_ethercat"
 
 
-class ElmoGold520SimEtherCAT(ElmoGold520, SimManagedEtherCATDevices):
-    product_code = 0x40030925
+class ElmoGold420SimLCEC(ManagedEtherCATSimDevices, ElmoGold420):
+    name = "elmo_gold_420_sim_ethercat"
 
 
-class InovanceIS620NSimEtherCAT(InovanceIS620N, SimManagedEtherCATDevices):
-    product_code = 0x400C0108
+class ElmoGold520SimLCEC(ManagedEtherCATSimDevices, ElmoGold520):
+    name = "elmo_gold_520_sim_ethercat"
 
 
-class InovanceSV660SimEtherCAT(InovanceSV660, SimManagedEtherCATDevices):
-    product_code = 0x400C010D
+class InovanceIS620NSimLCEC(ManagedEtherCATSimDevices, InovanceIS620N):
+    name = "inovance_is620n_sim_ethercat"
+
+
+class InovanceSV660SimLCEC(ManagedEtherCATSimDevices, InovanceSV660):
+    name = "inovance_sv660n_sim_ethercat"

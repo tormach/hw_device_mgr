@@ -1,19 +1,20 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from ...ethercat.tests.base_test_class import BaseEtherCATTestClass
+from ...hal.tests.base_test_class import BaseHALTestClass
 from ..data_types import LCECDataType
 from ..sdo import LCECSDO
 from ..command import LCECSimCommand
 from ..config import LCECSimConfig
 from .bogus_devices.device import (
     BogusLCECDevice,
-    BogusV1LCECServo,
-    BogusV2LCECServo,
-    BogusV1LCECIO,
+    BogusLCECV1Servo,
+    BogusLCECV2Servo,
+    BogusLCECV1IO,
 )
 
 
-class BaseLCECTestClass(BaseEtherCATTestClass):
+class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
 
     # Classes under test in this module
     data_type_class = LCECDataType
@@ -21,11 +22,14 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
     command_class = LCECSimCommand
     config_class = LCECSimConfig
     device_class = BogusLCECDevice
-    device_model_classes = BogusV1LCECServo, BogusV2LCECServo, BogusV1LCECIO
+    device_model_classes = BogusLCECV1Servo, BogusLCECV2Servo, BogusLCECV1IO
 
     @classmethod
     def lcec_data_type(cls, type_str):
         if not hasattr(cls, "_lcec_data_type_map"):
+            assert issubclass(
+                cls.data_type_class, LCECDataType
+            ), f"{cls.data_type_class} is not subclass of LCECDataType"
             dtm = cls._lcec_data_type_map = dict()
             for dt in cls.data_type_class.all_types():
                 if hasattr(dt, "igh_type"):
@@ -106,5 +110,5 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
         patch.stopall()
 
     @pytest.fixture
-    def extra_fixtures(self, mock_ethercat_command):
+    def extra_fixtures(self, mock_ethercat_command, mock_hal, device_xml):
         pass

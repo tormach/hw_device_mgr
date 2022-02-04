@@ -7,7 +7,6 @@ class InovanceIS620N(EtherCATDevice, CiA402Device):
 
     vendor_id = 0x00100000
     product_code = 0x000C0108
-    name = "IS620N_ECAT"
     xml_description_fname = "IS620N_v2.6.7.xml"
 
     def set_params_volatile(self, nv=False):

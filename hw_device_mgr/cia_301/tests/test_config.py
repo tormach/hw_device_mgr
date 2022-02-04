@@ -12,9 +12,10 @@ class TestCiA301Config(BaseCiA301TestClass):
             assert c.address == dd["address"]
 
     @pytest.fixture
-    def obj(self, device_data, config_cls):
+    def obj(self, sim_device_data, config_cls):
         self.obj = config_cls(
-            address=device_data["address"], model_id=device_data["model_id"]
+            address=sim_device_data["test_address"],
+            model_id=sim_device_data["test_model_id"],
         )
         yield self.obj
 
