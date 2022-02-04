@@ -184,7 +184,7 @@ class CiA301SimDevice(CiA301Device, SimDevice):
             model_id = dd.get("model_id", (dd["vendor_id"], dd["product_code"]))
             model_id = cls.config_class.format_model_id(model_id)
             device_cls = cls.get_model(model_id)
-            assert device_cls
+            assert device_cls, f"Unable to grok device class from {model_id}"
             updates = dict(
                 model_id=model_id,
                 vendor_id=model_id[0],

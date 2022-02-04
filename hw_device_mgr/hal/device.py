@@ -17,7 +17,7 @@ class HALPinDevice(Device, HALMixin):
     )
 
     # Prepend this to HAL pin names
-    dev_pin_prefix = "drive_"
+    dev_pin_prefix = "d"
 
     @property
     def compname(self):
