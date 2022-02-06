@@ -197,8 +197,14 @@ class CiA301Config:
         dtc = self.data_type_class
         config_raw["vendor_id"] = dtc.uint32(config_raw["vendor_id"])
         config_raw["product_code"] = dtc.uint32(config_raw["product_code"])
+        config_cooked = dict(
+            vendor_id=config_raw["vendor_id"],
+            product_code=config_raw["product_code"],
+            param_values=pv,
+            sync_manager=config_raw.get("sync_manager", dict()),
+        )
         # Return pruned config dict
-        return dict(sync_manager=config_raw["sync_manager"], param_values=pv)
+        return config_cooked
 
     @property
     def config(self):
