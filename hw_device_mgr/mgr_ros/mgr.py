@@ -92,7 +92,10 @@ class ROSHWDeviceMgr(HWDeviceMgr):
         Let `rclpy.node.Node` spinner manage looping and exit
         """
         self.ros_node.create_timer(1 / self.update_rate, self.read_update_write)
-        rclpy.spin(self.ros_node)
+        try:
+            rclpy.spin(self.ros_node)
+        except KeyboardInterrupt:
+            self.logger.warning("Caught KeyboardInterrupt")
         self.logger.info("Shutting down")
         rclpy.shutdown()
 
