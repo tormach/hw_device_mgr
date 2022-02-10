@@ -40,7 +40,6 @@ class BaseLCECTestClass(BaseEtherCATTestClass):
         Realistic results from `slaves`, `upload` and `download`
         commands.  Patches `subprocess.check_output()`.
         """
-        # This line resolves black & pep257 conflicts.  :P
 
         def emulate_ethercat_command(args):
             print(f'mocking ethercat command: {" ".join(args)}')

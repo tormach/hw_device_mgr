@@ -51,7 +51,6 @@ class BaseHALTestClass(BaseCiA301TestClass):
         attribute.  See the `mock_halcomp` fixture for more information
         about the mock instances of this mock class.
         """
-        # This line resolves black & pep257 conflicts.  :P
 
         def mock_component(comp_name):
             comp = MockHALComponent.get_mock(comp_name, self.pin_vals)
