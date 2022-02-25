@@ -6,6 +6,7 @@ from ..ethercat.command import (
 )
 from .data_types import LCECDataType
 import subprocess
+import netifaces
 
 
 class LCECCommand(EtherCATCommand):
@@ -60,6 +61,28 @@ class LCECCommand(EtherCATCommand):
                 model_id = (self.data_type_class.uint32(i) for i in (vi, pc))
                 device.append(tuple(model_id))
         return devices
+
+    _master_main_mac_re = re.compile(r"Main: ([0-9a-f:]+) ")
+
+    def master_mac(self, bus=None):
+        bus = self.default_bus if bus is None else bus
+        for line in self._ethercat("master", f"--master={bus}"):
+            m = self._master_main_mac_re.match(line.strip())
+            if m:
+                return m.group(1)
+        else:
+            return None
+
+    def master_nic(self, bus=None):
+        mac = self.master_mac(bus=bus)
+        for intf in netifaces.interfaces():
+            addrs = netifaces.ifaddresses(intf)
+            link_addrs = addrs.get(netifaces.AF_LINK, list())
+            for link_addr in link_addrs:
+                if link_addr["addr"] == mac:
+                    return intf
+        else:
+            return None
 
     def upload(self, address=None, index=None, subindex=0, datatype=None):
         index = self.data_type_class.uint16(index)
