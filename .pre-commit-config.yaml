@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.1.0
     hooks:
       - id: check-ast
       - id: fix-byte-order-marker
@@ -30,11 +30,10 @@ repos:
     - id: docformatter
       args: [--pre-summary-newline, --in-place]
 
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.1.0
+-   repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
     hooks:
-      - id: flake8
-        # note: ignores and excluded files in .flake8
+    -   id: flake8
 
 - repo: https://github.com/pycqa/pydocstyle
   rev: 6.1.1
