@@ -1,28 +1,27 @@
-from ...device import CiA301Device
-from .config import BogusCiA301Config
+from ...device import CiA301SimDevice
 
 
-class BogusCiA301Device(CiA301Device):
-    config_class = BogusCiA301Config
-    category = "bogus_cia301_devices"
+# Categories
+class BogusCiA301Device(CiA301SimDevice):
+    """Bogo Co CANopen 301 device class."""
 
-
-class BogusCiA301Servo(BogusCiA301Device):
-    name = "bogo_cia301_servo"
+    category = "bogus_cia301_device"
     vendor_id = 0xB090C0
+
+
+class BogusCiA301V1Servo(BogusCiA301Device):
+    name = "bogo_cia301_v1_servo"
+    test_category = "bogus_v1_servo"
     product_code = 0xB0905010
-    model_key = "bogus_servo"  # For test fixtures
 
 
-class BogusCiA301Servo2(BogusCiA301Device):
-    name = "bogo_cia301_servo_2"
-    vendor_id = 0xB090C0
+class BogusCiA301V2Servo(BogusCiA301Device):
+    name = "bogo_cia301_v2_servo"
+    test_category = "bogus_v2_servo"
     product_code = 0xB0905011
-    model_key = "bogus_servo_2"  # For test fixtures
 
 
-class BogusCiA301IO(BogusCiA301Device):
-    name = "bogo_cia301_io"
-    vendor_id = 0xB090C0
+class BogusCiA301V1IO(BogusCiA301Device):
+    name = "bogo_cia301_v1_io"
+    test_category = "bogus_v1_io"
     product_code = 0xB0901010
-    model_key = "bogus_io"  # For test fixtures

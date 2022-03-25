@@ -3,11 +3,12 @@
 #
 # - bogus_servo
 -
-  # model_key will be replaced with the following (or similar) in the
-  #   `global_config` fixture:
+  test_category:  bogus_v1_servo
+  # test_category will be replaced with the following (or similar) in
+  #   the `device_config` fixture:
+  #
   # vendor_id:  0xB090C0
   # product_code:  0xB0905010
-  model_key:  bogus_servo
 
   bus: 0
   positions: [10, 11, 12, 13, 14, 15]
@@ -87,11 +88,12 @@
 #
 # - bogus_servo_2:  Mostly the same as above with subtle value changes
 -
-  # model_key will be replaced with the following (or similar) in the
-  #   `global_config` fixture:
+  test_category:  bogus_v2_servo
+  # test_category will be replaced with the following (or similar) in
+  #   the `device_config` fixture:
+  #
   # vendor_id:  0xB090C0
   # product_code:  0xB0905011
-  model_key:  bogus_servo_2
 
   bus: 0
   positions: [10, 11, 12, 13, 14, 15]
@@ -173,11 +175,12 @@
 # B090.IO I/O modules
 #
 -
-  # model_key will be replaced with the following (or similar) in the
-  #   `global_config` fixture:
+  test_category:  bogus_v1_io
+  # test_category will be replaced with the following (or similar) in
+  #   the `device_config` fixture:
+  #
   # vendor_id:  0xB090C0
   # product_code:  0xB0901010
-  model_key:  bogus_io
 
   bus: 0
   positions: [16, 17]

@@ -5,7 +5,7 @@ from .base_test_class import ErrorBaseTestClass
 
 class TestErrorDevice(ErrorBaseTestClass, _TestDevice):
     expected_mro = [
-        "BogusErrorDevice",
+        "ErrorSimDevice",
         "ErrorDevice",
         *_TestDevice.expected_mro,
     ]

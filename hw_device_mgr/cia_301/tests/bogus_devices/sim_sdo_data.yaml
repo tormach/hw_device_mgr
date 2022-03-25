@@ -1,5 +1,5 @@
-# Simplified view of SDOs for each model
-bogus_servo:
+# Simplified view of SDOs for each category
+bogus_v1_servo:
   6040h:
     index:  0x6040
     data_type:  uint16
@@ -64,7 +64,7 @@ bogus_servo:
     index_name:  Position limit
     default_value:  500000
     pdo_mapping:  R
-bogus_servo_2:
+bogus_v2_servo:
   6040h:
     index:  0x6040
     data_type:  uint16
@@ -129,4 +129,4 @@ bogus_servo_2:
     index_name:  Position limit
     default_value:  500000
     pdo_mapping:  R
-bogus_io:  {}  # Only PDOs
+bogus_v1_io:  {}  # Only PDOs

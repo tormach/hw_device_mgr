@@ -1,5 +1,6 @@
 from ...mgr.tests.base_test_class import BaseMgrTestClass
-from .bogus_devices.mgr import BogusROSHWDeviceMgr
+from .bogus_devices.mgr import ROSHWDeviceMgrTest
+import yaml
 import pytest
 
 
@@ -10,19 +11,28 @@ import pytest
 class BaseROSMgrTestClass(BaseMgrTestClass):
     """Base test class for `ROSHWDeviceMgr` class."""
 
+    rclpy_patches = ("hw_device_mgr.mgr_ros.mgr.rclpy", "bogus")
+
     # Manager class
-    device_class = BogusROSHWDeviceMgr
+    device_class = ROSHWDeviceMgrTest
 
     # Data types
-    data_type_class = BogusROSHWDeviceMgr.data_type_class
+    data_type_class = ROSHWDeviceMgrTest.data_type_class
+
+    # Base class for attached devices
+    device_base_class = ROSHWDeviceMgrTest.device_base_class
 
     # Attached device classes
-    device_model_classes = BogusROSHWDeviceMgr.device_classes
+    device_model_classes = ROSHWDeviceMgrTest.device_classes
 
     @pytest.fixture
-    def manager_ros_params(
-        self, mock_rclpy, mgr_config, global_config, request
+    def extra_fixtures(
+        self, manager_ros_params, sim_device_data_path, device_config_path
     ):
+        pass
+
+    @pytest.fixture
+    def manager_ros_params(self, mock_rclpy, mgr_config):
         """ROS params for the device manager."""
         hdm_params = dict(
             update_rate=20,
@@ -30,13 +40,39 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         )
         hdm_params.update(mgr_config)
         hdm_params.pop("devices")
-        request.instance.rosparams.update(hdm_params)
+        self.rosparams.update(hdm_params)
 
     @pytest.fixture
-    def device_cls(self, config_cls, manager_ros_params):
-        """Fixture for ROS Device classes."""
-        self.device_class.clear_devices()
-        yield self.device_class
+    def sim_device_data_path(self, tmp_path, mock_rclpy):
+        # Dump sim_device_data into YAML file & point `sim_device_data_path` ROS
+        # param to it
+        tmpfile = tmp_path / "sim_devices.yaml"
+        print(f"Sim device data written to {tmpfile}")
+        sim_device_data = self.init_sim_device_data()
+        # Clean up for YAML dumper
+        for d in sim_device_data:
+            d["product_code"] = int(d["product_code"])
+            d["vendor_id"] = int(d["vendor_id"])
+        with open(tmpfile, "w") as f:
+            f.write(yaml.safe_dump(sim_device_data))
+        self.rosparams["sim_device_data_path"] = tmpfile
+        yield tmpfile
+
+    @pytest.fixture
+    def device_config_path(self, tmp_path, device_config, mock_rclpy):
+        # Clean data types from device config to dump into YAML file &
+        # set `device_config_path` ROS param
+        device_config = [dc.copy() for dc in device_config]
+        assert device_config
+        for dc in device_config:
+            dc["product_code"] = int(dc["product_code"])
+            dc["vendor_id"] = int(dc["vendor_id"])
+        tmpfile = tmp_path / "device_config.yaml"
+        with open(tmpfile, "w") as f:
+            f.write(yaml.safe_dump(device_config))
+        self.rosparams["device_config_path"] = tmpfile
+        print(f"Cleaned device config written to {tmpfile}")
+        yield tmpfile
 
     def test_mock_rclpy_fixture(self, mock_rclpy):
         from ..mgr import rclpy

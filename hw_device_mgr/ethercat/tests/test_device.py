@@ -1,14 +1,14 @@
-import pytest
-from ...cia_301.tests.test_device import TestCiA301Device as _TestCiA301Device
+from ...cia_402.tests.test_device import TestCiA402Device as _TestCiA402Device
 from .base_test_class import BaseEtherCATTestClass
 
 
-class TestEtherCATDevice(BaseEtherCATTestClass, _TestCiA301Device):
+class TestEtherCATDevice(BaseEtherCATTestClass, _TestCiA402Device):
 
     expected_mro = [
-        "BogusEtherCATDevice",
+        "RelocatableESIDevice",
+        "EtherCATSimDevice",
         "EtherCATDevice",
-        *_TestCiA301Device.expected_mro,
+        *_TestCiA402Device.expected_mro,
     ]
 
     def test_xml_description_path(self):
@@ -16,12 +16,3 @@ class TestEtherCATDevice(BaseEtherCATTestClass, _TestCiA301Device):
             esi_path = cls.xml_description_path()
             print(esi_path)
             assert esi_path.exists()
-
-    @pytest.fixture
-    def obj(self, device_cls, device_data, sdo_data):
-        self.obj = self.device_model_cls(
-            address=device_data["address"], sim=self.sim
-        )
-        self.obj.init()
-        self.obj.add_device_sdos()
-        yield self.obj

@@ -1,8 +1,7 @@
-from ...device import ErrorDevice
-from ....tests.bogus_devices.device import BogusDevice, BogusServo, BogusIO
+from ...device import ErrorSimDevice
 
 
-class BogusErrorDevice(ErrorDevice, BogusDevice):
+class BogusErrorDevice(ErrorSimDevice):
     category = "bogus_error_devices"
 
     @classmethod
@@ -10,11 +9,19 @@ class BogusErrorDevice(ErrorDevice, BogusDevice):
         return list()
 
 
-class BogusErrorServo(BogusErrorDevice, BogusServo):
-    name = "bogus_error_servo"
-    model_id = 0xB0905001
+class BogusErrorV1Servo(BogusErrorDevice):
+    name = "bogus_v1_error_servo"
+    test_category = "bogus_v1_servo"
+    model_id = 0xB0905041
 
 
-class BogusErrorIO(BogusErrorDevice, BogusIO):
-    name = "bogus_error_io"
-    model_id = 0xB0901001
+class BogusErrorV2Servo(BogusErrorDevice):
+    name = "bogus_v2_error_servo"
+    test_category = "bogus_v2_servo"
+    model_id = 0xB0905042
+
+
+class BogusErrorV1IO(BogusErrorDevice):
+    name = "bogus_v1_error_io"
+    test_category = "bogus_v1_io"
+    model_id = 0xB0901041

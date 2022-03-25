@@ -1,77 +1,113 @@
 import pytest
 from .base_test_class import BaseTestClass
+from ..device import Device
+import subprocess
 from pprint import pformat
 import ruamel.yaml
 
 
 class TestDevice(BaseTestClass):
     # Expected class MRO
-    expected_mro = ["BogusDevice", "Device", "ABC", "object"]
+    expected_mro = [
+        "SimDevice",
+        "Device",
+        "ABC",
+    ]
 
     #
     # Class tests
     #
 
     def test_mro(self, device_cls):
-        mro = [cls.__name__ for cls in device_cls.__mro__]
-        print(mro)
+        mro = [cls.__name__ for cls in device_cls.__mro__[1:-1]]
+        print("actual MRO:  ", mro)
+        print("expected MRO:", self.expected_mro)
         assert mro == self.expected_mro
 
     def test_category_registry(self, device_cls):
         # Check category_cls(), and if base class is a category,
         # it is in registry
         base = device_cls
-        print(f"category registry:  {base._category_registry}")
         # Test category registries
-        print(f"cls {base} category {base.category}")
+        print(f"base cls {base}")
+        print(f"category {base.category}")
+        print(f"category registry:  {base._category_registry}")
         assert base.category in base._category_registry
-        if self.tc_is_category:
+        if base.category == "hw_device_mgr":
+            # hw_device_mgr is its own device...
+            assert "category" not in base.__dict__
+            assert base.category_cls(base.category) is not base
+            assert issubclass(base, base.category_cls(base.category))
+        else:
+            # ...whereas other devices are tested together in a category
             assert "category" in base.__dict__
             assert base.category == base.__dict__["category"]
             assert base.category_cls() is base
             assert base.category_cls(base.category) is base
-        else:
-            assert "category" not in base.__dict__
-            assert base.category_cls(base.category) is not base
-            assert issubclass(base, base.category_cls(base.category))
         category_cls = base.category_cls()
         assert category_cls.category == base.category
         assert issubclass(base, category_cls)
         category_cls_super = super(category_cls, category_cls)
         assert getattr(category_cls_super, "category ", None) != base.category
 
-    def test_model_registry(self, device_cls):
+    def test_model_registries(self, category_cls):
         print(f"Registry log:\n{pformat(self.device_class._registry_log)}")
 
         for model_cls in self.device_model_classes:
-            key = model_cls.device_type_key()
+            model_id = model_cls.device_model_id()
+            id_registry = category_cls._model_id_registry
+            name = model_cls.name
+            name_registry = category_cls._model_name_registry
             print(f"model_cls:  {model_cls}")
-            print(f"model_cls key:  {key}")
-            print(f"dev cls category: {device_cls.category}")
-            print(f"dev cls registry:\n{pformat(device_cls._model_registry)}")
-            assert key in device_cls._model_registry
-            for category_cls in device_cls.__mro__:
-                if not hasattr(category_cls, "category"):
+            print(f"model_cls model_id:  {model_id}")
+            print(f"model_cls name:  {name}")
+            print(f"dev cls category: {category_cls.category}")
+            print(f"dev cls id registry:\n{pformat(id_registry)}")
+            print(f"dev cls name registry:\n{pformat(name_registry)}")
+            assert category_cls.category in id_registry
+            assert model_id in id_registry[category_cls.category]
+            assert category_cls.category in name_registry
+            assert name in name_registry[category_cls.category]
+            id_registered = False
+            name_registered = False
+            for parent_cls in category_cls.__mro__:
+                if not hasattr(parent_cls, "category"):
                     break  # Parent class of `Device`
-                registry = category_cls._model_registry
-                print(f"category: {category_cls.category}")
-                print(f"registry:\n{pformat(registry)}")
-                if not model_cls.allow_rereg:
-                    assert category_cls.get_model(key) is model_cls
-                    category = category_cls.category
-                    assert model_cls.get_model(key, category) is model_cls
-                if "category" not in category_cls.__dict__:
-                    continue
-                assert key in registry
-                if not model_cls.allow_rereg:
-                    assert registry[key] == model_cls
+                print(f"category: {parent_cls.category}")
+                # Check model_id_registry
+                assert parent_cls.category in id_registry
+                id_cat_reg = id_registry[parent_cls.category]
+                print(f"model_id_registry:\n{pformat(id_cat_reg)}")
+                assert (
+                    id_registered or parent_cls.get_model(model_id) is model_cls
+                )
+                if "category" in parent_cls.__dict__:
+                    assert model_id in id_cat_reg
+                    assert id_registered or id_cat_reg[model_id] is model_cls
+                    id_registered = True
+                # Check model name registry
+                assert parent_cls.category in name_registry
+                name_cat_reg = name_registry[parent_cls.category]
+                print(f"category: {parent_cls.category}")
+                print(f"model_name_registry:\n{pformat(name_cat_reg)}")
+                assert (
+                    name_registered
+                    or parent_cls.get_model_by_name(name) is model_cls
+                )
+                if "category" in parent_cls.__dict__:
+                    assert name in name_cat_reg
+                    assert name_registered or name_cat_reg[name] is model_cls
+                    name_registered = True
+
+            assert id_registered
+            assert name_registered
 
     def test_scan_devices(self, device_cls, all_device_data):
-        devs = device_cls.scan_devices(sim=self.sim)
-        for obj, data in zip(devs, all_device_data):
+        devs = device_cls.scan_devices()
+        for obj, data in zip(devs, all_device_data.values()):
             print(f"Dev:  {obj}")
-            assert obj.name == data["name"]
-            assert obj.address == data["address"]
+            assert obj.name == data["test_name"]
+            assert obj.address == data["test_address"]
             assert obj.model_id == data["model_id"]
 
     #
@@ -79,9 +115,9 @@ class TestDevice(BaseTestClass):
     #
 
     @pytest.fixture
-    def obj(self, device_cls, device_data):
-        self.device_data = device_data
-        self.obj = device_cls(address=device_data["address"], sim=self.sim)
+    def obj(self, device_cls, sim_device_data):
+        self.sim_device_data = sim_device_data
+        self.obj = device_cls(address=sim_device_data["test_address"])
         self.obj.init()
         yield self.obj
 
@@ -282,11 +318,14 @@ class TestDevice(BaseTestClass):
                 print(f"  ****MISMATCH****  expected:  {expected_val}")
                 passing = False
         # Check expected data is comprehensive, all params checked
-        if actual:
-            print(f"  ****ERROR****  Params not checked:  {actual}")
-            raise KeyError(f"Params not checked:  {actual}")
+        self.check_untested_params(actual)
 
         return passing
+
+    def check_untested_params(self, params):
+        if params:
+            print(f"  ****ERROR****  Params not checked:  {params}")
+            raise KeyError(f"Params not checked:  {params}")
 
     #
     # Main function
@@ -306,7 +345,20 @@ class TestDevice(BaseTestClass):
         with open(fpath(test_cases_yaml)) as f:
             yaml = ruamel.yaml.YAML()
             test_cases = yaml.load(f)
-        print(f"Read test cases from {test_cases_yaml}")
+        print(f"Read test cases from {fpath(test_cases_yaml)}")
 
         for test_case in test_cases:
             self.read_update_write_loop(test_case)
+
+    def test_dot(self, tmp_path):
+        # Test class diagram
+        gv_file = tmp_path / ".." / f"{self.device_class.category}.gv"
+        assert not gv_file.exists()
+        with gv_file.open("w") as f:
+            f.write(self.device_class.dot())
+        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
+        # All class diagrams
+        gv_file = tmp_path / ".." / "all.gv"
+        with gv_file.open("w") as f:
+            f.write(Device.dot())
+        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])

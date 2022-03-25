@@ -5,18 +5,18 @@ import pytest
 
 class TestCiA301Device(BaseCiA301TestClass, _TestDevice):
     expected_mro = [
-        "BogusCiA301Device",
+        "CiA301SimDevice",
         "CiA301Device",
-        *_TestDevice.expected_mro[1:],  # Chop out "BogusDevice"
+        *_TestDevice.expected_mro,
     ]
 
     # Test CiA NMT init:  online & operational status
     read_update_write_yaml = "cia_301/tests/read_update_write.cases.yaml"
 
     @pytest.fixture
-    def obj(self, device_cls, device_data):
+    def obj(self, device_cls, sim_device_data):
         self.obj = self.device_model_cls(
-            address=device_data["address"], sim=self.sim
+            address=sim_device_data["test_address"]
         )
         self.obj.init()
         yield self.obj

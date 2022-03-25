@@ -1,32 +1,25 @@
-from ...device import Device
+from ...device import SimDevice
 
 
-class BogusDevice(Device):
-    """Class for devices compatible with Bogus-Bus."""
+class BogusDevice(SimDevice):
+    """Bogus-Bus device class."""
 
-    category = "bogus_device"
-
-    @classmethod
-    def load_test_data(cls, data):
-        """Side-load bus scan data."""
-        cls._device_data = data
-
-    @classmethod
-    def scan_devices(cls, **kwargs):
-        res = list()
-        for data in cls._device_data:
-            dev_type = cls.get_model(data["name"])
-            dev = dev_type.get_device(address=data["address"], **kwargs)
-            print(f"scan_devices:  found {dev}")
-            res.append(dev)
-        return res
+    category = "bogus_bus_device"
 
 
-class BogusServo(BogusDevice):
-    name = "bogo_servo"
+class BogusV1Servo(BogusDevice):
+    name = "bogo_v1_servo"
+    test_category = "bogus_v1_servo"
     model_id = 0xB0905000
 
 
-class BogusIO(BogusDevice):
-    name = "bogo_io"
+class BogusV2Servo(BogusDevice):
+    name = "bogo_v2_servo"
+    test_category = "bogus_v2_servo"
+    model_id = 0xB0905001
+
+
+class BogusV1IO(BogusDevice):
+    name = "bogo_v1_io"
+    test_category = "bogus_v1_io"
     model_id = 0xB0901000

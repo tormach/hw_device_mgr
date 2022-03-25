@@ -1,14 +1,49 @@
-from ...mgr import HALHWDeviceMgr
-from ....lcec.tests.bogus_devices.device_402 import (
-    BogusLCEC402Device,
-    BogusLCEC402Servo,
-    BogusLCEC402Servo2,
+from ...mgr import HALSimHWDeviceMgr
+from ....lcec.device import LCECSimDevice
+from ....cia_402.device import CiA402SimDevice
+from ....devices.tests.devices import (
+    ElmoGold420,
+    ElmoGold520,
+    InovanceIS620N,
+    InovanceSV660,
 )
 
 
-class BogusLCEC402HWDeviceMgr(HALHWDeviceMgr):
-    data_type_class = BogusLCEC402Device.data_type_class
-    device_base_class = BogusLCEC402Device
-    device_classes = (BogusLCEC402Servo, BogusLCEC402Servo2)
+class HALHWMgrTestDevices(LCECSimDevice, CiA402SimDevice):
+    category = "hal_hw_mgr_test_devices"
 
-    name = "bogus_lcec_hw_device_mgr"
+
+class HALHWMgrTestElmoGold420(HALHWMgrTestDevices, ElmoGold420):
+    name = "elmo_gold_0x30924_0x10420_hal_hw_mgr_test"
+    test_category = "elmo_gold_420_test"
+
+
+class HALHWMgrTestElmoGold520(HALHWMgrTestDevices, ElmoGold520):
+    name = "elmo_gold_0x30925_0x10420_hal_hw_mgr_test"
+    test_category = "elmo_gold_520_test"
+
+
+class HALHWMgrTestInovanceIS620N(HALHWMgrTestDevices, InovanceIS620N):
+    name = "IS620N_ECAT_hal_hw_mgr_test"
+    test_category = "inovance_sv660n_test"
+
+
+class HALHWMgrTestInovanceSV660N(HALHWMgrTestDevices, InovanceSV660):
+    name = "SV660_ECAT_hal_hw_mgr_test"
+    test_category = "inovance_is620n_test"
+
+
+class HALHWDeviceMgrTestCategory(HALSimHWDeviceMgr):
+    category = "test_hal_hw_device_mgr"
+    data_type_class = HALHWMgrTestDevices.data_type_class
+    device_base_class = HALHWMgrTestDevices
+    device_classes = (
+        HALHWMgrTestElmoGold420,
+        HALHWMgrTestElmoGold520,
+        HALHWMgrTestInovanceIS620N,
+        HALHWMgrTestInovanceSV660N,
+    )
+
+
+class HALHWDeviceMgrTest(HALHWDeviceMgrTestCategory):
+    name = "test_sim_hal_hw_device_mgr"

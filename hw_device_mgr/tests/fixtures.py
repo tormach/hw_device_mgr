@@ -76,7 +76,7 @@ class MockFixture:
 
     @classmethod
     def get_mock(cls, *args, **kwargs):
-        """Factory:  Create a new instance and return the mock object."""
+        """Create a new instance and return the mock object."""
         print(f"get_mock:  Creating {cls.fixture_name}:  args {args} {kwargs}")
         obj = cls(*args, **kwargs)
         return obj.mock_obj

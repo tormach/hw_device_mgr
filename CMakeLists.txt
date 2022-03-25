@@ -54,7 +54,7 @@ if(BUILD_TESTING)
   # find_package(ament_cmake_xmllint REQUIRED)
   # ament_xmllint()
   find_package(ament_cmake_pytest REQUIRED)
-  ament_add_pytest_test(test_modules "hw_device_mgr")
+  ament_add_pytest_test(test_modules "hw_device_mgr" TIMEOUT 120)
 
 endif()
 

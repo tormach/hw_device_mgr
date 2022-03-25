@@ -1,5 +1,5 @@
 from .data_types import CiA301DataType
-from .command import CiA301Command
+from .command import CiA301Command, CiA301SimCommand
 from .sdo import CiA301SDO
 
 
@@ -57,11 +57,13 @@ class CiA301Config:
 
     @classmethod
     def command(cls):
-        if not hasattr(cls, "_command"):
-            cls._command = cls.command_class()
-        return cls._command
+        if not hasattr(cls, "_command_objs"):
+            cls._command_objs = dict()
+        if cls.__name__ not in cls._command_objs:
+            cls._command_objs[cls.__name__] = cls.command_class()
+        return cls._command_objs[cls.__name__]
 
-    def __str__(self):
+    def __repr__(self):
         cname = self.__class__.__name__
         return f"<{cname} addr {self.address} model {self.model_id}>"
 
@@ -72,27 +74,34 @@ class CiA301Config:
     @classmethod
     def add_device_sdos(cls, sdo_data):
         """Add device model object dictionary descriptions."""
-        dtc = cls.data_type_class
-        sdos = dict()
-        for model_id, model_sdo_data in sdo_data.items():
-            model_sdos = sdos[model_id] = dict()
-            for ix, sd in model_sdo_data.items():
-                ix = (dtc.uint16(ix[0]), dtc.uint8(ix[1]))
-                if ix in sdos:
+        for model_id, sdos in sdo_data.items():
+            sdos_new = dict()
+            for ix, sd in sdos.items():
+                ix = cls.sdo_ix(ix)
+                if ix in sdos_new:
                     raise KeyError(f"Duplicate SDO index {ix}")
                 if isinstance(sd, cls.sdo_class):
-                    model_sdos[ix] = sd
+                    sdos_new[ix] = sd
                 else:
-                    model_sdos[ix] = cls.sdo_class(**sd)
-        cls._model_sdos.update(sdos)
+                    sdos_new[ix] = cls.sdo_class(**sd)
+            cls._model_sdos[model_id] = sdos_new
+        assert cls._model_sdos
+        assert None not in cls._model_sdos
+
+    @classmethod
+    def sdo_ix(cls, ix):
+        if isinstance(ix, str):
+            ix = cls.sdo_class.parse_idx_str(ix)
+        elif isinstance(ix, int):
+            ix = (ix, 0)
+        dtc = cls.data_type_class
+        ix = (dtc.uint16(ix[0]), dtc.uint8(ix[1]))
+        return ix
 
     def sdo(self, ix):
         if isinstance(ix, self.sdo_class):
             return ix
-        if isinstance(ix, str):
-            ix = self.sdo_class.parse_idx_str(ix)
-        elif isinstance(ix, int):
-            ix = (ix, 0)
+        ix = self.sdo_ix(ix)
         return self._model_sdos[self.model_id][ix]
 
     #
@@ -137,10 +146,12 @@ class CiA301Config:
     # Device configuration
     #
 
+    _device_config = list()
+
     @classmethod
-    def set_global_device_configuration(cls, config):
+    def set_device_config(cls, config):
         """
-        Set the global device configuration.
+        Set the device configuration.
 
         `config` is a `list` of configurations in a `dict`.
 
@@ -172,7 +183,9 @@ class CiA301Config:
           applied to all `positions`, or a `list` of scalars applied
           to corresponding entries in `positions`
         """
-        cls._global_config = config
+        assert config
+        cls._device_config.clear()
+        cls._device_config.extend(config)
 
     def munge_config(self, config_raw):
         # Flatten out param_values key
@@ -183,14 +196,25 @@ class CiA301Config:
                 pos_ix = config_raw["positions"].index(self.position)
                 val = val[pos_ix]
             pv[ix] = val
+        dtc = self.data_type_class
+        config_raw["vendor_id"] = dtc.uint32(config_raw["vendor_id"])
+        config_raw["product_code"] = dtc.uint32(config_raw["product_code"])
+        config_cooked = dict(
+            vendor_id=config_raw["vendor_id"],
+            product_code=config_raw["product_code"],
+            param_values=pv,
+            sync_manager=config_raw.get("sync_manager", dict()),
+        )
         # Return pruned config dict
-        return dict(sync_manager=config_raw["sync_manager"], param_values=pv)
+        return config_cooked
 
     @property
     def config(self):
         if self._config is None:
             # Find matching config
-            for conf in self._global_config:
+            for conf in self._device_config:
+                if "vendor_id" not in conf:
+                    continue  # In tests only
                 if self.model_id != (conf["vendor_id"], conf["product_code"]):
                     continue
                 if self.bus != conf["bus"]:
@@ -223,3 +247,19 @@ class CiA301Config:
             config = cls(address=address, model_id=model_id, **kwargs)
             res.append(config)
         return res
+
+
+class CiA301SimConfig(CiA301Config):
+    """Configuration for simulated devices with simulated command."""
+
+    command_class = CiA301SimCommand
+
+    @classmethod
+    def init_sim(cls, *, sim_device_data):
+        assert sim_device_data
+        sdo_data = dict()
+        for address, data in sim_device_data.items():
+            sdo_data[address] = cls._model_sdos.get(data["model_id"], dict())
+        cls.command_class.init_sim(
+            sim_device_data=sim_device_data, sdo_data=sdo_data
+        )

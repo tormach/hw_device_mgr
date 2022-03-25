@@ -1,4 +1,4 @@
-from ..device import Device
+from ..device import Device, SimDevice
 from .base import HALMixin
 from .data_types import HALDataType
 
@@ -6,18 +6,16 @@ from .data_types import HALDataType
 class HALPinDevice(Device, HALMixin):
     """A `Device` with HAL pins attached to feedback, goal and command."""
 
-    category = "HAL"
     data_type_class = HALDataType
 
     # For these interfaces, create HAL pins with (direction, prefix)
     pin_interfaces = dict(
         feedback_in=(HALMixin.HAL_IN, ""),
         command_out=(HALMixin.HAL_OUT, ""),
-        sim_feedback=(HALMixin.HAL_OUT, "sim_"),
     )
 
     # Prepend this to HAL pin names
-    dev_pin_prefix = "drive_"
+    dev_pin_prefix = "d"
 
     @property
     def compname(self):
@@ -26,7 +24,7 @@ class HALPinDevice(Device, HALMixin):
     def pin_name(self, interface, pname):
         return self.pin_prefix + self.pin_interfaces[interface][1] + pname
 
-    def init(self, comp=None, **kwargs):
+    def init(self, *, comp, **kwargs):
         super().init(**kwargs)
         self.comp = comp
 
@@ -43,8 +41,8 @@ class HALPinDevice(Device, HALMixin):
                     continue
                 spec = all_specs[base_pname]
                 for key, new_val in new_spec.items():
-                    if key == "pdir" and spec[key] != new_val:
-                        spec[key] = self.HAL_IO
+                    if key == "pdir" and spec["pdir"] != new_val:
+                        spec["pdir"] = self.HAL_IO
                         continue
                     if spec[key] != new_val:
                         raise RuntimeError(
@@ -61,7 +59,9 @@ class HALPinDevice(Device, HALMixin):
             try:
                 pin = comp.newpin(pname, ptype, pdir)
             except Exception as e:
-                raise RuntimeError(f"Exception creating pin {pname}:  {e}")
+                raise RuntimeError(
+                    f"Exception creating pin {comp.getprefix()}.{pname}:  {e}"
+                )
             ptypes, pdirs = (self.hal_enum_str(i) for i in (ptype, pdir))
             self.pins[base_pname] = pin
             self.logger.debug(f"Created HAL pin {pname} {ptypes} {pdirs}")
@@ -98,11 +98,23 @@ class HALPinDevice(Device, HALMixin):
                 self.pins[pname].set(val)
 
 
-class HALCompDevice(Device, HALMixin):
+class HALPinSimDevice(HALPinDevice, SimDevice):
+    """A `HalPinDevice` with HAL pins attached to sim feedback."""
+
+    # For these interfaces, create HAL pins with (direction, prefix)
+    pin_interfaces = dict(
+        sim_feedback=(HALMixin.HAL_OUT, "sim_"),
+        **HALPinDevice.pin_interfaces,
+    )
+
+
+class HALCompDevice(HALPinDevice):
     """A `Device` with HAL component."""
 
+    hal_comp_name = None
+
     def init(self, **kwargs):
-        self.comp = self.hal.component(self.name)
+        self.comp = self.hal.component(self.hal_comp_name or self.name)
         self.logger.info(f"Initialized '{self.compname}' HAL component")
         super().init(comp=self.comp, **kwargs)
 

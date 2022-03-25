@@ -1,7 +1,5 @@
-from ..device import Device
-from ..cia_301.data_types import CiA301DataType
-from ..logging import Logging
-from ..cia_402.device import CiA402Device
+from ..device import Device, SimDevice
+from ..cia_402.device import CiA402Device, CiA402SimDevice
 
 
 import traceback
@@ -14,15 +12,18 @@ class HWDeviceTimeout(RuntimeError):
 
 
 class HWDeviceMgr(FysomGlobalMixin, Device):
-    data_type_class = CiA301DataType
+    data_type_class = CiA402Device.data_type_class
     device_base_class = CiA402Device
-    device_classes = (CiA402Device,)
+    device_classes = None
 
-    name = "hw_device_mgr"
-    allow_rereg = True
+    @classmethod
+    def device_model_id(cls):
+        return cls.name
 
-    feedback_in_defaults = dict(state_cmd=0, quick_stop=0)
-    feedback_in_data_types = dict(state_cmd="uint8", quick_stop="bit")
+    feedback_in_defaults = dict(state_cmd=0, quick_stop=0, reset=0)
+    feedback_in_data_types = dict(
+        state_cmd="uint8", quick_stop="bit", reset="bit"
+    )
     feedback_out_defaults = dict(
         state_cmd="init",
         quick_stop=0,
@@ -48,22 +49,16 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     update_rate = 10  # Hz
 
-    logger = Logging.getLogger(name)
-
     ####################################################
     # Initialization
 
-    def __init__(self, sim=False):
+    def __init__(self):
         self.state = "init_command"  # Used by FysomGlobalMixin
-        super().__init__(sim=sim)
+        super().__init__()
         self.fast_track = False
         self.mgr_config = None
         self.device_config = None
         self.shutdown = False
-
-    # To be called by external code
-    def set_mgr_configuration(self, config):
-        self.mgr_config = config
 
     def init(self, mgr_config=None, **kwargs):
         """Initialize Manager instance."""
@@ -71,32 +66,28 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         super().init(**kwargs)
         self.logger.info("Initialization complete")
 
-    def init_devices(self, device_config=None, **kwargs):
+    def init_devices(
+        self, *, device_config, device_init_kwargs=dict(), **kwargs
+    ):
         """
         Populate `HWDeviceMgr` instance `devices` attribute devices.
 
         Scan devices and configure with data in device configuration
         """
-        sim = kwargs.setdefault("sim", self.sim)
-        mode = "sim" if sim else "real-hardware"
-        self.logger.info(f"Configuring devices in {mode} mode")
-
-        self.device_config = device_config
-
         # Pass config to Config class and scan devices
-        self.init_device_classes()
+        assert device_config
+        self.init_device_classes(device_config=device_config)
         self.devices = self.scan_devices(**kwargs)
-        self.init_device_instances()
+        self.init_device_instances(**device_init_kwargs)
 
-    def init_device_classes(self):
-        if self.device_config is None:
-            raise RuntimeError("No device config set")
-        for dev_cls in self.device_classes:
-            dev_cls.set_global_device_configuration(self.device_config)
+    def init_device_classes(self, device_config=None):
+        assert device_config
+        self.device_config = device_config
+        self.device_base_class.set_device_config(device_config)
 
     @classmethod
-    def scan_devices(cls, sim=False, **kwargs):
-        return cls.device_base_class.scan_devices(sim=sim, **kwargs)
+    def scan_devices(cls, **kwargs):
+        return cls.device_base_class.scan_devices(**kwargs)
 
     def init_device_instances(self, **kwargs):
         for i, dev in enumerate(self.devices):
@@ -238,9 +229,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_command(e)
 
     def on_enter_stop_1(self, e):
-        # Zero out command & feedback differences to give operator
-        # confidence turning on machine
-        e.reset = True
         self.fsm_set_required_status_word_flags(e, all_clear=True)
         return self.fsm_set_drive_state_cmd(e, "SWITCH ON DISABLED")
 
@@ -248,7 +236,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_drive_goal_state(e)
 
     def on_enter_stop_complete(self, e):
-        e.reset = False
         self.fsm_finalize_command(e)
 
     #
@@ -256,7 +243,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     #
     def on_before_home_command(self, e):
         if not e.src == "stop_complete":
-            self.logger.warn("Unable to home when devices not stopped")
+            self.logger.warning("Unable to home when devices not stopped")
             return False
         return self.fsm_check_command(e)
 
@@ -348,11 +335,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             msg = f"Ignoring {cmd_name} command in init state {e.src}"
             self.command_in.set(state_cmd="init", state_log=msg)
             if self.command_in.changed("state_cmd"):
-                self.logger.warn(msg)
+                self.logger.warning(msg)
             return False
         elif e.src != f"{cmd_name}_command" and e.src.startswith(cmd_name):
             # Already running
-            self.logger.warn(f"Ignoring {cmd_name} command from state {e.src}")
+            self.logger.warning(
+                f"Ignoring {cmd_name} command from state {e.src}"
+            )
             return False
         else:
             self.logger.info(f"Received {cmd_name} command:  {e.msg}")
@@ -451,7 +440,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             self.logger.info(f"KeyboardInterrupt: {e}")
             self.shutdown = True
         except HWDeviceTimeout as e:
-            self.logger.error(e)
+            self.logger.error(str(e))
 
     fsm_next_state_map = dict(
         # Map current command to dict of {current_state:next_event}
@@ -573,7 +562,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             try:
                 self.trigger(event, msg=cmd_in.get("state_log"))
             except Canceled:
-                self.logger.warn(f"Unable to honor {event} command")
+                self.logger.warning(f"Unable to honor {event} command")
 
         # Attempt automatic transition to next state
         event = self.automatic_next_event()
@@ -585,7 +574,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             except Canceled:
                 # `on_before_{event}()` method returned `False`,
                 # causing `fysom.Canceled` exception
-                self.logger.debug(f"Cannot transition to next state {event}")
+                # self.logger.debug(f"Cannot transition to next state {event}")
+                pass
             else:
                 # State transition succeeded; fast-track the next update
                 self.fast_track = True
@@ -609,16 +599,12 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         event = state_map.get(self.state, f"{state_cmd}_command")
         return event
 
-    def set_sim_feedback(self):
-        sfb = super().set_sim_feedback()
-        sfb.update(
-            state_cmd=self.command_out.get("state_cmd"),
-            quick_stop=self.feedback_in.get("quick_stop"),
-        )
-        return sfb
-
     ####################################################
     # Drive helpers
+
+    @classmethod
+    def init_sim(cls, *, sim_device_data):
+        cls.device_base_class.init_sim(sim_device_data=sim_device_data)
 
     def initialize_devices(self):
         # Ensure drive parameters are up to date
@@ -657,3 +643,16 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             else:
                 res.append(dev)
         return res
+
+
+class SimHWDeviceMgr(HWDeviceMgr, SimDevice):
+
+    device_base_class = CiA402SimDevice
+
+    def set_sim_feedback(self):
+        sfb = super().set_sim_feedback()
+        sfb.update(
+            state_cmd=self.command_out.get("state_cmd"),
+            quick_stop=self.feedback_in.get("quick_stop"),
+        )
+        return sfb
