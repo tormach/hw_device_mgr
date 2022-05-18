@@ -10,6 +10,7 @@ pkgs_bd = [
     "ethercat",
     "hal",
     "lcec",
+    "logging",
     "mgr",
     "mgr_hal",
     "mgr_ros",
