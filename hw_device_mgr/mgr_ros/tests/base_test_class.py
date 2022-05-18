@@ -1,7 +1,12 @@
 from ...mgr.tests.base_test_class import BaseMgrTestClass
-from .bogus_devices.mgr import ROSHWDeviceMgrTest
 import yaml
 import pytest
+
+try:
+    import rclpy  # noqa: F401
+except ModuleNotFoundError:
+    pytest.skip(allow_module_level=True)
+from .bogus_devices.mgr import ROSHWDeviceMgrTest
 
 
 ###############################
@@ -75,7 +80,7 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         yield tmpfile
 
     def test_mock_rclpy_fixture(self, mock_rclpy):
-        from ..mgr import rclpy
+        from ..mgr import rclpy  # noqa:  F811
 
         node = rclpy.create_node("foo")
         assert node is self.node
