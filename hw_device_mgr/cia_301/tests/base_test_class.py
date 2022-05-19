@@ -20,10 +20,12 @@ class BaseCiA301TestClass(BaseTestClass):
     #
 
     # The device configuration, as in a real system
-    device_config_yaml = "cia_301/tests/device_config.yaml"
+    device_config_package = "hw_device_mgr.cia_301.tests"
+    device_config_yaml = "device_config.yaml"
 
     # Device model SDOs; for test fixture
-    device_sdos_yaml = "cia_301/tests/bogus_devices/sim_sdo_data.yaml"
+    device_sdos_package = "hw_device_mgr.cia_301.tests"
+    device_sdos_yaml = "sim_sdo_data.yaml"
 
     # Classes under test in this module
     data_type_class = CiA301DataType
@@ -42,18 +44,27 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @classmethod
     def init_sim(cls, **kwargs):
+        """Create sim device objects with configured SDOs."""
         if cls.pass_init_sim_device_sdos:
             # Init sim SDO data
-            path, sdo_data = cls.load_yaml(cls.device_sdos_yaml, True)
-            print(f"  Raw sdo_data from {path}")
+            sdo_data = cls.load_sdo_data()
+            print(f"  Raw sdo_data from {cls.sdo_data_resource()}")
             kwargs["sdo_data"] = cls.munge_sdo_data(sdo_data)
         # Init sim device data
         super().init_sim(**kwargs)
 
     @classmethod
     def munge_device_config(cls, device_config):
-        # Make device_config.yaml reusable by monkey-patching device vendor_id
-        # and product_code keys based on test_category key
+        """
+        Munge raw device config.
+
+        Return a copy of `device_config` with minor processing.
+
+        Optionally, to make the YAML file reusable, each configuration's
+        `vendor_id` and `product_code` keys may be replaced with a `category`
+        key matching a parent of classes listed; this fixture will re-add those
+        keys.
+        """
         new_device_config = list()
         for conf in device_config:
             device_cls = cls.test_category_class(conf["test_category"])
@@ -84,30 +95,34 @@ class BaseCiA301TestClass(BaseTestClass):
     def command_cls(self, device_cls):
         yield self.command_class
 
+    @classmethod
+    def load_device_config(cls):
+        """
+        Load device configuration from package resource.
+
+        The `importlib.resources` resource is named by
+        `device_config_package` and `device_config_yaml` attrs.
+        """
+        rsrc = (cls.device_config_package, cls.device_config_yaml)
+        dev_conf = cls.load_yaml_resource(*rsrc)
+        assert dev_conf, f"Empty device config in package resource {rsrc}"
+        print(f"  Raw device_config from {rsrc}")
+        return dev_conf
+
     @pytest.fixture
     def device_config(self):
         """
         Device configuration data fixture.
 
-        Load device configuration from file named in
-        `device_config_yaml` attr.
+        Load device configuration with `load_device_config()` and munge with
+        `mung_device_config()`.
 
         Device configuration in the same format as non-test
         configuration, described in `Config` classes.
-
-        The absolute path is stored in the test object
-        `device_config_path` attribute.
-
-        Optionally, to make the YAML file reusable, each
-        configuration's `vendor_id` and `product_code` keys may be
-        replaced with a `category` key matching a parent of classes
-        listed; this fixture will re-add those keys.
         """
-        path, dev_conf = self.load_yaml(self.device_config_yaml, True)
-        print(f"  Raw device_config from {path}")
-        dev_conf = self.munge_device_config(dev_conf)
+        conf_raw = self.load_device_config()
+        dev_conf = self.munge_device_config(conf_raw)
         self.device_config = dev_conf
-        self.device_config_path = path
         yield dev_conf
 
     @pytest.fixture
@@ -217,6 +232,17 @@ class BaseCiA301TestClass(BaseTestClass):
             dev["test_address"] = (dev["bus"], dev["position"])
         return sim_device_data
 
+    @classmethod
+    def sdo_data_resource(cls):
+        return (cls.device_sdos_package, cls.device_sdos_yaml)
+
+    @classmethod
+    def load_sdo_data(cls):
+        rsrc = cls.sdo_data_resource()
+        sdo_data = cls.load_yaml_resource(*rsrc)
+        assert sdo_data, f"Empty SDO data in package resource {rsrc}"
+        return sdo_data
+
     def pytest_generate_tests(self, metafunc):
         # Dynamic parametrization from sim_device_data_yaml:
         # - _sim_device_data:  iterate through `sim_device_data` list
@@ -224,10 +250,8 @@ class BaseCiA301TestClass(BaseTestClass):
         # - _sdo_data:  iterate through `sdo_data` values
         # - bus:  iterate through `sim_device_data` unique `bus` values
         # *Note all three cases are mutually exclusive
-        path, dev_data = self.load_yaml(self.sim_device_data_yaml, True)
-        dev_data = self.munge_sim_device_data(dev_data)
-        path, sdo_data = self.load_yaml(self.device_sdos_yaml, True)
-        sdo_data = self.munge_sdo_data(sdo_data, conv_sdos=True)
+        dev_data = self.munge_sim_device_data(self.load_sim_device_data())
+        sdo_data = self.munge_sdo_data(self.load_sdo_data(), conv_sdos=True)
         names = list()
         vals, ids = (list(), list())
         if "_sim_device_data" in metafunc.fixturenames:
