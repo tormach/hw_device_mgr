@@ -1,7 +1,5 @@
 import pytest
-from pathlib import Path
-import os
-import yaml
+from ..config_io import ConfigIO
 from .bogus_devices.data_types import BogusDataType
 from .bogus_devices.device import (
     BogusDevice,
@@ -11,11 +9,12 @@ from .bogus_devices.device import (
 )
 
 
-class BaseTestClass:
+class BaseTestClass(ConfigIO):
     """Base test class providing fixtures for use with `bogus_devices`."""
 
     # Device scan data; for test fixture
-    sim_device_data_yaml = "tests/sim_devices.yaml"
+    sim_device_data_package = "hw_device_mgr.tests"
+    sim_device_data_yaml = "sim_devices.yaml"
 
     # Data types
     # Classes under test in this module
@@ -25,13 +24,6 @@ class BaseTestClass:
 
     # Sim mode by default
     sim = True
-
-    @classmethod
-    def load_yaml(cls, fname, return_path=False):
-        p = Path(__file__).parent.parent.joinpath(fname)
-        with p.open() as f:
-            data = yaml.safe_load(f)
-        return (p, data) if return_path else data
 
     @classmethod
     def test_category_class(cls, test_category):
@@ -72,12 +64,16 @@ class BaseTestClass:
         cls.device_class.init_sim(**kwargs)
 
     @classmethod
+    def load_sim_device_data(cls):
+        rsrc = cls.sim_device_data_package, cls.sim_device_data_yaml
+        dev_data = cls.load_yaml_resource(*rsrc)
+        assert dev_data, f"Empty device data in package resource {rsrc}"
+        return dev_data
+
+    @classmethod
     def init_sim_device_data(cls):
-        # Set up sim devices:  munge YAML data & pass to sim device class
-        cls.sim_device_data_path, dev_data = cls.load_yaml(
-            cls.sim_device_data_yaml, True
-        )
-        print(f"  Raw sim_device_data from {cls.sim_device_data_path}")
+        # Set up sim devices:  munge data & pass to sim device class
+        dev_data = cls.load_sim_device_data()
         return cls.munge_sim_device_data(dev_data)
 
     @pytest.fixture
@@ -102,24 +98,10 @@ class BaseTestClass:
         if "sim_device_data" not in metafunc.fixturenames:
             return
 
-        path, sim_device_data = self.load_yaml(self.sim_device_data_yaml, True)
-        sim_device_data = self.munge_sim_device_data(sim_device_data)
+        data_raw = self.load_sim_device_data()
+        sim_device_data = self.munge_sim_device_data(data_raw)
         vals, ids = (list(), list())
         for dev in sim_device_data:
             ids.append(f"{dev['test_name']}@{dev['test_address']}")
             vals.append(dev)
         metafunc.parametrize("sim_device_data", vals, ids=ids, scope="class")
-
-    @pytest.fixture
-    def fpath(self):
-        """Fixture that returns test directory."""
-        # This line resolves black & pep257 conflicts.  :P
-
-        def func(base_name=None):
-            cwd = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-            if base_name is None:
-                return cwd
-            else:
-                return os.path.join(cwd, base_name)
-
-        return func

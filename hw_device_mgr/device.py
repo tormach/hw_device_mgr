@@ -1,5 +1,4 @@
 import abc
-from importlib.resources import path as imp_path
 from .logging import Logging
 from .interface import Interface
 from .data_types import DataType
@@ -131,14 +130,6 @@ class Device(abc.ABC):
 
     def log_status(self):
         pass
-
-    @classmethod
-    def pkg_path(cls, path):
-        """Return `pathlib.Path` object for this package's directory."""
-        # Find cls's module & package
-        pkg = ".".join(cls.__module__.split(".")[:-1])
-        with imp_path(pkg, path) as p:
-            return p
 
     def __str__(self):
         return f"<{self.name}@{self.address}>"
@@ -356,7 +347,12 @@ class SimDevice(Device):
 
     @classmethod
     def init_sim(cls, *, sim_device_data):
-        """Massage device test data for usability."""
+        """
+        Create sim device objects for tests.
+
+        Construct sim device objects with device class, address, etc.
+        from `sim_device_data`.
+        """
         cls_sim_data = cls._sim_device_data[cls.category] = dict()
 
         for dev in sim_device_data:
