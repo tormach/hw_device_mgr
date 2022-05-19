@@ -14,9 +14,6 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         *_TestDevice.expected_mro,
     ]
 
-    # Test CiA NMT init:  online & operational status
-    read_update_write_yaml = "mgr/tests/read_update_write.cases.yaml"
-
     @pytest.fixture
     def obj(self, device_cls, mgr_config, device_config, all_device_data):
         self.obj = device_cls()
