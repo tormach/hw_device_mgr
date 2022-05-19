@@ -11,6 +11,7 @@ class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
         "ROSSimHWDeviceMgr",
         "ROSHWDeviceMgr",
         *_TestHWDeviceMgr.expected_mro[1:],
+        "ConfigIO",
     ]
     rclpy_patches = [
         "hw_device_mgr.mgr_ros.mgr.rclpy",

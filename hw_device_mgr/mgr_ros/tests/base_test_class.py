@@ -1,5 +1,4 @@
 from ...mgr.tests.base_test_class import BaseMgrTestClass
-import yaml
 import pytest
 
 try:
@@ -58,8 +57,7 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         for d in sim_device_data:
             d["product_code"] = int(d["product_code"])
             d["vendor_id"] = int(d["vendor_id"])
-        with open(tmpfile, "w") as f:
-            f.write(yaml.safe_dump(sim_device_data))
+        self.dump_yaml_path(tmpfile, sim_device_data)
         self.rosparams["sim_device_data_path"] = tmpfile
         yield tmpfile
 
@@ -73,8 +71,7 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
             dc["product_code"] = int(dc["product_code"])
             dc["vendor_id"] = int(dc["vendor_id"])
         tmpfile = tmp_path / "device_config.yaml"
-        with open(tmpfile, "w") as f:
-            f.write(yaml.safe_dump(device_config))
+        self.dump_yaml_path(tmpfile, device_config)
         self.rosparams["device_config_path"] = tmpfile
         print(f"Cleaned device config written to {tmpfile}")
         yield tmpfile
