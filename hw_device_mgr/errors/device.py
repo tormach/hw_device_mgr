@@ -1,9 +1,9 @@
 from ..device import Device, SimDevice
 from ..data_types import DataType
-import ruamel.yaml
+from ..config_io import ConfigIO
 
 
-class ErrorDevice(Device):
+class ErrorDevice(Device, ConfigIO):
     """
     Abstract class representing a device error code handling.
 
@@ -45,9 +45,7 @@ class ErrorDevice(Device):
             errs = cls._error_descriptions[cls.name] = dict()
             path = cls.error_descriptions_yaml()
             if path.exists():
-                yaml = ruamel.yaml.YAML()
-                with path.open() as f:
-                    err_yaml = yaml.load(f)
+                err_yaml = cls.load_yaml(path)
                 for err_code_str, err_data in err_yaml.items():
                     errs[int(err_code_str, 0)] = err_data
         return cls._error_descriptions[cls.name]
