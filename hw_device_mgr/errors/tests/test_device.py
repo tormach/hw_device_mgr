@@ -8,6 +8,7 @@ class TestErrorDevice(ErrorBaseTestClass, _TestDevice):
         "ErrorSimDevice",
         "ErrorDevice",
         *_TestDevice.expected_mro,
+        "ConfigIO",
     ]
 
     @pytest.fixture
