@@ -3,7 +3,6 @@ from .base_test_class import BaseTestClass
 from ..device import Device
 import subprocess
 from pprint import pformat
-import ruamel.yaml
 
 
 class TestDevice(BaseTestClass):
@@ -136,8 +135,9 @@ class TestDevice(BaseTestClass):
     # - Check expected feedback & command, in & out
 
     # Configuration
-    # - Path to .yaml test cases (relative to `tests/` directory)
-    read_update_write_yaml = None
+    # - YAML test cases package resource
+    read_update_write_package = None  # Skip tests if None
+    read_update_write_yaml = "read_update_write.cases.yaml"
     # - Translate feedback/command test input params from values
     #   human-readable in .yaml to values matching actual params
     read_update_write_translate_feedback_in = dict()
@@ -338,15 +338,13 @@ class TestDevice(BaseTestClass):
         self.set_command_and_check()
         self.write_and_check()
 
-    def test_read_update_write(self, obj, fpath):
-        test_cases_yaml = getattr(self, "read_update_write_yaml", None)
-        if test_cases_yaml is None:
+    def test_read_update_write(self, obj):
+        if self.read_update_write_package is None:
             return  # No test cases defined for this class
-        with open(fpath(test_cases_yaml)) as f:
-            yaml = ruamel.yaml.YAML()
-            test_cases = yaml.load(f)
-        print(f"Read test cases from {fpath(test_cases_yaml)}")
-
+        rsrc = (self.read_update_write_package, self.read_update_write_yaml)
+        test_cases = self.load_yaml_resource(*rsrc)
+        assert test_cases, f"Empty YAML from package resource {rsrc}"
+        print(f"Read test cases from package resource {rsrc}")
         for test_case in test_cases:
             self.read_update_write_loop(test_case)
 
