@@ -66,8 +66,8 @@ class BaseHALTestClass(BaseCiA402TestClass):
         )
         self.mock_hal = mock_hal
         self.components = MockHALComponent
-        with mocker.patch("hal.component", side_effect=mock_hal.component):
-            yield mock_hal
+        mocker.patch("hal.component", side_effect=mock_hal.component)
+        yield mock_hal
         MockHALComponent.clear()
 
     @pytest.fixture
