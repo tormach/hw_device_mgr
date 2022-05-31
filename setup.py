@@ -60,7 +60,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "scripts/hw_device_mgr",
-        ],
+            "hw_device_mgr = hw_device_mgr.mgr_ros_hal.__main__:main"
+        ]
     },
 )
