@@ -10,14 +10,17 @@ pkgs_bd = [
     "ethercat",
     "hal",
     "lcec",
-    "logging",
     "mgr",
     "mgr_hal",
     "mgr_ros",
     "mgr_ros_hal",
 ]
 # Packages like hw_device_mgr.{pkg}.tests
-pkgs_t = ["devices"] + pkgs_bd
+pkgs_t = [
+    "devices",
+    "logging",
+    *pkgs_bd,
+]
 # Generate lists
 packages = (
     [
