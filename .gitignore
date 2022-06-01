@@ -1,1 +1,6 @@
 /.coverage
+
+# wheel build artifacts
+/build/
+/dist/
+/hw_device_mgr.egg-info/
