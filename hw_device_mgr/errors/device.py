@@ -14,7 +14,8 @@ class ErrorDevice(Device, ConfigIO):
     strings to feedback.
     """
 
-    device_error_dir = "device_err"
+    device_error_package = None
+    device_error_yaml = None
 
     feedback_in_data_types = dict(error_code="uint32")
     feedback_in_defaults = dict(error_code=0)
@@ -30,22 +31,19 @@ class ErrorDevice(Device, ConfigIO):
     _error_descriptions = dict()
 
     @classmethod
-    def error_descriptions_yaml(cls):
-        return cls.pkg_path(cls.device_error_dir) / f"{cls.name}.yaml"
-
-    @classmethod
     def error_descriptions(cls):
         """
         Return dictionary of error code data.
 
-        Data is read from YAML file `{device_error_dir}/{name}.yaml` and
-        cached.
+        Data is read from YAML resource from package
+        `device_error_package`, name `device_error_yaml`.
         """
         if cls.name not in cls._error_descriptions:
             errs = cls._error_descriptions[cls.name] = dict()
-            path = cls.error_descriptions_yaml()
-            if path.exists():
-                err_yaml = cls.load_yaml(path)
+            if cls.device_error_yaml:
+                err_yaml = cls.load_yaml_resource(
+                    cls.device_error_package, cls.device_error_yaml
+                )
                 for err_code_str, err_data in err_yaml.items():
                     errs[int(err_code_str, 0)] = err_data
         return cls._error_descriptions[cls.name]
