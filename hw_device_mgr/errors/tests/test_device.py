@@ -20,7 +20,7 @@ class TestErrorDevice(ErrorBaseTestClass, _TestDevice):
     def test_error_descriptions(self):
         for cls in self.device_model_classes:
             print("cls:", cls)
-            print("yaml:", cls.error_descriptions_yaml())
+            print("yaml:", cls.device_error_package, cls.device_error_yaml)
             errs = cls.error_descriptions()
             assert isinstance(errs, dict)
             assert len(errs) > 0
