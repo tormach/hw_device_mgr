@@ -1,7 +1,6 @@
 from ..mgr.mgr import HWDeviceMgr, SimHWDeviceMgr
 from ..config_io import ConfigIO
 import rclpy
-import os
 import traceback
 
 
