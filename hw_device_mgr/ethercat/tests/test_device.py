@@ -13,6 +13,8 @@ class TestEtherCATDevice(BaseEtherCATTestClass, _TestCiA402Device):
 
     def test_xml_description_path(self):
         for cls in self.device_model_classes:
-            esi_path = cls.xml_description_path()
-            print(esi_path)
-            assert esi_path.exists()
+            assert cls.xml_description_fname
+            if cls.xml_description_package is None:
+                assert "/" in cls.xml_description_fname
+            else:
+                assert "/" not in cls.xml_description_fname

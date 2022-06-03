@@ -1,16 +1,17 @@
 from .sdo import EtherCATSDO
+from ..config_io import ConfigIO
 from lxml import etree
 from pprint import pprint
+from functools import cached_property
 
 __all__ = ("EtherCATXMLReader",)
 
 
-class EtherCATXMLReader:
+class EtherCATXMLReader(ConfigIO):
     """Parse EtherCAT Slave Information "ESI" XML files."""
 
     sdo_class = EtherCATSDO
     _device_registry = dict()
-    _fpath_registry = dict()
 
     @classmethod
     def str_to_int(cls, s):
@@ -167,7 +168,7 @@ class EtherCATXMLReader:
         vendors = self.tree.xpath("/EtherCATInfo/Vendor")
         if len(vendors) != 1:
             raise RuntimeError(
-                f"{len(vendors)} <Vendor> sections in {self.fpath}"
+                f"{len(vendors)} <Vendor> sections in {self.esi_key}"
             )
         return vendors[0]
 
@@ -404,7 +405,7 @@ class EtherCATXMLReader:
                     ecat_type = self.data_type_class.by_name(type_name)
                 except KeyError as e:
                     print(self.data_type_class._name_re_registry)
-                    raise KeyError(f"Reading {self.fpath}:  {str(e)}")
+                    raise KeyError(f"Reading {self.esi_key}:  {str(e)}")
                 self.safe_set(osub, "DataType", ecat_type)
 
                 # Flatten out Flags, Info
@@ -449,14 +450,6 @@ class EtherCATXMLReader:
         # print(f"Unused:  {list(self._unused.keys())}")
         return sdos
 
-    @property
-    def tree(self):
-        if hasattr(self, "_tree"):
-            return self._tree
-        with self.fpath.open() as f:
-            self._tree = etree.parse(f)
-        return self._tree
-
     sdo_translations = dict(
         # Translate SDO data from read_objects() to SDOs.add_sdo() args
         Index="index",
@@ -484,12 +477,9 @@ class EtherCATXMLReader:
         subidx = sdo["subindex"] = dtc.uint8(sdo.pop("subindex") or 0)
         sdos[idx, subidx] = sdo
 
-    def add_device_descriptions(self, fpath):
-        """Parse ESI file and cache device information."""
-        if fpath in self._fpath_registry:
-            return self._fpath_registry[fpath]
-
-        self.fpath = fpath
+    def add_device_descriptions(self, stream):
+        """Parse ESI file stream and cache device information."""
+        self.tree = etree.parse(stream)
         model_sdos = dict()
         for dxml in self.devices_xml:
             sdos = dict()
@@ -502,7 +492,28 @@ class EtherCATXMLReader:
             sdo_data = self.read_objects(dxml)
             for sd in sdo_data:
                 self.add_sdo(sdos, sd)
-        self._fpath_registry[fpath] = model_sdos
+        return model_sdos
+
+    @classmethod
+    def open_device_description_resource(cls, package, resource):
+        return cls.open_resource(package, resource)
+
+    @classmethod
+    def open_device_description_path(cls, path, *args, **kwargs):
+        return cls.open_path(path, *args, **kwargs)
+
+    def add_device_descriptions_from_resource(self, package, resource):
+        """Parse ESI from package resource."""
+        print(f"Reading ESI from ({package}, {resource})")
+        with self.open_device_description_resource(package, resource) as f:
+            model_sdos = self.add_device_descriptions(f)
+        return model_sdos
+
+    def add_device_descriptions_from_path(self, fpath):
+        """Parse ESI from XML file path."""
+        print(f"Reading ESI from {fpath}")
+        with self.open_device_description_path(fpath) as f:
+            model_sdos = self.add_device_descriptions(f)
         return model_sdos
 
     @classmethod
