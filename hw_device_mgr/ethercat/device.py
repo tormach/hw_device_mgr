@@ -18,7 +18,8 @@ class EtherCATDevice(CiA301Device, abc.ABC):
     # Resource names for locating device description XML and error files
     device_xml_dir = "device_xml"
 
-    # Filename of XML description
+    # Package and filename of XML description resource
+    xml_description_package = None
     xml_description_fname = None
 
     # Swappable utility classes
@@ -46,27 +47,13 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         """
 
     @classmethod
-    def xml_description_path(cls):
-        """
-        Return path to device ESI file.
-
-        Path is under the module directory,
-        `{device_xml_dir}/{xml_description_fname}`.
-        """
-        path = cls.pkg_path(cls.device_xml_dir) / cls.xml_description_fname
-        return path.resolve()
-
-    @classmethod
     def read_device_sdos_from_esi(cls):
         sdo_data = dict()
-        dev_esi_paths = set()
         for dev in cls.get_model():
-            esi_path = dev.xml_description_path()
-            if esi_path in dev_esi_paths:
-                assert dev.device_model_id() in sdo_data
-                continue
-            dev_esi_paths.add(esi_path)
-            dev_sdo_data = dev.config_class.get_device_sdos_from_esi(esi_path)
+            conf = dev.config_class
+            dev_sdo_data = conf.get_device_sdos_from_esi(
+                dev.xml_description_package, dev.xml_description_fname
+            )
             sdo_data.update(dev_sdo_data)
         return sdo_data
 

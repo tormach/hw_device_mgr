@@ -8,7 +8,6 @@ from .bogus_devices.device import (
     BogusEtherCATServo,
     BogusOtherCATServo,
     BogusEtherCATIO,
-    RelocatableESIDevice,
 )
 import re
 import pytest
@@ -45,38 +44,38 @@ class BaseEtherCATTestClass(BaseCiA402TestClass):
 
     @pytest.fixture
     def device_xml(self, tmp_path):
-        if not issubclass(self.device_class, RelocatableESIDevice):
-            # Don't rewrite ESI files
-            yield
-        else:
-            # Subclasses will have different product_code, so customize ESI file
-            self.device_class.set_device_xml_dir(tmp_path)
-            finished_paths = set()
-            re_str = "|".join(rf"{pc[1]:08X}" for pc in self.sdo_model_id_clone)
-            re_str = r"#x(" + re_str + r")"
-            pat = re.compile(re_str)
-            # Map of orig ESI file product code to new ESI file product code
-            cm = {
-                k[1]: v.device_model_id()[1]
-                for k, v in self.model_id_clone_map.items()
-            }
-            for id_orig, cls in self.model_id_clone_map.items():
-                esi_orig = cls.orig_xml_description_path()
-                esi_new = cls.xml_description_path()
-                if esi_orig in finished_paths:
-                    continue
-                finished_paths.add(esi_orig)
-                esi_new.parent.mkdir(exist_ok=True)
-                with open(esi_orig) as f_orig:
-                    with open(esi_new, "w") as f_new:
-                        for line in f_orig:
-                            line = pat.sub(
-                                lambda m: f"#x{cm[int(m.group(1), 16)]}", line
-                            )
-                            f_new.write(line)
-                print(f"Wrote ESI file to {esi_new}")
-                print(f"  Original in {esi_orig}")
-            yield
+        # Subclasses will have different product_code, so customize ESI file
+        finished = set()
+        re_str = "|".join(rf"{pc[1]:08X}" for pc in self.sdo_model_id_clone)
+        re_str = r"#x(" + re_str + r")"
+        pat = re.compile(re_str)
+        # Map of orig ESI file product code to new ESI file product code
+        cm = {
+            k[1]: f"{v.device_model_id()[1]:08X}"
+            for k, v in self.model_id_clone_map.items()
+        }
+        for id_orig, cls in self.model_id_clone_map.items():
+            if not hasattr(cls, "alt_xml_description"):
+                print(f"Using original ESI file for device {cls.name}")
+                continue
+            esi_orig = (cls.xml_description_package, cls.xml_description_fname)
+            print(f"Model {cls.name} ESI resource:  {esi_orig}")
+            esi_new = tmp_path / cls.xml_description_fname
+            cls.alt_xml_description = esi_new
+            if esi_new in finished:
+                print(f"   Already written to {esi_new}")
+                continue  # Only process each ESI file once
+            finished.add(esi_new)
+            print(f"   Writing to {esi_new}")
+            with self.open_resource(*esi_orig) as f_orig:
+                with self.open_path(esi_new, "w") as f_new:
+                    for line in f_orig:
+                        line = line.decode()
+                        line = pat.sub(
+                            lambda m: f"#x{cm[int(m.group(1), 16)]}", line
+                        )
+                        f_new.write(line)
+        yield
 
     @pytest.fixture
     def extra_fixtures(self, device_xml):
