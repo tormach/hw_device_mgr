@@ -21,6 +21,6 @@ class BaseDevicesTestClass(BaseLCECTestClass):
         EVEXCREForTest,
     )
 
-    device_config_yaml = "devices/tests/device_config.yaml"
-    sim_device_data_yaml = "devices/tests/sim_devices.yaml"
-    device_sdos_yaml = "devices/tests/sim_sdo_data.yaml"
+    device_config_package = "hw_device_mgr.devices.tests"
+    sim_device_data_package = "hw_device_mgr.devices.tests"
+    device_sdos_package = "hw_device_mgr.devices.tests"
