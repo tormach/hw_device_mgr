@@ -5,6 +5,7 @@ class ITegvaE7xDevice(EtherCATDevice):
     """Base class for iTegva E7x series IO modules."""
 
     vendor_id = 0x00000A09
+    xml_description_package = "hw_device_mgr.devices.device_xml"
     xml_description_fname = "iTegva_E7x_Series.xml"
 
 
