@@ -12,5 +12,7 @@ class TestROSHWDeviceMgr(
         "ROSHALSimHWDeviceMgr",
         "ROSHALHWDeviceMgr",
         *_TestROSHWDeviceMgr.expected_mro[1:3],  # ROS{Sim...}HWDeviceMgr
-        *_TestHALHWDeviceMgr.expected_mro[1:],  # HALSimHWDeviceMgr...HALMixin
+        *_TestHALHWDeviceMgr.expected_mro[1:-1],  # HALSimHWDeviceMgr...ABC
+        "ConfigIO",
+        _TestHALHWDeviceMgr.expected_mro[-1],  # HALMixin
     ]
