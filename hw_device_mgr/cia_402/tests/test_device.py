@@ -29,11 +29,12 @@ class TestCiA402Device(_TestCiA301Device, BaseCiA402TestClass):
                     if key in intf_data:
                         intf_data[key] = uint16(intf_data[key])
 
-    def test_read_update_write(self, obj, fpath):
+    def test_read_update_write(self, obj):
         if hasattr(obj, "MODE_CSP"):
             # CiA 402 device
+            self.read_update_write_package = self.read_update_write_402_package
             self.read_update_write_yaml = self.read_update_write_402_yaml
             self.is_402_device = True
         else:
             self.is_402_device = False
-        super().test_read_update_write(obj, fpath)
+        super().test_read_update_write(obj)
