@@ -47,8 +47,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     command_out_defaults = dict(state_cmd=0, reset=0)
     command_out_data_types = dict(state_cmd="uint8", reset="bit")
 
-    update_rate = 10  # Hz
-
     ####################################################
     # Initialization
 
@@ -406,6 +404,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     def run(self):
         """Program main loop."""
+        update_period = 1.0 / self.mgr_config.get("update_rate", 10.0)
         while not self.shutdown:
             try:
                 self.read_update_write()
@@ -423,7 +422,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 # the `sleep()` before the next update
                 self.fast_track = False
                 continue
-            self.rate.sleep()
+            time.sleep(update_period)
 
     def read_update_write(self):
         """
