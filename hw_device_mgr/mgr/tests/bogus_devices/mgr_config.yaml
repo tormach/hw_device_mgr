@@ -1,5 +1,6 @@
 init_timeout: 30.0  # seconds
 goal_state_timeout: 5.0  # seconds
+update_rate:  20.0  # updates/second
 
 devices:
   # 6 DOF joints
