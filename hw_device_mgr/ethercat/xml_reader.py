@@ -3,6 +3,7 @@ from ..config_io import ConfigIO
 from ..logging import Logging
 from lxml import etree
 from pprint import pprint
+from functools import lru_cache
 
 __all__ = ("EtherCATXMLReader",)
 
@@ -26,8 +27,9 @@ class EtherCATXMLReader(ConfigIO):
     def data_type_class(self):
         return self.sdo_class.data_type_class
 
-    def __init__(self, LcId="1033"):
+    def __init__(self, tree, LcId="1033"):
         """Init object with locale ID."""
+        self.tree = tree
         self.LcId = LcId  # Discard anything not in this locale
 
     def safe_set(self, dst, key, val, prefix=None):
@@ -485,45 +487,81 @@ class EtherCATXMLReader(ConfigIO):
         subidx = sdo["subindex"] = dtc.uint8(sdo.pop("subindex") or 0)
         sdos[idx, subidx] = sdo
 
-    def add_device_descriptions(self, stream):
-        """Parse ESI file stream and cache device information."""
-        self.tree = etree.parse(stream)
+    # DC definitions
+    #
+    # <Dc>
+    # 	<OpMode>
+    # 		<Name>DC</Name>
+    # 		<Desc>DC-Synchron</Desc>
+    #       <AssignActivate>#x300</AssignActivate>
+    #       <CycleTimeSync0 Factor="1">0</CycleTimeSync0>
+    #       <ShiftTimeSync0>0</ShiftTimeSync0>
+    #       <CycleTimeSync1 Factor="1">0</CycleTimeSync1>
+    #     </OpMode>
+    #   </Dc>
+
+    def read_dc_opmodes(self, device):
+        """Parse XML `<Dc><OpMode/></Dc>` tags into simple Python object."""
+        opmodes = list()
+        for obj in device.xpath("Dc/OpMode"):
+            opmode = dict()
+            for subobj in obj:
+                key = subobj.tag
+                if key in {
+                    "AssignActivate",
+                    "CycleTimeSync0",
+                    "ShiftTimeSync0",
+                    "CycleTimeSync1",
+                }:
+                    opmode[key] = self.str_to_int(subobj.text)
+                else:
+                    opmode[key] = subobj.text
+            opmodes.append(opmode)
+        return opmodes
+
+    def device_model_id(self, device_xml):
+        device_type = self.read_device_type(device_xml)
+        product_code = self.str_to_int(device_type.get("ProductCode"))
+        uint32 = self.data_type_class.uint32
+        model_id = tuple(uint32(i) for i in (self.vendor_id, product_code))
+        return model_id
+
+    @lru_cache
+    def parse_sdos(self):
+        """Parse device SDO info from ESI XML."""
         model_sdos = dict()
         for dxml in self.devices_xml:
-            sdos = dict()
-            device_type = self.read_device_type(dxml)
-            product_code = self.str_to_int(device_type.get("ProductCode"))
-            model_id = (self.vendor_id, product_code)
-            model_id = tuple(self.data_type_class.uint32(i) for i in model_id)
-            self._device_registry[model_id] = sdos
-            model_sdos[model_id] = sdos
+            model_id = self.device_model_id(dxml)
+            reg = self._device_registry.setdefault(model_id, dict())
+            model_sdos[model_id] = reg["sdos"] = dict()
             sdo_data = self.read_objects(dxml)
             for sd in sdo_data:
-                self.add_sdo(sdos, sd)
+                self.add_sdo(reg["sdos"], sd)
         return model_sdos
 
-    @classmethod
-    def open_device_description_resource(cls, package, resource):
-        return cls.open_resource(package, resource)
+    @lru_cache
+    def parse_dc_opmodes(self):
+        """Parse device DC OpModes info from ESI XML."""
+        dc_opmodes = dict()
+        for dxml in self.devices_xml:
+            model_id = self.device_model_id(dxml)
+            opmodes = self.read_dc_opmodes(dxml)
+            assert isinstance(opmodes, list)
+            dc_opmodes[model_id] = opmodes
+        return dc_opmodes
 
     @classmethod
-    def open_device_description_path(cls, path, *args, **kwargs):
-        return cls.open_path(path, *args, **kwargs)
-
-    def add_device_descriptions_from_resource(self, package, resource):
-        """Parse ESI from package resource."""
-        self.logger.info(f"Reading ESI from ({package}, {resource})")
-        with self.open_device_description_resource(package, resource) as f:
-            model_sdos = self.add_device_descriptions(f)
-        return model_sdos
-
-    def add_device_descriptions_from_path(self, fpath):
-        """Parse ESI from XML file path."""
-        self.logger.info(f"Reading ESI from {fpath}")
-        with self.open_device_description_path(fpath) as f:
-            model_sdos = self.add_device_descriptions(f)
-        return model_sdos
+    @lru_cache
+    def read_from_resource(cls, package, resource, LcId="1033"):
+        cls.logger.info(f"Reading ESI from ({package}, {resource})")
+        with cls.open_resource(package, resource) as f:
+            tree = etree.parse(f)
+        return cls(tree, LcId=LcId)
 
     @classmethod
-    def sdos(cls, model_id):
-        return cls._device_registry[model_id]
+    @lru_cache
+    def read_from_path(cls, fpath, LcId="1033"):
+        print(f"Reading ESI from {fpath}")
+        with cls.open_path(fpath) as f:
+            tree = etree.parse(f)
+        return cls(tree, LcId=LcId)

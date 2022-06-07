@@ -3,6 +3,7 @@ from ..cia_301.config import CiA301Config, CiA301SimConfig
 from .data_types import EtherCATDataType
 from .xml_reader import EtherCATXMLReader
 from .command import EtherCATCommand, EtherCATSimCommand
+from functools import lru_cache
 
 
 class EtherCATConfig(CiA301Config):
@@ -23,19 +24,50 @@ class EtherCATConfig(CiA301Config):
     command_class = EtherCATCommand
 
     #
-    # Object dictionary
+    # Device ESI
     #
 
     @classmethod
-    def get_device_sdos_from_esi(cls, package, fname):
-        """Read in device configuration from ESI file at `esi_path`."""
-        esi_reader = cls.esi_reader_class()
+    @lru_cache
+    def read_esi(cls, package, fname, LcId="1033"):
+        """
+        Read ESI XML and return `EtherCATXMLReader` object.
+
+        ESI may be a package resource from `package` and `fname`;
+        otherwise, if `package` is `None`, a file from path `fname`.
+        """
+        esi_reader_class = cls.esi_reader_class
         if package:
-            return esi_reader.add_device_descriptions_from_resource(
-                package, fname
+            esi_reader = esi_reader_class.read_from_resource(
+                package, fname, LcId=LcId
             )
         else:
-            return esi_reader.add_device_descriptions_from_path(fname)
+            esi_reader = esi_reader_class.read_from_path(fname, LcId=LcId)
+        return esi_reader
+
+    @classmethod
+    @lru_cache
+    def get_device_sdos_from_esi(cls, package, fname, LcId="1033"):
+        """
+        Read in device SDOs from ESI.
+
+        The `package` and `fname` args are supplied to the `read_esi`
+        method.
+        """
+        esi_reader = cls.read_esi(package, fname, LcId=LcId)
+        return esi_reader.parse_sdos()
+
+    @classmethod
+    @lru_cache
+    def get_device_dcs_from_esi(cls, package, fname, LcId="1033"):
+        """
+        Read in device distributed clocks from ESI.
+
+        The `package` and `fname` args are supplied to the `read_esi`
+        method.
+        """
+        esi_reader = cls.read_esi(package, fname, LcId=LcId)
+        return esi_reader.parse_dc_opmodes()
 
 
 class EtherCATSimConfig(EtherCATConfig, CiA301SimConfig):
