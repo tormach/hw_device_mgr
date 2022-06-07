@@ -207,24 +207,21 @@ class CiA301Config:
         cls._device_config.clear()
         cls._device_config.extend(config)
 
-    def munge_config(self, config_raw):
+    @classmethod
+    def munge_config(cls, config_raw, position):
+        config_cooked = config_raw.copy()
+        # Convert model ID ints
+        model_id = (config_raw["vendor_id"], config_raw["product_code"])
+        model_id = cls.format_model_id(model_id)
+        config_cooked["vendor_id"], config_cooked["product_code"] = model_id
         # Flatten out param_values key
-        pv = dict()
+        config_cooked["param_values"] = dict()
         for ix, val in config_raw.get("param_values", dict()).items():
-            ix = self.sdo_class.parse_idx_str(ix)
+            ix = cls.sdo_class.parse_idx_str(ix)
             if isinstance(val, list):
-                pos_ix = config_raw["positions"].index(self.position)
+                pos_ix = config_raw["positions"].index(position)
                 val = val[pos_ix]
-            pv[ix] = val
-        dtc = self.data_type_class
-        config_raw["vendor_id"] = dtc.uint32(config_raw["vendor_id"])
-        config_raw["product_code"] = dtc.uint32(config_raw["product_code"])
-        config_cooked = dict(
-            vendor_id=config_raw["vendor_id"],
-            product_code=config_raw["product_code"],
-            param_values=pv,
-            sync_manager=config_raw.get("sync_manager", dict()),
-        )
+            config_cooked["param_values"][ix] = val
         # Return pruned config dict
         return config_cooked
 
@@ -245,7 +242,7 @@ class CiA301Config:
             else:
                 raise KeyError(f"No config for device at {self.address}")
             # Prune & cache config
-            self._config = self.munge_config(conf)
+            self._config = self.munge_config(conf, self.position)
 
         # Return cached config
         return self._config
