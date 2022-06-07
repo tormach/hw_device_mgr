@@ -36,7 +36,7 @@ class BaseEtherCATTestClass(BaseCiA402TestClass):
             )
         ]
     )
-    pass_init_sim_device_sdos = False  # SDO data from ESI file
+    pass_init_sim_device_description = False  # Data from ESI file
 
     @property
     def model_id_clone_map(self):

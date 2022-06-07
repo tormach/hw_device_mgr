@@ -26,9 +26,10 @@ class EtherCATDevice(CiA301Device, abc.ABC):
     data_type_class = EtherCATDataType
     config_class = EtherCATConfig
 
-    def __init__(self, **kwargs):
+    def __init__(self, LcId="1033", **kwargs):
         super().__init__(**kwargs)
-        self.add_device_sdos_from_esi()
+        self.add_device_sdos_from_esi(LcId=LcId)
+        self.add_device_dcs_from_esi(LcId=LcId)
 
     @property
     def master(self):
@@ -47,26 +48,47 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         """
 
     @classmethod
-    def read_device_sdos_from_esi(cls):
+    def read_device_sdos_from_esi(cls, LcId="1033"):
         sdo_data = dict()
         for dev in cls.get_model():
             conf = dev.config_class
             dev_sdo_data = conf.get_device_sdos_from_esi(
-                    dev.xml_description_package, dev.xml_description_fname
+                dev.xml_description_package,
+                dev.xml_description_fname,
+                LcId=LcId,
             )
             sdo_data.update(dev_sdo_data)
         return sdo_data
 
     @classmethod
-    def add_device_sdos_from_esi(cls):
+    def add_device_sdos_from_esi(cls, LcId="1033"):
         """Read device SDOs from ESI file and add to configuration."""
-        sdo_data = cls.read_device_sdos_from_esi()
+        sdo_data = cls.read_device_sdos_from_esi(LcId=LcId)
         cls.add_device_sdos(sdo_data)
 
     @classmethod
     def munge_sdo_data(cls, sdo_data):
         # SDO data from ESI parser already in correct format
         return sdo_data
+
+    @classmethod
+    def read_device_dcs_from_esi(cls, LcId="1033"):
+        dcs_data = dict()
+        for dev in cls.get_model():
+            conf = dev.config_class
+            dev_dcs_data = conf.get_device_dcs_from_esi(
+                dev.xml_description_package,
+                dev.xml_description_fname,
+                LcId=LcId,
+            )
+            dcs_data.update(dev_dcs_data)
+        return dcs_data
+
+    @classmethod
+    def add_device_dcs_from_esi(cls, LcId="1033"):
+        """Read device DCs from ESI file and add to configuration."""
+        dcs_data = cls.read_device_dcs_from_esi(LcId=LcId)
+        cls.add_device_dcs(dcs_data)
 
 
 class EtherCATSimDevice(EtherCATDevice, CiA301SimDevice):
@@ -80,7 +102,7 @@ class EtherCATSimDevice(EtherCATDevice, CiA301SimDevice):
         self.params_volatile = not nv
 
     @classmethod
-    def init_sim(cls, **kwargs):
+    def init_sim(cls, LcId="1033", **kwargs):
         """
         Configure device, config, command for sim EtherCAT devices.
 
@@ -88,5 +110,6 @@ class EtherCATSimDevice(EtherCATDevice, CiA301SimDevice):
         from EtherCAT ESI description file and pass with sim device data
         to parent class's method.
         """
-        sdo_data = cls.read_device_sdos_from_esi()
-        super().init_sim(sdo_data=sdo_data, **kwargs)
+        sdo_data = cls.read_device_sdos_from_esi(LcId=LcId)
+        dcs_data = cls.read_device_dcs_from_esi(LcId=LcId)
+        super().init_sim(sdo_data=sdo_data, dcs_data=dcs_data, **kwargs)
