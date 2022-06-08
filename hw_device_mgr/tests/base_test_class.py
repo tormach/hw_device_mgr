@@ -39,7 +39,9 @@ class BaseTestClass:
             assert dmc.name
             if dmc.test_category == test_category:
                 return dmc
-        raise ValueError(f"No device in test category class '{test_category}'")
+        raise ValueError(
+            f"{cls}:  No device in test category class '{test_category}'"
+        )
 
     @classmethod
     def munge_sim_device_data(cls, sim_device_data):
