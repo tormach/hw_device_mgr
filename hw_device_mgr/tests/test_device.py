@@ -352,7 +352,7 @@ class TestDevice(BaseTestClass):
 
     def test_dot(self, tmp_path):
         # Test class diagram
-        gv_file = tmp_path / ".." / f"{self.device_class.category}.gv"
+        gv_file = tmp_path / f"{self.device_class.category}.gv"
         assert not gv_file.exists()
         with gv_file.open("w") as f:
             f.write(self.device_class.dot())
