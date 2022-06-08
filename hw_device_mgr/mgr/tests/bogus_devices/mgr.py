@@ -6,6 +6,7 @@ from ....devices.tests.devices import (
     ElmoGold520,
     InovanceIS620N,
     InovanceSV660,
+    EVEXCRE,
 )
 
 
@@ -33,6 +34,11 @@ class HwMgrTestInovanceSV660N(HwMgrTestDevices, InovanceSV660):
     test_category = "inovance_sv660n_test"
 
 
+class HwMgrTestEVEXCRE(HwMgrTestDevices, EVEXCRE):
+    name = "EVE-XCR-E_hw_mgr_test"
+    test_category = "everest_xcr_e_test"
+
+
 class HWDeviceMgrTestCategory(SimHWDeviceMgr):
     category = "test_hw_device_mgr"
     device_base_class = HwMgrTestDevices
@@ -41,6 +47,7 @@ class HWDeviceMgrTestCategory(SimHWDeviceMgr):
         HwMgrTestElmoGold520,
         HwMgrTestInovanceIS620N,
         HwMgrTestInovanceSV660N,
+        HwMgrTestEVEXCRE,
     )
 
 

@@ -42,3 +42,10 @@
     605A-00h: 3
     607D-01h:  -35000
     607D-02h:  35000
+- test_category:  everest_xcr_e_test
+  bus:  0
+  position:  16
+  params:
+    605A-00h: 7
+    607D-01h:  1000
+    607D-02h:  10000
