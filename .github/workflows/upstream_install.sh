@@ -13,9 +13,9 @@ install_cloudsmith_repo() {
     REPO=$2
     KEY_ID=$3
     CLOUDSMITH_ARGS="distro=${ID}&codename=${VERSION_CODENAME}"
-    curl -1sLf ${BASE}/${ORG}/${REPO}/cfg/gpg/gpg.${KEY_ID}.key |
+    curl -1sLf ${BASE}/${ORG}/${REPO}/gpg.${KEY_ID}.key |
         apt-key add -
-    curl -1sLf "${BASE}/${ORG}/${REPO}/cfg/setup/config.deb.txt?${CLOUDSMITH_ARGS}" \
+    curl -1sLf "${BASE}/${ORG}/${REPO}/config.deb.txt?${CLOUDSMITH_ARGS}" \
         >/etc/apt/sources.list.d/${ORG}-${REPO}.list
 }
 
