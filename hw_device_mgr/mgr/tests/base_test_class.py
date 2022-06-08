@@ -7,6 +7,7 @@ from .bogus_devices.mgr import (
     HwMgrTestElmoGold520,
     HwMgrTestInovanceIS620N,
     HwMgrTestInovanceSV660N,
+    HwMgrTestEVEXCRE,
 )
 
 
@@ -43,6 +44,7 @@ class BaseMgrTestClass(BaseDevicesTestClass):
         HwMgrTestElmoGold520,
         HwMgrTestInovanceIS620N,
         HwMgrTestInovanceSV660N,
+        HwMgrTestEVEXCRE,
     )
 
     @pytest.fixture

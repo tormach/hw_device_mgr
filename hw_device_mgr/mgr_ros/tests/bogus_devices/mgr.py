@@ -5,6 +5,7 @@ from ....mgr.tests.bogus_devices.mgr import (
     HwMgrTestElmoGold520,
     HwMgrTestInovanceIS620N,
     HwMgrTestInovanceSV660N,
+    HwMgrTestEVEXCRE,
 )
 
 
@@ -16,6 +17,7 @@ class ROSHWDeviceMgrTestCategory(ROSSimHWDeviceMgr):
         HwMgrTestElmoGold520,
         HwMgrTestInovanceIS620N,
         HwMgrTestInovanceSV660N,
+        HwMgrTestEVEXCRE,
     )
 
 
