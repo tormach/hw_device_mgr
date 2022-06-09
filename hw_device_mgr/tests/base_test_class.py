@@ -37,9 +37,9 @@ class BaseTestClass:
     def test_category_class(cls, test_category):
         for dmc in cls.device_model_classes:
             assert dmc.name
-            if dmc.test_category == test_category and dmc.name:
+            if dmc.test_category == test_category:
                 return dmc
-        raise ValueError(f"No test category class '{test_category}'")
+        raise ValueError(f"No device in test category class '{test_category}'")
 
     @classmethod
     def munge_sim_device_data(cls, sim_device_data):

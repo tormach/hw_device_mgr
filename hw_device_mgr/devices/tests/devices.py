@@ -3,6 +3,7 @@ from ...cia_402.device import CiA402SimDevice
 from ..elmo_gold import ElmoGold420, ElmoGold520
 from ..inovance_is620n import InovanceIS620N
 from ..inovance_sv660 import InovanceSV660
+from ..eve_xcr_e import EVEXCRE
 
 
 class DevicesForTest(LCECSimDevice):
@@ -27,3 +28,8 @@ class InovanceIS620NForTest(DevicesForTest, InovanceIS620N, CiA402SimDevice):
 class InovanceSV660NForTest(DevicesForTest, InovanceSV660, CiA402SimDevice):
     name = "SV660_ECAT_test"
     test_category = "inovance_is620n_test"
+
+
+class EVEXCREForTest(DevicesForTest, EVEXCRE, CiA402SimDevice):
+    name = "EVE-XCR-E_test"
+    test_category = "everest_xcr_e_test"

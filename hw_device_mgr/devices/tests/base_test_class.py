@@ -5,6 +5,7 @@ from .devices import (
     ElmoGold520ForTest,
     InovanceIS620NForTest,
     InovanceSV660NForTest,
+    EVEXCREForTest,
 )
 
 
@@ -17,6 +18,7 @@ class BaseDevicesTestClass(BaseLCECTestClass):
         ElmoGold520ForTest,
         InovanceIS620NForTest,
         InovanceSV660NForTest,
+        EVEXCREForTest,
     )
 
     device_config_yaml = "devices/tests/device_config.yaml"

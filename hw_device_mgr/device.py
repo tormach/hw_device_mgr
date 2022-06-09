@@ -180,7 +180,9 @@ class Device(abc.ABC):
             reg = cls._model_id_registry.setdefault(category, dict())
             # Be sure model is registered in at least one category, but don't
             # clobber earlier registrations
-            assert model_id not in reg or registered
+            assert (
+                model_id not in reg or registered
+            ), f"Duplicate model_id {model_id}"
             if model_id not in reg:
                 registered = True
                 reg[model_id] = cls

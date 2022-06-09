@@ -6,6 +6,7 @@ from ....devices.tests.devices import (
     ElmoGold520,
     InovanceIS620N,
     InovanceSV660,
+    EVEXCRE,
 )
 
 
@@ -33,6 +34,11 @@ class HALHWMgrTestInovanceSV660N(HALHWMgrTestDevices, InovanceSV660):
     test_category = "inovance_is620n_test"
 
 
+class HALHWMgrTestEVEXCRE(HALHWMgrTestDevices, EVEXCRE):
+    name = "EVE-XCR-E_hal_hw_mgr_test"
+    test_category = "everest_xcr_e_test"
+
+
 class HALHWDeviceMgrTestCategory(HALSimHWDeviceMgr):
     category = "test_hal_hw_device_mgr"
     data_type_class = HALHWMgrTestDevices.data_type_class
@@ -42,6 +48,7 @@ class HALHWDeviceMgrTestCategory(HALSimHWDeviceMgr):
         HALHWMgrTestElmoGold520,
         HALHWMgrTestInovanceIS620N,
         HALHWMgrTestInovanceSV660N,
+        HALHWMgrTestEVEXCRE,
     )
 
 

@@ -129,6 +129,8 @@ class EtherCATXMLReader:
                 res[key] = subobj.text.rstrip()
             elif key in {"BitSize", "BitOffs", "SubIdx", "LBound", "Elements"}:
                 res[key] = int(subobj.text)
+            elif key in {"Backup", "Setting"}:
+                res[key] = int(subobj.text)
             elif key in {"Info", "Flags", "ArrayInfo"}:
                 res[key] = self.read_object(subobj)
             elif key == "SubItem":
@@ -144,7 +146,6 @@ class EtherCATXMLReader:
                 print(key)
                 pprint(type(key))
                 pprint(type(key).__name__)
-                pprint(dir(key))
                 res[key] = self.tree_to_obj(subobj)
         if subindex is not None:
             if "SubIndex" in res:  # Sanity
@@ -269,17 +270,24 @@ class EtherCATXMLReader:
             otype["OldSubItems"] = old_subitems = otype.pop("SubItems")
             otype["SubItems"] = self.expand_subitems(old_subitems)
         self.safe_set(otype, "TypeName", otype.pop("Name"))
-        return otype
+        key = otype["TypeName"]
+        if key in self.datatypes:  # Sanity
+            raise RuntimeError("Duplicate datatype '%s'" % key)
+        self.datatypes[key] = otype
 
     def read_datatypes(self, device):
         """Parse device `<DataType/>` elements into `self.datatypes` dict."""
         self.datatypes = dict()
-        for dt in device.xpath("Profile/Dictionary/DataTypes/DataType"):
-            o = self.massage_type(self.read_object(dt))
-            key = o["TypeName"]
-            if key in self.datatypes:  # Sanity
-                raise RuntimeError("Duplicate datatype '%s'" % key)
-            self.datatypes[key] = o
+        # First process <DataType/> without <SubItem/> children...
+        for dt in device.xpath(
+            "Profile/Dictionary/DataTypes/DataType[not(SubItem)]"
+        ):
+            self.massage_type(self.read_object(dt))
+        # ...So any complex <DataType><SubItem><Type/> will already be known
+        for dt in device.xpath(
+            "Profile/Dictionary/DataTypes/DataType[SubItem]"
+        ):
+            self.massage_type(self.read_object(dt))
         for i in self.datatypes.values():
             if "Name" in i:
                 raise RuntimeError('Found "Name" attr in type')
