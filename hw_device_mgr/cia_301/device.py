@@ -99,6 +99,28 @@ class CiA301Device(Device):
         cls.config_class.add_device_sdos(cls.munge_sdo_data(sdo_data))
 
     @classmethod
+    def munge_dcs_data(cls, dcs_data):
+        # Turn per-model name DCs data from YAML into per-model_id DCs data
+        res = dict()
+        for model_name, dcs in dcs_data.items():
+            device_cls = cls.get_model_by_name(model_name)
+            model_id = device_cls.device_model_id()
+            res[model_id] = dcs
+        assert res
+        assert None not in res
+        return res
+
+    @classmethod
+    def add_device_dcs(cls, dcs_data):
+        """
+        Configure device distributed clocks.
+
+        Pass to the `Config` class the information needed to configure
+        DCs for this `model_id`.
+        """
+        cls.config_class.add_device_dcs(cls.munge_dcs_data(dcs_data))
+
+    @classmethod
     def get_device(cls, address=None, **kwargs):
         registry = cls._address_registry.setdefault(cls.name, dict())
         config = address
@@ -178,10 +200,11 @@ class CiA301SimDevice(CiA301Device, SimDevice):
         return model_id
 
     @classmethod
-    def init_sim(cls, *, sim_device_data, sdo_data):
+    def init_sim(cls, *, sim_device_data, sdo_data, dcs_data):
         super().init_sim(sim_device_data=sim_device_data)
         sim_device_data = cls._sim_device_data[cls.category]
         cls.add_device_sdos(sdo_data)
+        cls.add_device_dcs(dcs_data)
         cls.config_class.init_sim(sim_device_data=sim_device_data)
 
     def set_sim_feedback(self, **kwargs):

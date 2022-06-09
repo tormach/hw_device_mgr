@@ -71,3 +71,13 @@ class TestCiA301Config(BaseCiA301TestClass):
         obj.write_config_param_values()
         for sdo_ix, val in obj.config["param_values"].items():
             assert obj.upload(sdo_ix) == val
+
+    def test_add_device_dcs(self, obj, config_cls, dcs_data):
+        print("model_id:", obj.model_id)
+        print("registered models:", list(config_cls._model_dcs))
+        print("config_cls._model_dcs:", config_cls._model_dcs)
+        assert obj.model_id in config_cls._model_dcs
+        obj_dcs = obj._model_dcs[obj.model_id]
+        assert len(obj_dcs) == len(dcs_data)
+        for expected_dc in dcs_data:
+            assert expected_dc in obj_dcs
