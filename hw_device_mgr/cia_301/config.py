@@ -29,6 +29,8 @@ class CiA301Config:
 
     # Mapping of model_id to a dict of (index, subindex) to SDO object
     _model_sdos = dict()
+    # Mapping of model_id to a dict of (index, subindex) to DC object
+    _model_dcs = dict()
 
     def __init__(self, address=None, model_id=None):
         self.address = address
@@ -109,6 +111,17 @@ class CiA301Config:
             return ix
         ix = self.sdo_ix(ix)
         return self._model_sdos[self.model_id][ix]
+
+    @classmethod
+    def add_device_dcs(cls, dcs_data):
+        """Add device model distributed clock descriptions."""
+        for model_id, dcs in dcs_data.items():
+            cls._model_dcs[model_id] = dcs
+        assert None not in cls._model_dcs
+
+    def dcs(self):
+        """Get list of distributed clocks for this device."""
+        return self._model_dcs[self.model_id]
 
     def dump_param_values(self):
         res = dict()

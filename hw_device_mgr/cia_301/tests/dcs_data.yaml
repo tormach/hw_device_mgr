@@ -1,0 +1,23 @@
+bogus_v1_servo:
+  - name:  Synchron
+    desc:  SM-Synchron
+    assignactivate:  0x0
+    cycletimesync0: 0
+    shifttimesync0: 0
+    cycletimesync1: 0
+  - name:  DCSync
+    desc:  DC-Synchron
+    assignactivate:  0x300
+    cycletimesync0: 0
+    shifttimesync0: 0
+    cycletimesync1: 0
+bogus_v2_servo:
+  - name:  DC Sync
+    desc:  DC for synchronization
+    assignactivate:  0x300
+    cycletimesync0: 0
+    shifttimesync0: 0
+  - name:  DC Off
+    desc:  DC unused
+    assignactivate:  0x0
+bogus_v1_io:  []  # No DCs
