@@ -24,3 +24,4 @@ class BaseDevicesTestClass(BaseLCECTestClass):
     device_config_package = "hw_device_mgr.devices.tests"
     sim_device_data_package = "hw_device_mgr.devices.tests"
     device_sdos_package = "hw_device_mgr.devices.tests"
+    device_dcs_package = "hw_device_mgr.devices.tests"

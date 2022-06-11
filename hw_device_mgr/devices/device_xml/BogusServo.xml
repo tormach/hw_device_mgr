@@ -287,12 +287,17 @@
         </TxPdo>
         <Dc>
           <OpMode>
-            <Name>DC</Name>
-            <Desc>Distributed Clock</Desc>
+            <Name>DC Sync</Name>
+            <Desc>DC for synchronization</Desc>
             <AssignActivate>#x300</AssignActivate>
             <CycleTimeSync0 Factor="1">0</CycleTimeSync0>
             <ShiftTimeSync0>0</ShiftTimeSync0>
             <CycleTimeSync1 Factor="1">0</CycleTimeSync1>
+          </OpMode>
+          <OpMode>
+            <Name>DC Off</Name>
+            <Desc>DC unused</Desc>
+            <AssignActivate>0</AssignActivate>
           </OpMode>
         </Dc>
       </Device>
@@ -565,12 +570,17 @@
         </TxPdo>
         <Dc>
           <OpMode>
-            <Name>DC</Name>
-            <Desc>Distributed Clock</Desc>
+            <Name>DC Sync</Name>
+            <Desc>DC for synchronization</Desc>
             <AssignActivate>#x300</AssignActivate>
             <CycleTimeSync0 Factor="1">0</CycleTimeSync0>
             <ShiftTimeSync0>0</ShiftTimeSync0>
             <CycleTimeSync1 Factor="1">0</CycleTimeSync1>
+          </OpMode>
+          <OpMode>
+            <Name>DC Off</Name>
+            <Desc>DC unused</Desc>
+            <AssignActivate>0</AssignActivate>
           </OpMode>
         </Dc>
       </Device>
