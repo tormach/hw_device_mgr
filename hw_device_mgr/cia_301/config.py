@@ -116,6 +116,7 @@ class CiA301Config:
     def add_device_dcs(cls, dcs_data):
         """Add device model distributed clock descriptions."""
         for model_id, dcs in dcs_data.items():
+            assert isinstance(dcs, list)
             cls._model_dcs[model_id] = dcs
         assert None not in cls._model_dcs
 
