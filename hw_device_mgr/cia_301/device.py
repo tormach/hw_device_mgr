@@ -80,8 +80,8 @@ class CiA301Device(Device):
     def munge_sdo_data(cls, sdo_data):
         # Turn per-model name SDO data from YAML into per-model_id SDO data
         res = dict()
-        for model_name, sd in sdo_data.items():
-            device_cls = cls.get_model_by_name(model_name)
+        for model_id, sd in sdo_data.items():
+            device_cls = cls.get_model(model_id)
             model_id = device_cls.device_model_id()
             res[model_id] = sd
         assert res
@@ -99,18 +99,6 @@ class CiA301Device(Device):
         cls.config_class.add_device_sdos(cls.munge_sdo_data(sdo_data))
 
     @classmethod
-    def munge_dcs_data(cls, dcs_data):
-        # Turn per-model name DCs data from YAML into per-model_id DCs data
-        res = dict()
-        for model_name, dcs in dcs_data.items():
-            device_cls = cls.get_model_by_name(model_name)
-            model_id = device_cls.device_model_id()
-            res[model_id] = dcs
-        assert res
-        assert None not in res
-        return res
-
-    @classmethod
     def add_device_dcs(cls, dcs_data):
         """
         Configure device distributed clocks.
@@ -118,7 +106,7 @@ class CiA301Device(Device):
         Pass to the `Config` class the information needed to configure
         DCs for this `model_id`.
         """
-        cls.config_class.add_device_dcs(cls.munge_dcs_data(dcs_data))
+        cls.config_class.add_device_dcs(dcs_data)
 
     @classmethod
     def get_device(cls, address=None, **kwargs):

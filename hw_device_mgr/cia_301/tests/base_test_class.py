@@ -219,7 +219,7 @@ class BaseCiA301TestClass(BaseTestClass):
         for test_category, old_sdos in sdo_data.items():
             device_cls = cls.test_category_class(test_category)
             assert device_cls
-            sdos = new_sdo_data[device_cls.name] = dict()
+            sdos = new_sdo_data[device_cls.device_model_id()] = dict()
             for ix, sdo in old_sdos.items():
                 if conv_sdos:
                     ix = cls.config_class.sdo_ix(ix)
@@ -282,7 +282,7 @@ class BaseCiA301TestClass(BaseTestClass):
         for test_category, dcs in dcs_data.items():
             device_cls = cls.test_category_class(test_category)
             assert device_cls
-            new_dcs_data[device_cls.name] = dcs
+            new_dcs_data[device_cls.device_model_id()] = dcs
         assert new_dcs_data
         assert None not in new_dcs_data
         return new_dcs_data
@@ -312,18 +312,19 @@ class BaseCiA301TestClass(BaseTestClass):
                 device_cls = self.test_category_class(dev["test_category"])
                 assert device_cls is not None
                 if "_sdo_data" in metafunc.fixturenames:
-                    dev_vals.append(sdo_data[device_cls.name])
+                    dev_vals.append(sdo_data[device_cls.device_model_id()])
                 if "_dcs_data" in metafunc.fixturenames:
-                    dev_vals.append(dcs_data[device_cls.name])
+                    dev_vals.append(dcs_data[device_cls.device_model_id()])
                 if len(dev_vals) == 1:
                     vals.append(dev_vals[0])
                 else:
                     vals.append(dev_vals)
         elif "_sdo_data" in metafunc.fixturenames:
             names.append("_sdo_data")
-            for category, device_sdos in sdo_data.items():
+            for model_id, device_sdos in sdo_data.items():
                 vals.append(device_sdos)
-                ids.append(category)
+                dev_cls = self.device_class.get_model(model_id)
+                ids.append(dev_cls.test_category)
         elif "_dcs_data" in metafunc.fixturenames:
             names.append("_dcs_data")
             for model_id, device_dcs in dcs_data.items():

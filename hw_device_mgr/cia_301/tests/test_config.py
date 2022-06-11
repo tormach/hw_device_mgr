@@ -74,10 +74,10 @@ class TestCiA301Config(BaseCiA301TestClass):
 
     def test_add_device_dcs(self, obj, config_cls, dcs_data):
         print("model_id:", obj.model_id)
-        print("registered models:", list(config_cls._model_dcs))
         print("config_cls._model_dcs:", config_cls._model_dcs)
-        assert obj.model_id in config_cls._model_dcs
-        obj_dcs = obj._model_dcs[obj.model_id]
-        assert len(obj_dcs) == len(dcs_data)
+        dcs_data = [dict(dc) for dc in dcs_data]
+        print("expected dcs:", dcs_data)
+        print("object dcs:", obj.dcs())
+        assert len(obj.dcs()) == len(dcs_data)
         for expected_dc in dcs_data:
-            assert expected_dc in obj_dcs
+            assert dict(expected_dc) in obj.dcs()
