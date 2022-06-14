@@ -14,7 +14,7 @@ class EtherCATDataType(DataType):
         int16=dict(name="INT"),
         int32=dict(name="DINT"),
         int64=dict(name="LINT"),
-        uint8=dict(name="USINT"),
+        uint8=dict(name="USINT", name_re=r"USINT|BITARR8"),
         uint16=dict(name="UINT"),
         uint32=dict(name="UDINT"),
         uint64=dict(name="ULINT"),
