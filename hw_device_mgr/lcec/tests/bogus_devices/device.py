@@ -3,6 +3,7 @@ from ...device import LCECSimDevice
 from ....cia_402.device import CiA402SimDevice
 
 
+
 class BogusLCECDevice(LCECSimDevice, RelocatableESIDevice):
     category = "bogus_lcec_devices"
     vendor_id = 0xB090C0
