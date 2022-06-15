@@ -1,6 +1,7 @@
 from .data_types import CiA301DataType
 from .command import CiA301Command, CiA301SimCommand
 from .sdo import CiA301SDO
+from functools import cached_property
 
 
 class CiA301Config:
@@ -34,7 +35,6 @@ class CiA301Config:
     def __init__(self, address=None, model_id=None):
         self.address = address
         self.model_id = self.format_model_id(model_id)
-        self._config = None
 
     @classmethod
     def format_model_id(cls, model_id):
@@ -186,8 +186,7 @@ class CiA301Config:
           - `pdo_mapping`:  PDO mapping SM types only; `dict`:
             - `index`:  Index of PDO mapping object
             - `entries`:  Dictionary objects to be mapped;  `dict`:
-              - `index`:  Index of dictionary object
-              - `subindex`:  Subindex of dictionary object (default 0)
+              - `index`:  Index of dictionary object, e.g. "6041h" or "1A00-03h"
               - `name`:  Name, a handle for the data object
               - `bits`:  Instead of `name`, break out individual bits,
                  names specified by a `list`
@@ -219,27 +218,28 @@ class CiA301Config:
         # Return pruned config dict
         return config_cooked
 
-    @property
-    def config(self):
-        if self._config is None:
-            # Find matching config
-            for conf in self._device_config:
-                if "vendor_id" not in conf:
-                    continue  # In tests only
-                if self.model_id != (conf["vendor_id"], conf["product_code"]):
-                    continue
-                if self.bus != conf["bus"]:
-                    continue
-                if self.position not in conf["positions"]:
-                    continue
-                break
-            else:
-                raise KeyError(f"No config for device at {self.address}")
-            # Prune & cache config
-            self._config = self.munge_config(conf, self.position)
+    @classmethod
+    def gen_config(cls, model_id, address):
+        bus, position = address
+        # Find matching config
+        for conf in cls._device_config:
+            if "vendor_id" not in conf:
+                continue  # In tests only
+            if model_id != (conf["vendor_id"], conf["product_code"]):
+                continue
+            if bus != conf["bus"]:
+                continue
+            if position not in conf["positions"]:
+                continue
+            break
+        else:
+            raise KeyError(f"No config for device at {address}")
+        # Prune & return config
+        return cls.munge_config(conf, position)
 
-        # Return cached config
-        return self._config
+    @cached_property
+    def config(self):
+        return self.gen_config(self.model_id, self.address)
 
     def write_config_param_values(self):
         for sdo, value in self.config["param_values"].items():

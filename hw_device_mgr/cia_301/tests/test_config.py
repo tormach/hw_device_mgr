@@ -20,12 +20,12 @@ class TestCiA301Config(BaseCiA301TestClass):
         yield self.obj
 
     def test_add_device_sdos(self, obj, config_cls, sdo_data):
-        print("model_id:", obj.model_id)
-        print("registered models:", list(config_cls._model_sdos))
-        print("config_cls._model_sdos:", config_cls._model_sdos)
+        print("registered models w/SDOs:", list(config_cls._model_sdos))
+        print("test obj model_id:", obj.model_id)
         assert obj.model_id in config_cls._model_sdos
         obj_sdos = obj._model_sdos[obj.model_id]
-        assert len(obj_sdos) == len(sdo_data)
+        print("test obj SDOs:", obj_sdos)
+        assert list(sorted(obj_sdos)) == list(sorted(sdo_data))
         for ix, expected_sdo in sdo_data.items():
             assert ix in obj_sdos
             obj_sdo = obj_sdos[ix]
