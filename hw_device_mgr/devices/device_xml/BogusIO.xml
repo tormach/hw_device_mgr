@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--Bogus 0xB090 Series EtherCAT Digital I/O Module ESI File -->
+<!-- Any changes here must match ../../cia_301/tests/sim_sdo_data.yaml -->
 <EtherCATInfo
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="EtherCATInfo.xsd"
