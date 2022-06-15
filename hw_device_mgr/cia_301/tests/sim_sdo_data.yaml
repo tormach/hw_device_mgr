@@ -1,5 +1,272 @@
 # Simplified view of SDOs for each category
 bogus_v1_servo:
+  # Any changes here must match ../../devices/device_xml/BogusServo.xml
+  1600-00h:
+    index:  0x1600
+    subindex: 0x00
+    index_name: RxPDO Map 1
+    name:  Subindex 000
+    data_type:  uint8
+    # default_data:  0x04
+  1600-01h:
+    index:  0x1600
+    subindex: 0x01
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 1
+    data_type:  uint16
+    # default_data:  0x10004060
+  1600-02h:
+    index:  0x1600
+    subindex: 0x02
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 2
+    data_type:  uint16
+    # default_data:  0x20007a60
+  1600-03h:
+    index:  0x1600
+    subindex: 0x03
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 3
+    data_type:  uint16
+    # default_data:  0x2000ff60
+  1600-04h:
+    index:  0x1600
+    subindex: 0x04
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 4
+    data_type:  uint16
+    # default_data:  0x08006060
+  1600-05h:
+    index:  0x1600
+    subindex: 0x05
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 5
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-06h:
+    index:  0x1600
+    subindex: 0x06
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 6
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-07h:
+    index:  0x1600
+    subindex: 0x07
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 7
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-08h:
+    index:  0x1600
+    subindex: 0x08
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 8
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-09h:
+    index:  0x1600
+    subindex: 0x09
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 9
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Ah:
+    index:  0x1600
+    subindex: 0x0A
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 10
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Bh:
+    index:  0x1600
+    subindex: 0x0B
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 11
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Ch:
+    index:  0x1600
+    subindex: 0x0C
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 12
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Dh:
+    index:  0x1600
+    subindex: 0x0D
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 13
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Eh:
+    index:  0x1600
+    subindex: 0x0E
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 14
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Fh:
+    index:  0x1600
+    subindex: 0x0F
+    index_name: RxPDO Map 1
+    name:  RxPDO Map 1 Element 15
+    data_type:  uint16
+    # default_data:  0x00000000
+  1601-00h:
+    index:  0x1601
+    subindex: 0x00
+    index_name: 2nd receive PDO-Mapping
+    name:  largest sub-index supported
+    data_type:  uint8
+  1601-01h:
+    index:  0x1601
+    subindex: 0x01
+    index_name: 2nd receive PDO-Mapping
+    name:  Target Velocity
+    data_type:  uint16
+  1601-02h:
+    index:  0x1601
+    subindex: 0x02
+    index_name: 2nd receive PDO-Mapping
+    name:  Controlword
+    data_type:  uint16
+  1A00-00h:
+    index:  0x1A00
+    subindex: 0x00
+    index_name: TxPDO Map 1
+    name:  Subindex 000
+    data_type:  uint8
+    # default_data:  0x04
+  1A00-01h:
+    index:  0x1A00
+    subindex: 0x01
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 1
+    data_type:  uint16
+    # default_data:  0x10004160
+  1A00-02h:
+    index:  0x1A00
+    subindex: 0x02
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 2
+    data_type:  uint16
+    # default_data:  0x20006460
+  1A00-03h:
+    index:  0x1A00
+    subindex: 0x03
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 3
+    data_type:  uint16
+    # default_data:  0x20006c60
+  1A00-04h:
+    index:  0x1A00
+    subindex: 0x04
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 4
+    data_type:  uint16
+    # default_data:  0x08006160
+  1A00-05h:
+    index:  0x1A00
+    subindex: 0x05
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 5
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-06h:
+    index:  0x1A00
+    subindex: 0x06
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 6
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-07h:
+    index:  0x1A00
+    subindex: 0x07
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 7
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-08h:
+    index:  0x1A00
+    subindex: 0x08
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 8
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-09h:
+    index:  0x1A00
+    subindex: 0x09
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 9
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Ah:
+    index:  0x1A00
+    subindex: 0x0A
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 10
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Bh:
+    index:  0x1A00
+    subindex: 0x0B
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 11
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Ch:
+    index:  0x1A00
+    subindex: 0x0C
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 12
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Dh:
+    index:  0x1A00
+    subindex: 0x0D
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 13
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Eh:
+    index:  0x1A00
+    subindex: 0x0E
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 14
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Fh:
+    index:  0x1A00
+    subindex: 0x0F
+    index_name: TxPDO Map 1
+    name:  TxPDO Map 1 Element 15
+    # default_data:  0x00000000
+    data_type:  uint16
+  1A01-00h:
+    index:  0x1A01
+    subindex: 0x00
+    index_name: 2nd transmit PDO-Mapping
+    name:  largest sub-index supported
+    data_type:  uint8
+  1A01-01h:
+    index:  0x1A01
+    subindex: 0x01
+    index_name: 2nd transmit PDO-Mapping
+    name:  Position Actual Value
+    data_type:  uint16
+  1A01-02h:
+    index:  0x1A01
+    subindex: 0x02
+    index_name: 2nd transmit PDO-Mapping
+    name:  Torque Actual Value
+    data_type:  uint16
+  1A01-03h:
+    index:  0x1A01
+    subindex: 0x03
+    index_name: 2nd transmit PDO-Mapping
+    name:  Statusword
+    data_type:  uint16
   6040h:
     index:  0x6040
     data_type:  uint16
@@ -65,6 +332,234 @@ bogus_v1_servo:
     default_value:  500000
     pdo_mapping:  R
 bogus_v2_servo:
+  # Any changes here must match ../../devices/device_xml/BogusServo.xml
+  1600-00h:
+    index:  0x1600
+    subindex: 0x00
+    name:  Subindex 000
+    data_type:  uint8
+    # default_data:  0x04
+  1600-01h:
+    index:  0x1600
+    subindex: 0x01
+    name:  RxPDO Map 1 Element 1
+    data_type:  uint16
+    # default_data:  0x10004060
+  1600-02h:
+    index:  0x1600
+    subindex: 0x02
+    name:  RxPDO Map 1 Element 2
+    data_type:  uint16
+    # default_data:  0x20007a60
+  1600-03h:
+    index:  0x1600
+    subindex: 0x03
+    name:  RxPDO Map 1 Element 3
+    data_type:  uint16
+    # default_data:  0x2000ff60
+  1600-04h:
+    index:  0x1600
+    subindex: 0x04
+    name:  RxPDO Map 1 Element 4
+    data_type:  uint16
+    # default_data:  0x08006060
+  1600-05h:
+    index:  0x1600
+    subindex: 0x05
+    name:  RxPDO Map 1 Element 5
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-06h:
+    index:  0x1600
+    subindex: 0x06
+    name:  RxPDO Map 1 Element 6
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-07h:
+    index:  0x1600
+    subindex: 0x07
+    name:  RxPDO Map 1 Element 7
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-08h:
+    index:  0x1600
+    subindex: 0x08
+    name:  RxPDO Map 1 Element 8
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-09h:
+    index:  0x1600
+    subindex: 0x09
+    name:  RxPDO Map 1 Element 9
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Ah:
+    index:  0x1600
+    subindex: 0x0A
+    name:  RxPDO Map 1 Element 10
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Bh:
+    index:  0x1600
+    subindex: 0x0B
+    name:  RxPDO Map 1 Element 11
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Ch:
+    index:  0x1600
+    subindex: 0x0C
+    name:  RxPDO Map 1 Element 12
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Dh:
+    index:  0x1600
+    subindex: 0x0D
+    name:  RxPDO Map 1 Element 13
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Eh:
+    index:  0x1600
+    subindex: 0x0E
+    name:  RxPDO Map 1 Element 14
+    data_type:  uint16
+    # default_data:  0x00000000
+  1600-0Fh:
+    index:  0x1600
+    subindex: 0x0F
+    name:  RxPDO Map 1 Element 15
+    data_type:  uint16
+    # default_data:  0x00000000
+  1601-00h:
+    index:  0x1601
+    subindex: 0x00
+    name:  largest sub-index supported
+    data_type:  uint8
+  1601-01h:
+    index:  0x1601
+    subindex: 0x01
+    name:  Target Velocity
+    data_type:  uint16
+  1601-02h:
+    index:  0x1601
+    subindex: 0x02
+    name:  Controlword
+    data_type:  uint16
+  1A00-00h:
+    index:  0x1A00
+    subindex: 0x00
+    name:  Subindex 000
+    data_type:  uint8
+    # default_data:  0x04
+  1A00-01h:
+    index:  0x1A00
+    subindex: 0x01
+    name:  TxPDO Map 1 Element 1
+    data_type:  uint16
+    # default_data:  0x10004160
+  1A00-02h:
+    index:  0x1A00
+    subindex: 0x02
+    name:  TxPDO Map 1 Element 2
+    data_type:  uint16
+    # default_data:  0x20006460
+  1A00-03h:
+    index:  0x1A00
+    subindex: 0x03
+    name:  TxPDO Map 1 Element 3
+    data_type:  uint16
+    # default_data:  0x20006c60
+  1A00-04h:
+    index:  0x1A00
+    subindex: 0x04
+    name:  TxPDO Map 1 Element 4
+    data_type:  uint16
+    # default_data:  0x08006160
+  1A00-05h:
+    index:  0x1A00
+    subindex: 0x05
+    name:  TxPDO Map 1 Element 5
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-06h:
+    index:  0x1A00
+    subindex: 0x06
+    name:  TxPDO Map 1 Element 6
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-07h:
+    index:  0x1A00
+    subindex: 0x07
+    name:  TxPDO Map 1 Element 7
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-08h:
+    index:  0x1A00
+    subindex: 0x08
+    name:  TxPDO Map 1 Element 8
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-09h:
+    index:  0x1A00
+    subindex: 0x09
+    name:  TxPDO Map 1 Element 9
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Ah:
+    index:  0x1A00
+    subindex: 0x0A
+    name:  TxPDO Map 1 Element 10
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Bh:
+    index:  0x1A00
+    subindex: 0x0B
+    name:  TxPDO Map 1 Element 11
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Ch:
+    index:  0x1A00
+    subindex: 0x0C
+    name:  TxPDO Map 1 Element 12
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Dh:
+    index:  0x1A00
+    subindex: 0x0D
+    name:  TxPDO Map 1 Element 13
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Eh:
+    index:  0x1A00
+    subindex: 0x0E
+    name:  TxPDO Map 1 Element 14
+    data_type:  uint16
+    # default_data:  0x00000000
+  1A00-0Fh:
+    index:  0x1A00
+    subindex: 0x0F
+    name:  TxPDO Map 1 Element 15
+    # default_data:  0x00000000
+    data_type:  uint16
+  1A01-00h:
+    index:  0x1A01
+    subindex: 0x00
+    name:  largest sub-index supported
+    data_type:  uint8
+  1A01-01h:
+    index:  0x1A01
+    subindex: 0x01
+    name:  Position Actual Value
+    data_type:  uint16
+  1A01-02h:
+    index:  0x1A01
+    subindex: 0x02
+    name:  Torque Actual Value
+    data_type:  uint16
+  1A01-03h:
+    index:  0x1A01
+    subindex: 0x03
+    name:  Statusword
+    data_type:  uint16
   6040h:
     index:  0x6040
     data_type:  uint16
@@ -129,4 +624,31 @@ bogus_v2_servo:
     index_name:  Position limit
     default_value:  500000
     pdo_mapping:  R
-bogus_v1_io:  {}  # Only PDOs
+bogus_v1_io:
+  # Any changes here must match ../../devices/device_xml/BogusIO.xml
+  1600-00h:
+    # From RxPdo element
+    index:  0x1600
+    subindex:  0x00
+    data_type:  int8
+    name:  Subindex 000
+    index_name:  DOut(0-2)
+  7000-01h:
+    # From RxPdo Entry element
+    index:  0x7000
+    subindex:  0x01
+    data_type:  uint8
+    name:  Outputs
+  1A00-00h:
+    # From TxPdo element
+    index:  0x1A00
+    subindex:  0x00
+    data_type:  int8
+    name:  Subindex 000
+    index_name:  Din(0-2)
+  6000-01h:
+    # From TxPdo element
+    index:  0x6000
+    subindex:  0x01
+    data_type:  uint8
+    name:  Inputs

@@ -13,6 +13,9 @@
   bus: 0
   positions: [10, 11, 12, 13, 14, 15]
 
+  dc_conf:
+    sync0Shift: 500000
+
   # Sync manager configuration
   sync_manager:
     '0':
@@ -39,38 +42,6 @@
         entries:
           - index: 6041h
             name: status_word
-          - index: 6041h
-            bits:  # Break bits out into separate items
-              # Bit0: Ready to switch on
-              - ready_to_switch_on
-              # Bit1: Switched on
-              - switched_on
-              # Bit2: Operation enabled
-              - operation_enabled
-              # Bit3: Fault
-              - fault
-              # Bit4: Voltage enabled
-              - voltage_enabled
-              # Bit5: Quick stop
-              - quick_stop_fb
-              # Bit6: Switch on disabled
-              - switch_on_disabled
-              # Bit7: Warning bit
-              - warning
-              # Bit8: Manufacturer specific
-              - bit_len: 1
-              # Bit9: Remote
-              - remote
-              # Bit10: Goes high when target position is reached (HM, CSP modes)
-              - target_reached
-              # Bit11: Internal limit active (HM, CSP modes)
-              - internal_limit_active
-              # Bit12~Bit13 Operation mode specific
-              - status_bit12
-              - status_bit13
-              # Bit14~Bit15: Manufacturer specific
-              - status_bit14
-              - homing_done_fb
           - index: 6064h
             name: position_fb
 
@@ -110,7 +81,7 @@
       # RPDOs:  Receive PDOs ("out" to drive)
       dir: out
       pdo_mapping:
-        index: 1700h
+        index: 1601h
         entries:
           - index: 6040h
             name: control_word
@@ -120,10 +91,8 @@
       # TPDOs:  Transmit PDOs ("in" from drive)
       dir: in
       pdo_mapping:
-        index: 1B00h
+        index: 1A01h
         entries:
-          - index: 6041h
-            name: status_word
           - index: 6041h
             bits:  # Break bits out into separate items
               # Bit0: Ready to switch on
@@ -143,7 +112,7 @@
               # Bit7: Warning bit
               - warning
               # Bit8: Manufacturer specific
-              - bit_len: 1
+              - null
               # Bit9: Remote
               - remote
               # Bit10: Goes high when target position is reached (HM, CSP modes)
@@ -185,6 +154,8 @@
   bus: 0
   positions: [16, 17]
 
+  config_pdos:  False
+
   # Sync manager configuration
   sync_manager:
     '0':
@@ -199,7 +170,7 @@
       pdo_mapping:
         index: 1600h
         entries:
-          - index: 7000h
+          - index: 7000-01h
             bits:
               - out0
               - out1
@@ -210,7 +181,7 @@
       pdo_mapping:
         index: 1A00h
         entries:
-          - index: 6000h
+          - index: 6000-01h
             bits:
               - in0
               - in1

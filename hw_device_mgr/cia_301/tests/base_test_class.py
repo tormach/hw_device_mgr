@@ -52,11 +52,11 @@ class BaseCiA301TestClass(BaseTestClass):
         if cls.pass_init_sim_device_description:
             # Init sim SDO data
             sdo_data = cls.load_sdo_data()
-            print(f"  Raw sdo_data from {cls.sdo_data_resource()}")
+            print(f"  init_sim() sdo_data from {cls.sdo_data_resource()}")
             kwargs["sdo_data"] = cls.munge_sdo_data(sdo_data)
             # Init DC data
             dcs_data = cls.load_dcs_data()
-            print(f"  Raw dcs_data from {cls.dcs_data_resource()}")
+            print(f"  init_sim() dcs_data from {cls.dcs_data_resource()}")
             kwargs["dcs_data"] = cls.munge_dcs_data(dcs_data)
         # Init sim device data
         super().init_sim(**kwargs)
