@@ -1,3 +1,4 @@
+<!-- Expected lcec config generated from ../../cia_301/tests/device_config.yaml -->
 <masters>
   <master idx="0" appTimePeriod="1000000" refClockSyncCycles="1">
     <slave idx="10" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true">
@@ -77,6 +78,7 @@
             <complexEntry bitLen="1" halType="bit" halPin="out0"/>
             <complexEntry bitLen="1" halType="bit" halPin="out1"/>
             <complexEntry bitLen="1" halType="bit" halPin="out2"/>
+            <complexEntry bitLen="5"/>
           </pdoEntry>
         </pdo>
       </syncManager>
@@ -86,6 +88,7 @@
             <complexEntry bitLen="1" halType="bit" halPin="in0"/>
             <complexEntry bitLen="1" halType="bit" halPin="in1"/>
             <complexEntry bitLen="1" halType="bit" halPin="in2"/>
+            <complexEntry bitLen="5"/>
           </pdoEntry>
         </pdo>
       </syncManager>

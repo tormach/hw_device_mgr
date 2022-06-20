@@ -15,6 +15,7 @@ class TestLCECConfig(BaseLCECTestClass, _TestEtherCATConfig):
         rsrc = (self.ethercat_conf_xml_package, self.ethercat_conf_xml_resource)
         with self.open_resource(*rsrc) as f:
             expected_xml = etree.parse(f)
+        etree.strip_tags(expected_xml, etree.Comment)  # Clean out comments
         expected_str = etree.tostring(expected_xml).decode()
         expected_lines = expected_str.splitlines()
         print(f"Comparing lcec conf from {rsrc}")
