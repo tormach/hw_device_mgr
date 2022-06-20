@@ -175,6 +175,8 @@
               - out0
               - out1
               - out2
+              # Unused bits
+              - bitLen:  5
     '3':
       # TPDOs:  Transmit PDOs
       dir: in  # from drive
@@ -186,5 +188,7 @@
               - in0
               - in1
               - in2
+              # Unused bits
+              - bitLen:  5
 
   # (No parameters)
