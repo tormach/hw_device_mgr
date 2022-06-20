@@ -75,6 +75,9 @@ class BaseCiA301TestClass(BaseTestClass):
         """
         new_device_config = list()
         for conf in device_config:
+            if "test_category" not in conf:  # No monkey-patching needed
+                new_device_config.append(conf)
+                continue
             device_cls = cls.test_category_class(conf["test_category"])
             assert device_cls
             new_device_config.append(conf)
