@@ -105,10 +105,14 @@ class LCECConfig(EtherCATConfig):
                                 "complexEntry", bitLen="1"
                             )
                             pdo_entry_xml.append(complex_entry_xml)
-                            if bit is None:
+                            if bit is None:  # Unused bit
                                 continue
-                            complex_entry_xml.set("halType", "bit")
-                            complex_entry_xml.set("halPin", bit)
+                            elif isinstance(bit, dict):  # Dict of attributes
+                                for k, v in bit.items():
+                                    complex_entry_xml.set(k, str(v))
+                            else:  # Pin name; assume 1 bit
+                                complex_entry_xml.set("halType", "bit")
+                                complex_entry_xml.set("halPin", bit)
 
         return etree.tostring(xml, pretty_print=True)
 
