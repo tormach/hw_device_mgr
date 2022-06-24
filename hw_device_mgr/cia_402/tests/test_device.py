@@ -9,6 +9,13 @@ class TestCiA402Device(_TestCiA301Device, BaseCiA402TestClass):
     # to simplify tests & test cases
 
     def read_update_write_conv_test_data(self):
+        if "error_code" in self.obj.feedback_out.get():
+            # Account for some devices that inherit from ErrorDevice
+            self.test_data["feedback_in"].setdefault("error_code", 0x00000000)
+            self.test_data["feedback_out"].setdefault("error_code", 0x00000000)
+            self.test_data["feedback_out"].setdefault("description", "No error")
+            self.test_data["feedback_out"].setdefault("advice", "No error")
+
         if not self.is_402_device:
             return
         uint16 = self.device_class.data_type_class.uint16
