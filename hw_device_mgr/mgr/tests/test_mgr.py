@@ -38,6 +38,22 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         pass
 
     def read_update_write_conv_test_data(self):
+        for i, d in enumerate(self.obj.devices):
+            if "error_code" in d.feedback_out.get():
+                # Account for some devices that inherit from ErrorDevice
+                self.test_data["feedback_in"].setdefault(
+                    f"drive_{i}_error_code", 0x00000000
+                )
+                self.test_data["feedback_out"].setdefault(
+                    f"drive_{i}_error_code", 0x00000000
+                )
+                self.test_data["feedback_out"].setdefault(
+                    f"drive_{i}_description", "No error"
+                )
+                self.test_data["feedback_out"].setdefault(
+                    f"drive_{i}_advice", "No error"
+                )
+
         uint16 = self.device_class.data_type_class.uint16
         control_mode_int = CiA402Device.control_mode_int
         for data in (self.test_data, self.ovr_data):
