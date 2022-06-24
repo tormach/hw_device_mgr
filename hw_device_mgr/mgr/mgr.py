@@ -402,7 +402,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     ####################################################
     # Execution
 
-    def run(self):
+    def run_loop(self):
         """Program main loop."""
         update_period = 1.0 / self.mgr_config.get("update_rate", 10.0)
         while not self.shutdown:
@@ -423,6 +423,21 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 self.fast_track = False
                 continue
             time.sleep(update_period)
+
+    def run(self):
+        """Program main."""
+        try:
+            self.run_loop()
+        except KeyboardInterrupt:
+            self.logger.info("Exiting at keyboard interrupt")
+            return 0
+        except Exception:
+            self.logger.error("Exiting at unrecoverable exception:")
+            for line in traceback.format_exc().splitlines():
+                self.logger.error(line)
+            return 1
+        self.logger.info("Exiting")
+        return 0
 
     def read_update_write(self):
         """
