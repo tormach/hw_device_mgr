@@ -11,6 +11,7 @@
     oper:  False
     goal_reached:  False
     goal_reason:  Offline
+    fault:  False
   command_in:
     online:  True
     oper:  True
