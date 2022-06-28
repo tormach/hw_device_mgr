@@ -19,18 +19,10 @@
     status_word:  0x0000
     control_mode_fb:  MODE_NA  # Undefined
     state:  START
-    state_flags:
-      VOLTAGE_ENABLED:  False
-      WARNING:  False
-      MANUFACTURER_SPECIFIC_1:  False
-      REMOTE:  False
-      TARGET_REACHED:  False
-      INTERNAL_LIMIT_ACTIVE:  False
-      OPERATION_MODE_SPECIFIC_1:  False
-      OPERATION_MODE_SPECIFIC_2:  False
-      MANUFACTURER_SPECIFIC_2:  False
-      HOMING_COMPLETED:  False
     transition:  null
+    home_success:  False
+    home_error:  False
+    fault:  False
     goal_reached:  False
     goal_reason:  Offline
   command_in:
@@ -40,8 +32,7 @@
     # CiA 402
     state:  SWITCH ON DISABLED
     control_mode:  MODE_CSP
-    control_word_flags:  {}
-    state_flags:  {}
+    home_request:  False
   command_out:
     # CiA 402
     control_word:  0x0000
@@ -75,17 +66,6 @@
     oper:  True
     # CiA 402
     status_word:  0x0010  # VOLTAGE_ENABLED
-    state_flags:  # Set VOLTAGE_ENABLED
-      VOLTAGE_ENABLED:  True
-      WARNING:  False
-      MANUFACTURER_SPECIFIC_1:  False
-      REMOTE:  False
-      TARGET_REACHED:  False
-      INTERNAL_LIMIT_ACTIVE:  False
-      OPERATION_MODE_SPECIFIC_1:  False
-      OPERATION_MODE_SPECIFIC_2:  False
-      MANUFACTURER_SPECIFIC_2:  False
-      HOMING_COMPLETED:  False
     state:  'NOT READY TO SWITCH ON'
     transition:  TRANSITION_0
     goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON (0x00000010) != SWITCH ON DISABLED
@@ -400,25 +380,13 @@
 - desc:  "Disable disabled:  Hold SWITCH ON DISABLED x2"
 
 #
-# Controller walks drive through homing operation
-# command_mode -> MODE_HM
+# Controller moves to OPERATION ENABLED, then commands homing operation
 # SWITCH ON DISABLED -> OPERATION ENABLED
+# command_mode -> MODE_HM
 # control_word set OPERATION_MODE_SPECIFIC_1 (HOMING_START) bit
 # status_word HOMING_COMPLETED bit set
 # OPERATION ENABLED -> SWITCH ON DISABLED
-- desc:  "Home:  Set MODE_HM"
-  command_in:
-    # Controller commands homing mode
-    control_mode:  MODE_HM
-  command_out:
-    control_mode:  MODE_HM
-  sim_feedback:
-    control_mode_fb:  MODE_HM
 - desc:  "Home:  Command OPERATION ENABLED;  402 state machine transition hold"
-  feedback_in:
-    control_mode_fb:  MODE_HM
-  feedback_out:
-    control_mode_fb:  MODE_HM
   command_in:
     # Controller commands enable
     state:  OPERATION ENABLED
@@ -451,7 +419,7 @@
     control_word:  0x000F
   sim_feedback:
     status_word:  0x0037
-- desc:  "Home:  Command HOMING_START;  402 state machine transition 4"
+- desc:  "Home:  402 state machine transition 4; command home_request & MODE_HM"
   feedback_in:
     status_word:  0x0037
   feedback_out:
@@ -462,65 +430,72 @@
     goal_reason:  Reached
   command_in:
     # Controller commands homing start
-    control_word_flags:
-      OPERATION_MODE_SPECIFIC_1:  True
+    home_request:  True
   command_out:
-    control_word:  0x001F  # OPERATION ENABLED + OPERATION_MODE_SPECIFIC_1
+    control_mode:  MODE_HM
   sim_feedback:
-    status_word:  0x8037  # OPERATION ENABLED + HOMING_COMPLETED
-- desc:  "Home:  Homing completed; Command SWITCH ON DISABLED;  402 state machine transition hold"
+    control_mode_fb:  MODE_HM
+- desc:  "Home:  Drive MODE_HM;  Command HOMING_START"
   feedback_in:
-    status_word:  0x8037
+    control_mode_fb:  MODE_HM
   feedback_out:
-    status_word:  0x8037
-    state_flags:  # HOMING_COMPLETED set
-      VOLTAGE_ENABLED:  True
-      WARNING:  False
-      MANUFACTURER_SPECIFIC_1:  False
-      REMOTE:  False
-      TARGET_REACHED:  False
-      INTERNAL_LIMIT_ACTIVE:  False
-      OPERATION_MODE_SPECIFIC_1:  False
-      OPERATION_MODE_SPECIFIC_2:  False
-      MANUFACTURER_SPECIFIC_2:  False
-      HOMING_COMPLETED:  True
+    control_mode_fb:  MODE_HM
     transition:  null
-  command_in:
-    state:  SWITCH ON DISABLED
-    control_word_flags:  {}  # Clear flags
+    goal_reached:  False
+    goal_reason:  homing not complete
   command_out:
-    control_word:  0x0002
+    control_word:  0x001F  # OPERATION ENABLED + HOMING_START
   sim_feedback:
-    status_word:  0x0017
-- desc:  "Home:  Command disable;  402 state machine transition 11"
+    status_word:  0x1037  # OPERATION ENABLED + HOMING_ATTAINED
+- desc:  "Home:  HOMING_ATTAINED & home_success set; Command no home_request"
   feedback_in:
-    status_word:  0x0017
+    status_word:  0x1037  # OPERATION ENABLED + HOMING_ATTAINED
+  feedback_out:
+    status_word:  0x1037  # OPERATION ENABLED + HOMING_ATTAINED
+    home_success:  True
+    goal_reached:  True
+    goal_reason:  Reached
+  command_in:
+    home_request:  False
+  command_out:
+    control_word:  0x000F  # OPERATION ENABLED
+    control_mode:  MODE_CSP
+  sim_feedback:
+    control_mode_fb:  MODE_CSP
+    status_word:  0x0037  # OPERATION ENABLED
+- desc:  "Home:  Command disable"
+  feedback_in:
+    status_word:  0x0037  # OPERATION ENABLED
+    control_mode_fb:  MODE_CSP
+  feedback_out:
+    status_word:  0x0037  # OPERATION ENABLED
+    control_mode_fb:  MODE_CSP
+    home_success:  False
+  command_in:
+    # Controller commands disable
+    state:  SWITCH ON DISABLED
+  command_out:
+    control_word:  0x0002  # QUICK STOP ACTIVE
+  sim_feedback:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+- desc:  "Home:  402 state machine transition 11"
+  feedback_in:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
   feedback_out:
     status_word:  0x0017
     state:  QUICK STOP ACTIVE
     transition:  TRANSITION_11
-    state_flags:  # HOMING_COMPLETED cleared
-      VOLTAGE_ENABLED:  True
-      WARNING:  False
-      MANUFACTURER_SPECIFIC_1:  False
-      REMOTE:  False
-      TARGET_REACHED:  False
-      INTERNAL_LIMIT_ACTIVE:  False
-      OPERATION_MODE_SPECIFIC_1:  False
-      OPERATION_MODE_SPECIFIC_2:  False
-      MANUFACTURER_SPECIFIC_2:  False
-      HOMING_COMPLETED:  False
     goal_reached:  False
     goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED
   command_out:
-    control_word:  0x0000
+    control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
-    status_word:  0x0050
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
 - desc:  "Home:  402 state machine transition 12"
   feedback_in:
-    status_word:  0x0050
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0050
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     state:  SWITCH ON DISABLED
     transition:  TRANSITION_12
     goal_reached:  True

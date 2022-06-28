@@ -3,6 +3,7 @@ from ..cia_301.device import (
     CiA301DataType,
     CiA301SimDevice,
 )
+from time import time
 
 
 class CiA402Device(CiA301Device):
@@ -13,11 +14,14 @@ class CiA402Device(CiA301Device):
     state machine to the goal `state` (e.g. `OPERATION ENABLED`), and
     will manage other goals.
 
-    Goal parameters:
+    Command parameters:
     - `state`:  The CiA 402 goal state
     - `control_mode`:  Drive control mode, e.g. `MODE_CSP`
-    - `control_word_flags`:  Control word bits to set
-    - `state_flags`:  Status word bits to match for `goal_reached` feedback
+    - `home_request`:  Command homing operation
+
+    Feedback parameters:
+    - `home_success`:  Drive completed homing successfully
+    - `home_error`:  Drive reports homing error
     """
 
     data_types = CiA301DataType
@@ -36,6 +40,8 @@ class CiA402Device(CiA301Device):
     MODE_CSV = 9
     MODE_CST = 10
     DEFAULT_CONTROL_MODE = MODE_CSP
+
+    home_timeout = 15.0  # seconds
 
     @classmethod
     def control_mode_int(cls, mode):
@@ -72,7 +78,7 @@ class CiA402Device(CiA301Device):
         VOLTAGE_ENABLED=4,
         # QUICK_STOP_ACTIVE=5,         # (CiA402)
         # SWITCH_ON_DISABLED=6,        # (CiA402)
-        WARNING=7,  # (CiA402)
+        WARNING=7,
         MANUFACTURER_SPECIFIC_1=8,
         REMOTE=9,
         TARGET_REACHED=10,
@@ -80,7 +86,7 @@ class CiA402Device(CiA301Device):
         OPERATION_MODE_SPECIFIC_1=12,  # HM=HOMING_ATTAINED
         OPERATION_MODE_SPECIFIC_2=13,  # HM=HOMING_ERROR; others=FOLLOWING_ERROR
         MANUFACTURER_SPECIFIC_2=14,
-        HOMING_COMPLETED=15,
+        MANUFACTURER_SPECIFIC_3=15,
     )
 
     # Incoming feedback from drives:  param_name : data_type
@@ -99,13 +105,24 @@ class CiA402Device(CiA301Device):
     feedback_out_defaults = dict(
         state="START",
         transition=None,
-        state_flags={bit: False for bit in sw_extra_bits},
+        home_success=False,
+        home_error=False,
         **feedback_in_defaults,
     )
     feedback_out_initial_values = dict(
         status_word=0,
         control_mode_fb="MODE_NA",
+        home_success=False,
+        home_error=False,
     )
+
+    @classmethod
+    def test_sw_bit(cls, word, name):
+        return bool(word & (1 << cls.sw_extra_bits[name]))
+
+    @classmethod
+    def test_cw_bit(cls, word, name):
+        return bool(word & (1 << cls.cw_extra_bits[name]))
 
     def get_feedback(self):
         fb_out = super().get_feedback()
@@ -126,7 +143,7 @@ class CiA402Device(CiA301Device):
         cm_str = self.control_mode_str(cm)
         self.feedback_out.update(status_word=sw, control_mode_fb=cm_str)
         cm_cmd = self.command_in.get("control_mode")
-        if cm_str != cm_cmd:
+        if cm != self.MODE_HM and cm_str != cm_cmd:
             goal_reached = False
             goal_reasons.append(f"control_mode {cm_str} != {cm_cmd}")
 
@@ -160,23 +177,42 @@ class CiA402Device(CiA301Device):
         else:
             self.feedback_out.update(transition=None)
 
-        # Calculate 'state_flags' feedback from status word
-        sf = {
-            flag: bool(sw & (1 << bitnum))
-            for flag, bitnum in self.sw_extra_bits.items()
-        }
-        self.feedback_out.update(state_flags=sf)
-        sf_cmd = self.command_in.get("state_flags")
-        for flag_name, flag_val in sf_cmd.items():
-            if sf.get(flag_name, False) != flag_val:
+        # Calculate homing status
+        home_success = home_error = False
+        if self.command_in.get("home_request"):
+            if self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_2"):
+                # HOMING_ERROR bit set
+                home_error = True
                 goal_reached = False
-                goal_reasons.append(f"state flag {flag_name} != {not flag_val}")
+                goal_reasons.append("homing error")
+            elif time() - self._home_request_start > self.home_timeout:
+                goal_reached = False
+                goal_reasons.append(
+                    f"homing timeout after {self.home_timeout}s"
+                )
+                self.feedback_out.update(fault=True)
+                home_error = True
+            if self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1"):
+                # HOMING_ATTAINED bit set
+                home_success = True
+            elif cm != self.MODE_HM:
+                goal_reached = False
+                goal_reasons.append(
+                    f"homing requested, but still in {cm_str} mode"
+                )
+            else:
+                goal_reached = False
+                goal_reasons.append("homing not complete")
+        self.feedback_out.update(
+            home_success=home_success, home_error=home_error
+        )
 
         if not goal_reached:
             goal_reason = "; ".join(goal_reasons)
             fb_out.update(goal_reached=False, goal_reason=goal_reason)
-            if fb_out.changed("goal_reason"):
-                self.logger.debug(f"{self}:  Goal not reached: {goal_reason}")
+            self.logger.debug(
+                f"Device {self.address}:  Goal not reached: {goal_reason}"
+            )
         return fb_out
 
     state_bits = {
@@ -197,8 +233,7 @@ class CiA402Device(CiA301Device):
     command_in_defaults = dict(
         state="SWITCH ON DISABLED",
         control_mode=DEFAULT_CONTROL_MODE,
-        control_word_flags=dict(),
-        state_flags=dict(),  # Required, even if not commanded
+        home_request=False,
     )
 
     # ------- Command out -------
@@ -304,9 +339,25 @@ class CiA402Device(CiA301Device):
             # Transitioning to next state
             control_word = self._get_transition_control_word()
 
+        # Check for home request
+        home_request = False
+        if self.command_in.get("home_request"):
+            if self.command_in.changed("home_request"):
+                # New request
+                self._home_request_start = time()
+                self.logger.info(
+                    f"Device {self.address}:  Homing operation requested"
+                )
+            if self.feedback_out.get("control_mode_fb") == "MODE_HM":
+                # Only set HOMING_START control word bit in MODE_HM
+                home_request = True
+
         # Add flags and return
-        flags = self.command_in.get("control_word_flags")
-        return self._add_control_word_flags(control_word, **flags)
+        return self._add_control_word_flags(
+            control_word,
+            # OPERATION_MODE_SPECIFIC_1 in MODE_HM = HOMING_START
+            OPERATION_MODE_SPECIFIC_1=home_request,
+        )
 
     # Map drive states to control word that maintains the state.
     # `None` indicates hold state N/A in automatic transition states
@@ -425,6 +476,9 @@ class CiA402Device(CiA301Device):
         return control_word
 
     def _get_next_control_mode(self):
+        # If `home_request` is set, command homing mode
+        if self.command_in.get("home_request"):
+            return self.MODE_HM
         # Get control_mode from command_in; translate e.g. "MODE_CSP" to 8
         cm = self.command_in.get("control_mode")
         return self.control_mode_int(cm)
@@ -471,9 +525,12 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice):
 
         # Status word (incl. flags)
         status_word = 0x0000 if state == "START" else self.state_bits[state][1]
-        cw_flags = self._get_control_word_flags(control_word)
+        homing_attained = (  # In MODE_HM and HOMING_START set
+            self.feedback_in.get("control_mode_fb") == self.MODE_HM
+            and self.test_cw_bit(control_word, "OPERATION_MODE_SPECIFIC_1")
+        )
         sw_flags = dict(
-            HOMING_COMPLETED=cw_flags["OPERATION_MODE_SPECIFIC_1"],
+            OPERATION_MODE_SPECIFIC_1=homing_attained,
             VOLTAGE_ENABLED=sfb.get("online"),
         )
         status_word = self._add_status_word_flags(status_word, **sw_flags)
@@ -551,11 +608,3 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice):
                 status_word &= ~operand & 0xFFFF
 
         return status_word
-
-    @classmethod
-    def _get_control_word_flags(cls, control_word):
-        # Get flags by name from control word; used in set_sim_feedback
-        flags = dict()
-        for name, bitnum in cls.cw_extra_bits.items():
-            flags[name] = bool(control_word & 1 << bitnum)
-        return flags
