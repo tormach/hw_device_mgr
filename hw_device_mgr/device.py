@@ -22,7 +22,9 @@ class Device(abc.ABC):
     command_out_data_types = dict()
 
     feedback_in_defaults = dict()
-    feedback_out_defaults = dict(goal_reached=True, goal_reason="Reached")
+    feedback_out_defaults = dict(
+        goal_reached=True, goal_reason="Reached", fault=False
+    )
     command_in_defaults = dict()
     command_out_defaults = dict()
 
