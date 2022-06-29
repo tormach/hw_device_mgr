@@ -2,6 +2,8 @@ import abc
 from .logging import Logging
 from .interface import Interface
 from .data_types import DataType
+from functools import cached_property
+import re
 
 
 class Device(abc.ABC):
@@ -37,7 +39,7 @@ class Device(abc.ABC):
         self.address = address
         self.init_interfaces()
 
-    def init(self, index=None):
+    def init(self):
         """
         Initialize device.
 
@@ -45,7 +47,7 @@ class Device(abc.ABC):
         outside the constructor.  Implementations should always call
         `super().init()`.
         """
-        self.index = index
+        pass
 
     @classmethod
     def merge_dict_attrs(cls, attr):
@@ -62,6 +64,21 @@ class Device(abc.ABC):
             assert not (set(res.keys()) & set(c_attr.keys()))
             res.update(c_attr)
         return res
+
+    slug_separator = "."
+
+    @cached_property
+    def addr_slug(self):
+        """
+        Return a slug generated from the device address.
+
+        The slug is computed by separating numeric components of the
+        device `address` string with the `slug_separator` character,
+        default `.`, e.g. `(0,5)` -> `0.5`.  This is intended to be
+        useful for inclusion into identifiers.
+        """
+        addr_prefix = re.sub(r"[^0-9]+", self.slug_separator, str(self.address))
+        return addr_prefix.strip(self.slug_separator)
 
     def init_interfaces(self):
         intfs = self._interfaces = dict()
