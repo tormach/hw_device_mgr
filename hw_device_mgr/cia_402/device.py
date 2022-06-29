@@ -71,13 +71,13 @@ class CiA402Device(CiA301Device):
     # Status word bits not used for CiA402 state machine operation may
     # have other purposes
     sw_extra_bits = dict(
-        # READY_TO_SWITCH_ON=0,        # (CiA402)
-        # SWITCH_ON=1,                 # (CiA402)
-        # OPERATION_ENABLED=2,         # (CiA402)
-        # FAULT=3,                     # (CiA402)
+        READY_TO_SWITCH_ON=0,  # (CiA402)
+        SWITCH_ON=1,  # (CiA402)
+        OPERATION_ENABLED=2,  # (CiA402)
+        FAULT=3,  # (CiA402)
         VOLTAGE_ENABLED=4,
-        # QUICK_STOP_ACTIVE=5,         # (CiA402)
-        # SWITCH_ON_DISABLED=6,        # (CiA402)
+        QUICK_STOP_ACTIVE=5,  # (CiA402)
+        SWITCH_ON_DISABLED=6,  # (CiA402)
         WARNING=7,
         MANUFACTURER_SPECIFIC_1=8,
         REMOTE=9,
@@ -206,6 +206,8 @@ class CiA402Device(CiA301Device):
         self.feedback_out.update(
             home_success=home_success, home_error=home_error
         )
+        if self.test_sw_bit(sw, "FAULT"):
+            self.feedback_out.update(fault=True)
 
         if not goal_reached:
             goal_reason = "; ".join(goal_reasons)
