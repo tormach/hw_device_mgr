@@ -73,24 +73,17 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         Scan devices and configure with data in device configuration
         """
         # Pass config to Config class and scan devices
-        assert device_config
-        self.init_device_classes(device_config=device_config)
-        self.devices = self.scan_devices(**kwargs)
-        self.init_device_instances(**device_init_kwargs)
-
-    def init_device_classes(self, device_config=None):
-        assert device_config
+        assert device_config, "Empty device configuration"
         self.device_config = device_config
         self.device_base_class.set_device_config(device_config)
+        self.devices = self.scan_devices(**kwargs)
+        for dev in self.devices:
+            dev.init()
+            self.logger.info(f"Initialized device {dev}")
 
     @classmethod
     def scan_devices(cls, **kwargs):
         return cls.device_base_class.scan_devices(**kwargs)
-
-    def init_device_instances(self, **kwargs):
-        for i, dev in enumerate(self.devices):
-            dev.init(index=i, **kwargs)
-            self.logger.info(f"Adding device #{i}: {dev}")
 
     ####################################################
     # Drive state FSM
