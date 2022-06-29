@@ -1,6 +1,7 @@
 from ..device import Device, SimDevice
 from .config import CiA301Config, CiA301SimConfig
 from .data_types import CiA301DataType
+from functools import cached_property, lru_cache
 
 
 class CiA301Device(Device):
@@ -30,6 +31,7 @@ class CiA301Device(Device):
         super().__init__(address=address, **kwargs)
 
     @classmethod
+    @lru_cache
     def device_model_id(cls):
         """
         Return unique device model identifier.
@@ -40,7 +42,7 @@ class CiA301Device(Device):
         model_id = cls.vendor_id, cls.product_code
         return cls.config_class.format_model_id(model_id)
 
-    @property
+    @cached_property
     def model_id(self):
         return self.device_model_id()
 
@@ -49,8 +51,9 @@ class CiA301Device(Device):
         assert device_config
         cls.config_class.set_device_config(device_config)
 
-    def write_config_param_values(self):
-        self.config.write_config_param_values()
+    def init(self, **kwargs):
+        super().init(**kwargs)
+        self.config.initialize_params()
 
     def get_feedback(self):
         fb_out = super().get_feedback()

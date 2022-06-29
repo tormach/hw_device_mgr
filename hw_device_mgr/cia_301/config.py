@@ -1,6 +1,7 @@
 from .data_types import CiA301DataType
 from .command import CiA301Command, CiA301SimCommand
 from .sdo import CiA301SDO
+from ..logging import Logging
 from functools import cached_property
 
 
@@ -26,6 +27,10 @@ class CiA301Config:
     data_type_class = CiA301DataType
     command_class = CiA301Command
     sdo_class = CiA301SDO
+
+    init_params_nv = True
+
+    logger = Logging(__name__)
 
     # Mapping of model_id to a dict of (index, subindex) to SDO object
     _model_sdos = dict()
@@ -133,21 +138,23 @@ class CiA301Config:
         )
         return sdo.data_type(res_raw)
 
-    def download(self, sdo, val, dry_run=False):
+    def download(self, sdo, val, dry_run=False, force=False):
         # Get SDO object
         sdo = self.sdo(sdo)
-        # Check before setting value to avoid unnecessary NVRAM writes
-        res_raw = self.command().upload(
-            address=self.address,
-            index=sdo.index,
-            subindex=sdo.subindex,
-            datatype=sdo.data_type,
-        )
-        if sdo.data_type(res_raw) == val:
-            return  # SDO value already correct
+        if not force:
+            # Check before setting value to avoid unnecessary NVRAM writes
+            res_raw = self.command().upload(
+                address=self.address,
+                index=sdo.index,
+                subindex=sdo.subindex,
+                datatype=sdo.data_type,
+            )
+            if sdo.data_type(res_raw) == val:
+                return  # SDO value already correct
         if dry_run:
             self.logger.info(f"Dry run:  download {val} to {sdo}")
             return
+        self.logger.info(f"{self} param download {sdo} = {val}")
         self.command().download(
             address=self.address,
             index=sdo.index,
@@ -241,9 +248,53 @@ class CiA301Config:
     def config(self):
         return self.gen_config(self.model_id, self.address)
 
-    def write_config_param_values(self):
+    def get_device_params_nv(self):
+        """
+        Return whether device is in non-volatile params mode.
+
+        Drives with parameter volatile/non-volatile mode must overload
+        this.
+        """
+        return False
+
+    def set_device_params_nv(self, nv=True, dry_run=False):
+        """
+        Set device params to non-volatile/volatile mode.
+
+        Drives with parameter volatile/non-volatile mode must overload
+        this.
+        """
+        pass
+
+    def initialize_params(self, dry_run=False):
+        if self.init_params_nv:
+            # To save NVRAM wear, don't write if all params are correct
+            all_correct = True
+            for sdo, value in self.config["param_values"].items():
+                if self.upload(sdo) != value:
+                    all_correct = False
+                    break
+            if all_correct:
+                self.logger.info(f"{self} param values already correct")
+                return
+            # Save current NV mode setting & set NV mode
+            self._old_device_params_nv = self.get_device_params_nv()
+            self.logger.info(f"{self} setting device params in NV mode)")
+            self.set_device_params_nv(dry_run=dry_run)
+        else:
+            self.logger.info(f"{self} setting device params in volatile mode)")
+
+        # Something needs changing
         for sdo, value in self.config["param_values"].items():
-            self.download(sdo, value)
+            self.download(sdo, value, dry_run=dry_run, force=True)
+
+        if self.init_params_nv and not self._old_device_params_nv:
+            self.logger.info(
+                f"{self} returning device params to volatile mode)"
+            )
+            self.set_device_params_nv(
+                nv=self._old_device_params_nv, dry_run=dry_run
+            )
 
     #
     # Scan bus device config factory
