@@ -10,9 +10,8 @@ class EtherCATDevice(CiA301Device, abc.ABC):
 
     Device instances are addressed by `(master, position)`.
 
-    Device model subclasses have matching XML description, methods
-    (e.g. set params volatile) and other features specific to that
-    model.
+    Device model subclasses have matching XML description and other features
+    specific to that model.
     """
 
     # Resource names for locating device description XML and error files
@@ -38,14 +37,6 @@ class EtherCATDevice(CiA301Device, abc.ABC):
     @property
     def position(self):
         return self.address[1]
-
-    @abc.abstractmethod
-    def set_params_volatile(self, nv=False):
-        """
-        Set device params volatile or non-volatile.
-
-        Concrete subclasses may optionally implement this
-        """
 
     @classmethod
     def read_device_sdos_from_esi(cls, LcId="1033"):
@@ -96,10 +87,6 @@ class EtherCATSimDevice(EtherCATDevice, CiA301SimDevice):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params_volatile = False
-
-    def set_params_volatile(self, nv=False):
-        self.params_volatile = not nv
 
     @classmethod
     def init_sim(cls, LcId="1033", **kwargs):
