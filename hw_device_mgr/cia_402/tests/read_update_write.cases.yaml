@@ -10,16 +10,16 @@
     oper:  False
     # CiA 402:  Default values before NMT operational
     status_word:  0x0000
-    control_mode_fb:  MODE_NA  # Undefined
+    control_mode_fb:  0  # Undefined
   feedback_out:
     # CiA 301
     online:  False
     oper:  False
     # CiA 402:  Default values before NMT operational
     status_word:  0x0000
-    control_mode_fb:  MODE_NA  # Undefined
+    control_mode_fb:  0  # Undefined
     state:  START
-    transition:  null
+    transition:  -1
     home_success:  False
     home_error:  False
     fault:  False
@@ -31,19 +31,19 @@
     oper:  True
     # CiA 402
     state:  SWITCH ON DISABLED
-    control_mode:  MODE_CSP
+    control_mode:  8  # MODE_CSP
     home_request:  False
   command_out:
     # CiA 402
     control_word:  0x0000
-    control_mode:  MODE_CSP
+    control_mode:  8  # MODE_CSP
   sim_feedback:
     # CiA 301
     online:  True
     oper:  False
     # CiA 402
     status_word:  0x0010  # VOLTAGE_ENABLED
-    control_mode_fb:  MODE_NA  # Undefined
+    control_mode_fb:  0  # Undefined
 - desc:  "Init:  301 NMT state machine pre-op"
   feedback_in:
     # CiA 301
@@ -67,26 +67,26 @@
     # CiA 402
     status_word:  0x0010  # VOLTAGE_ENABLED
     state:  'NOT READY TO SWITCH ON'
-    transition:  TRANSITION_0
+    transition:  0
     goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON (0x00000010) != SWITCH ON DISABLED
   sim_feedback:
     # CiA 402
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
-    control_mode_fb:  MODE_CSP
+    control_mode_fb:  8  # MODE_CSP
 - desc:  "Init:  402 state machine transition 1"
   feedback_in:
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
-    control_mode_fb:  MODE_CSP
+    control_mode_fb:  8  # MODE_CSP
   feedback_out:
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
-    control_mode_fb:  MODE_CSP
+    control_mode_fb:  8  # MODE_CSP
     state:  SWITCH ON DISABLED
-    transition:  TRANSITION_1
+    transition:  1
     goal_reached:  True
     goal_reason:  Reached
 - desc:  "Init:  Hold state x1"
   feedback_out:
-    transition:  null
+    transition:  -1
 - desc:  "Init:  Hold state x2"
 
 #
@@ -107,7 +107,7 @@
   feedback_out:
     status_word:  0x0031
     state:  READY TO SWITCH ON
-    transition:  TRANSITION_2
+    transition:  2
     goal_reached:  False
     goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
   command_out:
@@ -120,19 +120,19 @@
   feedback_out:
     status_word:  0x0033
     state:  SWITCHED ON
-    transition:  TRANSITION_3
+    transition:  3
     goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
   command_out:
     control_word:  0x000F
   sim_feedback:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "Enable:  402 state machine transition 4"
   feedback_in:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
     state:  OPERATION ENABLED
-    transition:  TRANSITION_4
+    transition:  4
     goal_reached:  True
     goal_reason:  Reached
 
@@ -150,7 +150,7 @@
   feedback_out:
     status_word:  0x001F
     state:  FAULT REACTION ACTIVE
-    transition:  TRANSITION_13
+    transition:  13
     fault:  True
     goal_reached:  False
     goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
@@ -164,7 +164,7 @@
   feedback_out:
     status_word:  0x0018
     state:  FAULT
-    transition:  TRANSITION_14
+    transition:  14
     goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED
   command_out:
     # Goal is still OPERATION ENABLED, so automatically clear fault
@@ -177,7 +177,7 @@
   feedback_out:
     status_word:  0x0050
     state:  SWITCH ON DISABLED
-    transition:  TRANSITION_15
+    transition:  15
     fault:  False
     goal_reason:  state SWITCH ON DISABLED (0x00000050) != OPERATION ENABLED
   command_out:
@@ -190,7 +190,7 @@
   feedback_out:
     status_word:  0x0031
     state:  READY TO SWITCH ON
-    transition:  TRANSITION_2
+    transition:  2
     goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
   command_out:
     control_word:  0x0007
@@ -209,7 +209,7 @@
   feedback_out:
     status_word:  0x001F
     state:  FAULT REACTION ACTIVE
-    transition:  TRANSITION_13
+    transition:  13
     fault:  True
     goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
   command_out:
@@ -222,14 +222,14 @@
   feedback_out:
     status_word:  0x0018
     state:  FAULT
-    transition:  TRANSITION_14
+    transition:  14
     goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED
   command_in:
   # Controller sees FAULT state and commands hold at that state
     state:  FAULT
 - desc:  "Hold fault:  Hold state x1"
   feedback_out:
-    transition:  null
+    transition:  -1
     goal_reached:  True
     goal_reason:  Reached
 - desc:  "Hold fault:  Hold state x2"
@@ -253,12 +253,12 @@
     status_word:  0x0050
     state:  SWITCH ON DISABLED
     fault:  False
-    transition:  TRANSITION_15
+    transition:  15
   command_out:
     control_word:  0x0000
 - desc:  "Disable:  Hold state x1"
   feedback_out:
-    transition:  null
+    transition:  -1
     goal_reached:  True
     goal_reason:  Reached
 - desc:  "Disable:  Hold state x2"
@@ -291,7 +291,7 @@
   feedback_out:
     status_word:  0x0031
     state:  READY TO SWITCH ON
-    transition:  TRANSITION_2
+    transition:  2
     goal_reached:  False
     goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
   command_out:
@@ -304,12 +304,12 @@
   feedback_out:
     status_word:  0x0033
     state:  SWITCHED ON
-    transition:  TRANSITION_3
+    transition:  3
     goal_reached:  True
     goal_reason:  Reached
 - desc:  "Enable multi:  Hold SWITCHED ON while waiting for other drives x1"
   feedback_out:
-    transition:  null
+    transition:  -1
 - desc:  "Enable multi:  Hold SWITCHED ON while waiting for other drives x2"
 
 #
@@ -328,19 +328,19 @@
   command_out:
     control_word:  0x000F
   sim_feedback:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "Enable multi:  402 state machine transition 4"
   feedback_in:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
     state:  OPERATION ENABLED
-    transition:  TRANSITION_4
+    transition:  4
     goal_reached:  True
     goal_reason:  Reached
 - desc:  "Enable multi:  Hold OPERATION ENABLED x1"
   feedback_out:
-    transition:  null
+    transition:  -1
 - desc:  "Enable multi:  Hold OPERATION ENABLED x2"
 
 #
@@ -362,7 +362,7 @@
   feedback_out:
     status_word:  0x0017
     state:  QUICK STOP ACTIVE
-    transition:  TRANSITION_11
+    transition:  11
     goal_reached:  False
     goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
   command_out:
@@ -375,12 +375,12 @@
   feedback_out:
     status_word:  0x0050
     state:  SWITCH ON DISABLED
-    transition:  TRANSITION_12
+    transition:  12
     goal_reached:  True
     goal_reason:  Reached
 - desc:  "Disable disabled:  Hold SWITCH ON DISABLED x1"
   feedback_out:
-    transition:  null
+    transition:  -1
 - desc:  "Disable disabled:  Hold SWITCH ON DISABLED x2"
 
 #
@@ -404,7 +404,7 @@
   feedback_out:
     status_word:  0x0031
     state:  READY TO SWITCH ON
-    transition:  TRANSITION_2
+    transition:  2
     goal_reached:  False
     goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
   command_out:
@@ -417,34 +417,34 @@
   feedback_out:
     status_word:  0x0033
     state:  SWITCHED ON
-    transition:  TRANSITION_3
+    transition:  3
     goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
   command_out:
     control_word:  0x000F
   sim_feedback:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "Home:  402 state machine transition 4; command home_request & MODE_HM"
   feedback_in:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0037
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
     state:  OPERATION ENABLED
-    transition:  TRANSITION_4
+    transition:  4
     goal_reached:  True
     goal_reason:  Reached
   command_in:
     # Controller commands homing start
     home_request:  True
   command_out:
-    control_mode:  MODE_HM
+    control_mode:  6  # MODE_HM
   sim_feedback:
-    control_mode_fb:  MODE_HM
+    control_mode_fb:  6  # MODE_HM
 - desc:  "Home:  Drive MODE_HM;  Command HOMING_START"
   feedback_in:
-    control_mode_fb:  MODE_HM
+    control_mode_fb:  6  # MODE_HM
   feedback_out:
-    control_mode_fb:  MODE_HM
-    transition:  null
+    control_mode_fb:  6  # MODE_HM
+    transition:  -1
     goal_reached:  False
     goal_reason:  homing not complete
   command_out:
@@ -463,17 +463,17 @@
     home_request:  False
   command_out:
     control_word:  0x000F  # OPERATION ENABLED
-    control_mode:  MODE_CSP
+    control_mode:  8  # MODE_CSP
   sim_feedback:
-    control_mode_fb:  MODE_CSP
-    status_word:  0x0037  # OPERATION ENABLED
+    control_mode_fb:  8  # MODE_CSP
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "Home:  Command disable"
   feedback_in:
-    status_word:  0x0037  # OPERATION ENABLED
-    control_mode_fb:  MODE_CSP
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  8  # MODE_CSP
   feedback_out:
-    status_word:  0x0037  # OPERATION ENABLED
-    control_mode_fb:  MODE_CSP
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  8  # MODE_CSP
     home_success:  False
   command_in:
     # Controller commands disable
@@ -488,7 +488,7 @@
   feedback_out:
     status_word:  0x0017
     state:  QUICK STOP ACTIVE
-    transition:  TRANSITION_11
+    transition:  11
     goal_reached:  False
     goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED
   command_out:
@@ -501,10 +501,10 @@
   feedback_out:
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     state:  SWITCH ON DISABLED
-    transition:  TRANSITION_12
+    transition:  12
     goal_reached:  True
     goal_reason:  Reached
 - desc:  "Home:  Hold SWITCH ON DISABLED x1"
   feedback_out:
-    transition:  null
+    transition:  -1
 - desc:  "Home:  Hold SWITCH ON DISABLED x2"
