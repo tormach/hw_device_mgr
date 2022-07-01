@@ -37,17 +37,16 @@ class Device(abc.ABC):
 
     def __init__(self, address=None):
         self.address = address
-        self.init_interfaces()
 
     def init(self):
         """
-        Initialize device.
+        Initialize device and interfaces.
 
         Subclasses may implement `init()` for extra initialization
         outside the constructor.  Implementations should always call
         `super().init()`.
         """
-        pass
+        self.init_interfaces()
 
     @classmethod
     def merge_dict_attrs(cls, attr):
