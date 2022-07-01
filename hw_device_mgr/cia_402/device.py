@@ -44,15 +44,6 @@ class CiA402Device(CiA301Device):
     home_timeout = 15.0  # seconds
 
     @classmethod
-    def control_mode_int(cls, mode):
-        """
-        Translate control mode to integer value.
-
-        E.g. `MODE_CSP` to `int` `8`; pass `int` back unchanged.
-        """
-        return getattr(cls, mode) if isinstance(mode, str) else mode
-
-    @classmethod
     def control_mode_str(cls, mode):
         """
         Translate control mode to string value.
@@ -102,16 +93,17 @@ class CiA402Device(CiA301Device):
     )
 
     # Outgoing feedback to controller:  param_name : inital_value
-    feedback_out_defaults = dict(
-        state="START",
-        transition=None,
-        home_success=False,
-        home_error=False,
-        **feedback_in_defaults,
+    feedback_out_data_types = dict(
+        **feedback_in_data_types,
+        state="str",
+        transition="int8",
+        home_success="bit",
+        home_error="bit",
     )
-    feedback_out_initial_values = dict(
-        status_word=0,
-        control_mode_fb="MODE_NA",
+    feedback_out_defaults = dict(
+        **feedback_in_defaults,
+        state="START",
+        transition=-1,
         home_success=False,
         home_error=False,
     )
@@ -130,7 +122,7 @@ class CiA402Device(CiA301Device):
         # If lower layer goals not reached (not operational), set
         # default feedback ("START" state)
         if not fb_out.get("goal_reached"):
-            self.feedback_out.update(**self.feedback_out_initial_values)
+            self.feedback_out.update(**self.feedback_out_defaults)
             return self.feedback_out
 
         # Goal reached vars
@@ -139,13 +131,14 @@ class CiA402Device(CiA301Device):
 
         # Status word, control mode from fb in
         sw = self.feedback_in.get("status_word")
-        cm = fb_out.get("control_mode_fb")
-        cm_str = self.control_mode_str(cm)
-        self.feedback_out.update(status_word=sw, control_mode_fb=cm_str)
+        cm = self.feedback_in.get("control_mode_fb")
+        self.feedback_out.update(status_word=sw, control_mode_fb=cm)
         cm_cmd = self.command_in.get("control_mode")
-        if cm != self.MODE_HM and cm_str != cm_cmd:
+        if cm != self.MODE_HM and cm != cm_cmd:
             goal_reached = False
-            goal_reasons.append(f"control_mode {cm_str} != {cm_cmd}")
+            cm_str = self.control_mode_str(cm)
+            cm_cmd_str = self.control_mode_str(cm_cmd)
+            goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
 
         # Calculate 'state' feedback
         for state, bits in self.state_bits.items():
@@ -159,7 +152,7 @@ class CiA402Device(CiA301Device):
                 f"Unknown status word 0x{sw:X}; "
                 f"state {self.feedback_out.get('state')} unchanged"
             )
-        if self._get_next_transition() is not None:
+        if self._get_next_transition() >= 0:
             goal_reached = False
             state_cmd = self.command_in.get("state")
             sw = self.feedback_in.get("status_word")
@@ -168,14 +161,14 @@ class CiA402Device(CiA301Device):
         # Calculate 'transition' feedback
         new_st, old_st = self.feedback_out.changed("state", return_vals=True)
         if (old_st, new_st) == ("START", "NOT READY TO SWITCH ON"):
-            self.feedback_out.update(transition="TRANSITION_0")
+            self.feedback_out.update(transition=0)
         elif new_st == "FAULT REACTION ACTIVE":
-            self.feedback_out.update(transition="TRANSITION_13")
+            self.feedback_out.update(transition=13)
         elif self._get_next_state(curr_state=old_st) == new_st:
             next_trans = self._get_next_transition(curr_state=old_st)
             self.feedback_out.update(transition=next_trans)
         else:
-            self.feedback_out.update(transition=None)
+            self.feedback_out.update(transition=-1)
 
         # Calculate homing status
         home_success = home_error = False
@@ -237,13 +230,18 @@ class CiA402Device(CiA301Device):
         control_mode=DEFAULT_CONTROL_MODE,
         home_request=False,
     )
+    command_in_data_types = dict(
+        state="str",
+        control_mode="int8",
+        home_request="bit",
+    )
 
     # ------- Command out -------
 
     goal_paths = {
         # These dicts map the current state to [next state,
         # transition] to arrive at some goal state.  When the
-        # transition is `None`, the final state has been reached.
+        # transition is -1, the final state has been reached.
         # Some transitions happen automatically; those are marked with
         # a `None` value in the `transitions` dict.
         #
@@ -253,60 +251,60 @@ class CiA402Device(CiA301Device):
         # subclasses
         "SWITCHED ON": {
             # Drives in OPERATION ENABLED move to QUICK STOP ACTIVE
-            "OPERATION ENABLED": ["QUICK STOP ACTIVE", "TRANSITION_11"],
-            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", "TRANSITION_12"],
+            "OPERATION ENABLED": ["QUICK STOP ACTIVE", 11],
+            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
             # Transition other drives to SWITCHED ON
-            "START": ["NOT READY TO SWITCH ON", "TRANSITION_0"],
-            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_1"],
-            "SWITCH ON DISABLED": ["READY TO SWITCH ON", "TRANSITION_2"],
-            "READY TO SWITCH ON": ["SWITCHED ON", "TRANSITION_3"],
-            "SWITCHED ON": ["SWITCHED ON", None],  # End state
-            "FAULT": ["SWITCH ON DISABLED", "TRANSITION_15"],
-            "FAULT REACTION ACTIVE": ["FAULT", "TRANSITION_14"],
+            "START": ["NOT READY TO SWITCH ON", 0],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", 1],
+            "SWITCH ON DISABLED": ["READY TO SWITCH ON", 2],
+            "READY TO SWITCH ON": ["SWITCHED ON", 3],
+            "SWITCHED ON": ["SWITCHED ON", -1],  # End state
+            "FAULT": ["SWITCH ON DISABLED", 15],
+            "FAULT REACTION ACTIVE": ["FAULT", 14],
         },
         "OPERATION ENABLED": {
             # Drives transition to OPERATION ENABLED; note the
             # Hal402Mgr always brings drives to SWITCHED ON state
             # first before setting OPERATION ENABLED goal state
-            "SWITCHED ON": ["OPERATION ENABLED", "TRANSITION_4"],
-            "OPERATION ENABLED": ["OPERATION ENABLED", None],  # End
-            "START": ["START", "TRANSITION_0"],
-            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_1"],
-            "SWITCH ON DISABLED": ["READY TO SWITCH ON", "TRANSITION_2"],
-            "READY TO SWITCH ON": ["SWITCHED ON", "TRANSITION_3"],
-            "FAULT": ["SWITCH ON DISABLED", "TRANSITION_15"],
-            "FAULT REACTION ACTIVE": ["FAULT", "TRANSITION_14"],
-            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", "TRANSITION_12"],
+            "SWITCHED ON": ["OPERATION ENABLED", 4],
+            "OPERATION ENABLED": ["OPERATION ENABLED", -1],  # End
+            "START": ["START", 0],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", 1],
+            "SWITCH ON DISABLED": ["READY TO SWITCH ON", 2],
+            "READY TO SWITCH ON": ["SWITCHED ON", 3],
+            "FAULT": ["SWITCH ON DISABLED", 15],
+            "FAULT REACTION ACTIVE": ["FAULT", 14],
+            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
         },
         # These tr'ns take longer from OPERATION ENABLED -> SWITCH ON DISABLED
-        # 'OPERATION ENABLED':        ['SWITCHED ON', 'TRANSITION_5'],
-        # 'SWITCHED ON':              ['READY TO SWITCH ON', 'TRANSITION_6'],
-        # 'READY TO SWITCH ON':       ['SWITCH ON DISABLED', 'TRANSITION_7']
+        # 'OPERATION ENABLED':        ['SWITCHED ON', 5],
+        # 'SWITCHED ON':              ['READY TO SWITCH ON', 6],
+        # 'READY TO SWITCH ON':       ['SWITCH ON DISABLED', 7]
         "SWITCH ON DISABLED": {
-            "START": ["NOT READY TO SWITCH ON", "TRANSITION_0"],
-            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_1"],
-            "SWITCH ON DISABLED": ["SWITCH ON DISABLED", None],  # End State
-            "READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_7"],
-            "SWITCHED ON": ["SWITCH ON DISABLED", "TRANSITION_10"],
-            "FAULT REACTION ACTIVE": ["FAULT", "TRANSITION_14"],
-            "FAULT": ["SWITCH ON DISABLED", "TRANSITION_15"],
-            "OPERATION ENABLED": ["QUICK STOP ACTIVE", "TRANSITION_11"],
-            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", "TRANSITION_12"],
+            "START": ["NOT READY TO SWITCH ON", 0],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", 1],
+            "SWITCH ON DISABLED": ["SWITCH ON DISABLED", -1],  # End State
+            "READY TO SWITCH ON": ["SWITCH ON DISABLED", 7],
+            "SWITCHED ON": ["SWITCH ON DISABLED", 10],
+            "FAULT REACTION ACTIVE": ["FAULT", 14],
+            "FAULT": ["SWITCH ON DISABLED", 15],
+            "OPERATION ENABLED": ["QUICK STOP ACTIVE", 11],
+            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
         },
         # Fault state has three possible final states; see inline notes
         "FAULT": {
             # Drives in FAULT state remain in that state
-            "FAULT REACTION ACTIVE": ["FAULT", "TRANSITION_14"],
-            "FAULT": ["FAULT", None],  # End state
+            "FAULT REACTION ACTIVE": ["FAULT", 14],
+            "FAULT": ["FAULT", -1],  # End state
             # Drives in OPERATION ENABLED quick stop & disable
-            "OPERATION ENABLED": ["QUICK STOP ACTIVE", "TRANSITION_11"],
-            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", "TRANSITION_12"],
+            "OPERATION ENABLED": ["QUICK STOP ACTIVE", 11],
+            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
             # Drives in all other states transition to SWITCH ON DISABLED
-            "START": ["NOT READY TO SWITCH ON", "TRANSITION_0"],
-            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_1"],
-            "SWITCH ON DISABLED": ["SWITCH ON DISABLED", None],  # End state
-            "READY TO SWITCH ON": ["SWITCH ON DISABLED", "TRANSITION_7"],
-            "SWITCHED ON": ["SWITCH ON DISABLED", "TRANSITION_10"],
+            "START": ["NOT READY TO SWITCH ON", 0],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", 1],
+            "SWITCH ON DISABLED": ["SWITCH ON DISABLED", -1],  # End state
+            "READY TO SWITCH ON": ["SWITCH ON DISABLED", 7],
+            "SWITCHED ON": ["SWITCH ON DISABLED", 10],
         },
     }
 
@@ -334,7 +332,7 @@ class CiA402Device(CiA301Device):
 
     def _get_next_control_word(self):
         # Get base control word
-        if self._get_next_transition() is None:
+        if self._get_next_transition() < 0:
             # Holding current state
             control_word = self._get_hold_state_control_word()
         else:
@@ -350,7 +348,7 @@ class CiA402Device(CiA301Device):
                 self.logger.info(
                     f"Device {self.address}:  Homing operation requested"
                 )
-            if self.feedback_out.get("control_mode_fb") == "MODE_HM":
+            if self.feedback_out.get("control_mode_fb") == self.MODE_HM:
                 # Only set HOMING_START control word bit in MODE_HM
                 home_request = True
 
@@ -389,30 +387,30 @@ class CiA402Device(CiA301Device):
     # Map transition to the control word that would effect the
     # transition; None indicates automatic transition where control
     # word is ignored
-    transitions = dict(
-        TRANSITION_0=None,  # START->NOT READY TO SWITCH ON
-        TRANSITION_1=None,  # NOT READY TO SWITCH ON->SWITCH ON DISABLED
-        TRANSITION_2=0x0006,  # SWITCH ON DISABLED->READY TO SWITCH ON
-        TRANSITION_3=0x0007,  # READY TO SWITCH ON->SWITCHED ON
-        TRANSITION_4=0x000F,  # SWITCHED ON->OPERATION ENABLED
-        TRANSITION_5=0x0007,  # OPERATION ENABLED->SWITCHED ON
-        TRANSITION_6=0x0006,  # SWITCHED ON->READY TO SWITCH ON
-        TRANSITION_7=0x0000,  # READY TO SWITCH ON->SWITCH ON DISABLED
-        TRANSITION_8=0x0006,  # OPERATION ENABLED->READY TO SWITCH ON
-        TRANSITION_9=0x0000,  # OPERATION ENABLED->SWITCH ON DISABLED
-        TRANSITION_10=0x0000,  # SWITCHED ON->SWITCH ON DISABLED
-        TRANSITION_11=0x0002,  # OPERATION ENABLED->QUICK STOP ACTIVE
-        TRANSITION_12=0x0000,  # QUICK STOP ACTIVE->SWITCH ON DISABLED *
-        TRANSITION_13=None,  # (Any)->FAULT REACTION ACTIVE
-        TRANSITION_14=None,  # FAULT REACTION ACTIVE->FAULT
-        TRANSITION_15=0x0080,  # FAULT->SWITCH ON DISABLED **
-        TRANSITION_16=0x000F,  # QUICK STOP ACTIVE->OPERATION ENABLED *
+    transitions = {
+        0: None,  # START->NOT READY TO SWITCH ON
+        1: None,  # NOT READY TO SWITCH ON->SWITCH ON DISABLED
+        2: 0x0006,  # SWITCH ON DISABLED->READY TO SWITCH ON
+        3: 0x0007,  # READY TO SWITCH ON->SWITCHED ON
+        4: 0x000F,  # SWITCHED ON->OPERATION ENABLED
+        5: 0x0007,  # OPERATION ENABLED->SWITCHED ON
+        6: 0x0006,  # SWITCHED ON->READY TO SWITCH ON
+        7: 0x0000,  # READY TO SWITCH ON->SWITCH ON DISABLED
+        8: 0x0006,  # OPERATION ENABLED->READY TO SWITCH ON
+        9: 0x0000,  # OPERATION ENABLED->SWITCH ON DISABLED
+        10: 0x0000,  # SWITCHED ON->SWITCH ON DISABLED
+        11: 0x0002,  # OPERATION ENABLED->QUICK STOP ACTIVE
+        12: 0x0000,  # QUICK STOP ACTIVE->SWITCH ON DISABLED *
+        13: None,  # (Any)->FAULT REACTION ACTIVE
+        14: None,  # FAULT REACTION ACTIVE->FAULT
+        15: 0x0080,  # FAULT->SWITCH ON DISABLED **
+        16: 0x000F,  # QUICK STOP ACTIVE->OPERATION ENABLED *
         # * Transitions 12, 16:  Set 605Ah "Quick stop option code" value:
-        # - 0:    coast to stop; automatic TRANSITION_12
-        # - 1-3:  stop @ 2007-10h torque; automatic TRANSITION_12
-        # - 5-7:  stop @ 2007-10h torque; hold; then can TRANSITION_12 or 16
+        # - 0:    coast to stop; automatic transition 12
+        # - 1-3:  stop @ 2007-10h torque; automatic transition 12
+        # - 5-7:  stop @ 2007-10h torque; hold; then can transition 12 or 16
         # ** Transition 15:  Fault cleared on rising edge of bit 7
-    )
+    }
 
     # Control word bits not used for CiA402 state machine operation
     # may have other purposes
@@ -438,7 +436,7 @@ class CiA402Device(CiA301Device):
     def _get_transition_control_word(self):
         # Look up next transition and return control word to effect it
         transition = self._get_next_transition()
-        if transition is None:
+        if transition < 0:
             # Goal state reached; shouldn't be here
             raise ValueError(
                 "BUG:  No transition control word when goal reached"
@@ -481,9 +479,8 @@ class CiA402Device(CiA301Device):
         # If `home_request` is set, command homing mode
         if self.command_in.get("home_request"):
             return self.MODE_HM
-        # Get control_mode from command_in; translate e.g. "MODE_CSP" to 8
-        cm = self.command_in.get("control_mode")
-        return self.control_mode_int(cm)
+        # Get control_mode from command_in
+        return self.command_in.get("control_mode")
 
 
 class CiA402SimDevice(CiA402Device, CiA301SimDevice):
