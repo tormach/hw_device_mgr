@@ -23,6 +23,9 @@ class ErrorDevice(Device, ConfigIO):
     feedback_out_defaults = dict(
         error_code=0, description="No error", advice="No error"
     )
+    feedback_out_data_types = dict(
+        error_code="uint32", description="str", advice="str"
+    )
 
     no_error = feedback_out_defaults
 
