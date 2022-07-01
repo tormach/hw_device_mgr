@@ -3,11 +3,21 @@ class Interface:
 
     def __init__(self, name, defaults=None, data_types=None):
         self.name = name
-        self.data_types = data_types or dict()
+        self.data_types = data_types.copy() if data_types else dict()
         self.defaults = self.set_types(**(defaults or dict()))
         self.values = dict()  # Make attribute exist
         self.set(**defaults)  # Set values to defaults
         self.set(**defaults)  # Set old values to defaults
+
+    def add_attribute(self, attr, default, data_type):
+        assert (
+            attr not in self.defaults
+        ), f"Attempt to redefine attribute '{attr}' in interface {self.name}"
+        self.data_types[attr] = data_type
+        kwargs = {attr: default}
+        self.defaults.update(self.set_types(**kwargs))
+        self.set(**kwargs)  # Set value to default
+        self.set(**kwargs)  # Set old value to default
 
     def set_types(self, **values):
         """Set data types for values if a type is defined for that value."""
@@ -26,6 +36,9 @@ class Interface:
 
     def get(self, key=None):
         return self.values if key is None else self.values[key]
+
+    def get_data_type(self, key):
+        return self.data_types[key]
 
     def changed(self, key, return_vals=False):
         val = self.values[key]
