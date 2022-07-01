@@ -17,7 +17,7 @@ class Device(abc.ABC):
     data_type_class = DataType
 
     feedback_in_data_types = dict()
-    feedback_out_data_types = dict()
+    feedback_out_data_types = dict(goal_reached="bit", goal_reason="str", fault="bit")
     command_in_data_types = dict()
     command_out_data_types = dict()
 
@@ -347,7 +347,7 @@ class SimDevice(Device):
         return sim_device_data["position"]
 
     @classmethod
-    def init_sim(cls, *, sim_device_data):
+    def init_sim(cls, /, sim_device_data):
         """
         Create sim device objects for tests.
 
