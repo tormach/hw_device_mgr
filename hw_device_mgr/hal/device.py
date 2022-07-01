@@ -47,7 +47,7 @@ class HALPinDevice(Device, HALMixin):
         # except for direction, which becomes HAL_IO if different
         self.no_pin_keys = set()  # Interface attrs without HAL pins
         all_specs = dict()
-        for iface, params in self.pin_interfaces.items():
+        for iface in self.pin_interfaces:
             for base_pname, new_spec in self.iface_pin_specs(iface).items():
                 if base_pname not in all_specs:
                     all_specs[base_pname] = new_spec
@@ -65,15 +65,15 @@ class HALPinDevice(Device, HALMixin):
                         )
                 all_specs[base_pname] = spec
 
-        # Create all pins from specs
+        # Create all pins from interfaces
         self.pins = dict()
         for base_pname, specs in all_specs.items():
             pname, ptype, pdir = specs["pname"], specs["ptype"], specs["pdir"]
             try:
-                pin = comp.newpin(pname, ptype, pdir)
+                pin = self.comp.newpin(pname, ptype, pdir)
             except Exception as e:
                 raise RuntimeError(
-                    f"Exception creating pin {comp.getprefix()}.{pname}:  {e}"
+                    f"Exception creating pin {self.compname}.{pname}:  {e}"
                 )
             ptypes, pdirs = (self.hal_enum_str(i) for i in (ptype, pdir))
             self.pins[base_pname] = pin
@@ -83,13 +83,14 @@ class HALPinDevice(Device, HALMixin):
         iface_pdir = self.pin_interfaces[iface][0]
         data_types = self.merge_dict_attrs(f"{iface}_data_types")
         res = dict()
-        for base_pname, data_type_name in data_types.items():
-            dtype = self.data_type_class.by_shared_name(data_type_name)
+        iface_obj = self.interface(iface)
+        for base_pname in iface_obj.keys():
+            dtype = iface_obj.get_data_type(base_pname)
             if not hasattr(dtype, "hal_type"):
                 iface_obj = self.interface(iface)
                 self.logger.debug(
                     f"Interface '{iface_obj.name}' key '{base_pname}' type"
-                    f" '{data_type_name}' not HAL compatible; not creating pin"
+                    f" '{dtype.name}' not HAL compatible; not creating pin"
                 )
                 self.no_pin_keys.add(base_pname)
                 continue
