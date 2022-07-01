@@ -36,7 +36,12 @@ class BaseEtherCATTestClass(BaseCiA402TestClass):
             )
         ]
     )
-    pass_init_sim_device_description = False  # Data from ESI file
+
+    @classmethod
+    def init_sim_sdo_kwargs(cls, **kwargs):
+        """SDO and DC data are generated from ESI."""
+        # Send back the result
+        return kwargs
 
     @property
     def model_id_clone_map(self):
