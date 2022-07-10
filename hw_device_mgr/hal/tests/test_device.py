@@ -45,15 +45,16 @@ class TestHALDevice(BaseHALTestClass, _TestCiA402Device):
     # Test read()/update()/write() integration
     #
 
-    def override_interface_param(self, interface, key, val):
+    def override_interface_param(self, interface, ovr_data):
         intf = self.obj.interface(interface)
-        intf.update(**{key: val})
+        intf.update(**ovr_data)
         dt_names = self.obj.merge_dict_attrs(f"{interface}_data_types")
-        dt = dt_names.get(key, None)
-        if dt is not None:
-            val = self.obj.data_type_class.by_shared_name(dt)(val)
-        pname = self.obj.pin_name(interface, key)
-        self.set_pin(pname, val)
+        for key, val in ovr_data.items():
+            dt = dt_names.get(key, None)
+            if dt is not None:
+                val = self.obj.data_type_class.by_shared_name(dt)(val)
+            pname = self.obj.pin_name(interface, key)
+            self.set_pin(pname, val)
 
     def copy_sim_feedback(self, obj=None):
         if obj is None:
