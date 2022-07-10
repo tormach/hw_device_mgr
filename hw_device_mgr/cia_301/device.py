@@ -20,6 +20,9 @@ class CiA301Device(Device):
     feedback_in_data_types = dict(online="bit", oper="bit")
     feedback_in_defaults = dict(online=False, oper=False)
 
+    feedback_out_data_types = feedback_in_data_types
+    feedback_out_defaults = feedback_in_defaults
+
     def __init__(self, address=None, **kwargs):
         if isinstance(address, self.config_class):
             self.config = address
