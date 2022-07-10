@@ -4,9 +4,11 @@ from ..elmo_gold import ElmoGold420, ElmoGold520
 from ..inovance_is620n import InovanceIS620N
 from ..inovance_sv660 import InovanceSV660
 from ..eve_xcr_e import EVEXCRE
+from ...tests.interface import DebugInterface
 
 
 class DevicesForTest(LCECSimDevice):
+    interface_class = DebugInterface
     category = "devices_for_test"
 
 
