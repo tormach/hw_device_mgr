@@ -127,6 +127,19 @@ class TestDevice(BaseTestClass):
         res = obj.set_sim_feedback()
         assert res.__class__.__name__ == "DebugInterface"
 
+    def test_dot(self, tmp_path):
+        # Test class diagram
+        gv_file = tmp_path / f"{self.device_class.category}.gv"
+        assert not gv_file.exists()
+        with gv_file.open("w") as f:
+            f.write(self.device_class.dot())
+        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
+        # All class diagrams
+        gv_file = tmp_path / ".." / "all.gv"
+        with gv_file.open("w") as f:
+            f.write(Device.dot())
+        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
+
     #########################################
     # Test read()/update()/write() integration
     #
@@ -219,9 +232,14 @@ class TestDevice(BaseTestClass):
         # )
         assert self.check_interface_values("feedback_out")
 
+    def munge_interface_data(self, interface):
+        # Do any test data manipulation before sending to interface; subclasses
+        # may override
+        return self.test_data[interface]
+
     def set_command_and_check(self):
         print("\n*** Running object set_command()")
-        self.obj.set_command(**self.test_data["command_in"])
+        self.obj.set_command(**self.munge_interface_data("command_in"))
         assert self.check_interface_values("command_in")
         assert self.check_interface_values("command_out")
         print("\n*** Overriding command_out")
@@ -242,17 +260,16 @@ class TestDevice(BaseTestClass):
     # Utilities
     #
 
-    def override_interface_param(self, interface, key, val):
+    def override_interface_param(self, interface, ovr_data):
         intf = self.obj.interface(interface)
-        intf.update(**{key: val})
+        intf.update(**ovr_data)
 
     def override_data(self, interface):
         ovr_data = self.ovr_data.get(interface, dict())
         if not ovr_data:
-            print(f"  {interface}:  No overrides")
+            print(f"  {interface}:  {{}}  (no overrides)")
             return
-        for key, val in ovr_data.items():
-            self.override_interface_param(interface, key, val)
+        self.override_interface_param(interface, ovr_data)
         self.print_dict(ovr_data, interface, indent=2)
         # self.print_dict(intf_data, interface, indent=2)
 
@@ -347,16 +364,3 @@ class TestDevice(BaseTestClass):
         print(f"Read test cases from package resource {rsrc}")
         for test_case in test_cases:
             self.read_update_write_loop(test_case)
-
-    def test_dot(self, tmp_path):
-        # Test class diagram
-        gv_file = tmp_path / f"{self.device_class.category}.gv"
-        assert not gv_file.exists()
-        with gv_file.open("w") as f:
-            f.write(self.device_class.dot())
-        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
-        # All class diagrams
-        gv_file = tmp_path / ".." / "all.gv"
-        with gv_file.open("w") as f:
-            f.write(Device.dot())
-        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
