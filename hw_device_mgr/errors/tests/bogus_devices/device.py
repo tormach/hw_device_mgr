@@ -1,7 +1,9 @@
 from ...device import ErrorSimDevice
+from ....tests.interface import DebugInterface
 
 
 class BogusErrorDevice(ErrorSimDevice):
+    interface_class = DebugInterface
     category = "bogus_error_devices"
     device_error_package = "hw_device_mgr.errors.tests.bogus_devices.device_err"
 
