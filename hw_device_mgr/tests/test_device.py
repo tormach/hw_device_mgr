@@ -125,7 +125,7 @@ class TestDevice(BaseTestClass):
 
     def test_set_sim_feedback(self, obj):
         res = obj.set_sim_feedback()
-        assert res.__class__.__name__ == "Interface"
+        assert res.__class__.__name__ == "DebugInterface"
 
     #########################################
     # Test read()/update()/write() integration

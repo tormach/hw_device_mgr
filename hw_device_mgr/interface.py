@@ -26,6 +26,9 @@ class Interface:
                 values[key] = data_type(values[key])
         return values
 
+    def keys(self):
+        return self.values.keys()
+
     def set(self, **values):
         self.values_old = self.values
         self.values = self.defaults.copy()
