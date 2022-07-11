@@ -8,13 +8,12 @@ class TestHALHWDeviceMgr(BaseHALMgrTestClass, _TestHWDeviceMgr, _TestHALDevice):
         "HALHWDeviceMgrTestCategory",
         "HALSimHWDeviceMgr",
         "HALHWDeviceMgr",
-        *_TestHWDeviceMgr.expected_mro[1:4],  # SimHWDeviceMgr..FysomGlobalMixin
         "HALCompDevice",  # HAL comp (this should be tested, too!)
-        *_TestHALDevice.expected_mro[:2],  # HALPinSim...HALPin
-        *_TestHWDeviceMgr.expected_mro[4:],  # SimDevice...ABC
-        _TestHALDevice.expected_mro[-1],  # HalMixin
+        _TestHWDeviceMgr.expected_mro[1],  # SimHWDeviceMgr
+        *_TestHALDevice.expected_mro[:2],  # HALPinSimDevice...HALPinDevice
+        *_TestHWDeviceMgr.expected_mro[2:],  # HWDeviceMgr...ABC
+        _TestHALDevice.expected_mro[-1],  # HalMixin (skip CiA301, etc.)
     ]
-
 
     def override_interface_param(self, interface, ovr_data):
         for key, val in ovr_data.items():
@@ -34,18 +33,22 @@ class TestHALHWDeviceMgr(BaseHALMgrTestClass, _TestHWDeviceMgr, _TestHALDevice):
 
     def post_read_actions(self, obj=None):
         if obj is None:
-            super().post_read_actions()
-            print("  feedback_in pin values:")
             obj = self.obj
+            super().post_read_actions()
+            for dev in obj.devices:
+                self.post_read_actions(dev)
 
-        for name in obj.feedback_in.get():
+        print(f"  feedback_in pin values:  {obj}")
+        for name in obj.pins["feedback_in"]:
             pname = obj.pin_name("feedback_in", name)
             val = self.get_pin(pname)
             print(f"    {pname} = {val}")
-            assert val == obj.feedback_in.get(pname)
+            assert val == obj.feedback_in.get(name)
         print()
 
-    def check_halpin_values(self):
-        super().check_halpin_values()
+    def post_write_actions(self):
+        super().post_write_actions()
         for dev in self.obj.devices:
-            super().check_halpin_values(obj=dev)
+            for iface in dev.pins:
+                if dev.pin_interfaces[iface][0] == dev.HAL_OUT:
+                    self.check_halpin_values(iface, dev)
