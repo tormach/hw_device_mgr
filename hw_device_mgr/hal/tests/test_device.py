@@ -36,6 +36,9 @@ class TestHALDevice(BaseHALTestClass, _TestCiA402Device):
         for intf, data in obj.pin_interfaces.items():
             print(f"interface:  {intf};  data:  {data}")
             for name in obj.interface(intf).get():
+                if name in obj.no_pin_keys:
+                    print(f"    {name}:  no HAL pin")
+                    continue
                 pname = obj.pin_name(intf, name)
                 assert pname in obj.pins
                 pnames.add(pname)
@@ -80,6 +83,9 @@ class TestHALDevice(BaseHALTestClass, _TestCiA402Device):
         for iface in ("sim_feedback", "command_out"):
             print(f"  {iface}:")
             for name, iface_val in obj.interface(iface).get().items():
+                if name in obj.no_pin_keys:
+                    print(f"    {name}:  no HAL pin")
+                    continue
                 pname = obj.pin_name(iface, name)
                 pin_val = self.get_pin(pname)
                 print(f"    {pname}={pin_val}, {name}={iface_val}")

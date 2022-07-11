@@ -45,6 +45,7 @@ class HALPinDevice(Device, HALMixin):
 
         # Get specs for all pins in all interfaces; shared pin names must match,
         # except for direction, which becomes HAL_IO if different
+        self.no_pin_keys = set()  # Interface attrs without HAL pins
         all_specs = dict()
         for iface, params in self.pin_interfaces.items():
             for base_pname, new_spec in self.iface_pin_specs(iface).items():
@@ -83,8 +84,17 @@ class HALPinDevice(Device, HALMixin):
         data_types = self.merge_dict_attrs(f"{iface}_data_types")
         res = dict()
         for base_pname, data_type_name in data_types.items():
+            dtype = self.data_type_class.by_shared_name(data_type_name)
+            if not hasattr(dtype, "hal_type"):
+                iface_obj = self.interface(iface)
+                self.logger.debug(
+                    f"Interface '{iface_obj.name}' key '{base_pname}' type"
+                    f" '{data_type_name}' not HAL compatible; not creating pin"
+                )
+                self.no_pin_keys.add(base_pname)
+                continue
             pname = self.pin_name(iface, base_pname)
-            ptype = self.data_type_class.by_shared_name(data_type_name).hal_type
+            ptype = dtype.hal_type
             res[pname] = dict(pname=pname, ptype=ptype, pdir=iface_pdir)
         return res
 
@@ -96,6 +106,7 @@ class HALPinDevice(Device, HALMixin):
             iface_vals = {
                 p: self.pins[self.pin_name(pin_iface, p)].get()
                 for p in self.interface(pin_iface).get()
+                if p not in self.no_pin_keys
             }
             self.interface(pin_iface).set(**iface_vals)
 
@@ -106,6 +117,8 @@ class HALPinDevice(Device, HALMixin):
             if params[0] == self.HAL_IN:
                 continue  # Only write HAL_OUT, HAL_IO pins
             for name, val in self.interface(pin_iface).get().items():
+                if name in self.no_pin_keys:
+                    continue
                 pname = self.pin_name(pin_iface, name)
                 self.pins[pname].set(val)
 
