@@ -15,15 +15,17 @@ class TestHALHWDeviceMgr(BaseHALMgrTestClass, _TestHWDeviceMgr, _TestHALDevice):
         _TestHALDevice.expected_mro[-1],  # HalMixin
     ]
 
-    def override_interface_param(self, interface, key, val):
-        match = self.drive_key_re.match(key)
-        if match:
-            index, key = match.groups()
-            dev = self.obj.devices[int(index)]
-            pname = dev.pin_name(interface, key)
-            self.set_pin(pname, val)
-        else:
-            super().override_interface_param(interface, key, val)
+
+    def override_interface_param(self, interface, ovr_data):
+        for key, val in ovr_data.items():
+            match = self.test_case_key_re.match(key)
+            if match:
+                index, key = match.groups()
+                dev = self.obj.devices[int(index)]
+                pname = dev.pin_name(interface, key)
+                self.set_pin(pname, val)
+            else:
+                super().override_interface_param(interface, key, val)
 
     def copy_sim_feedback(self):
         super().copy_sim_feedback()
