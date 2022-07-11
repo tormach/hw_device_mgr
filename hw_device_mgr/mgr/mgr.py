@@ -56,10 +56,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         assert device_config, "Empty device configuration"
         self.device_config = device_config
         self.device_base_class.set_device_config(device_config)
-        # Scan & init devices
-        self.init_devices(**kwargs)
         # Init self
         super().init()
+        # Scan & init devices
+        self.init_devices(**kwargs)
         self.logger.info("Initialization complete")
 
     @classmethod
@@ -89,6 +89,20 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             dev.init(**device_init_kwargs)
             self.logger.info(f"Initialized device {dev}")
 
+        # Add per-device interface attributes to feedback & command
+        for dev in self.devices:
+            prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
+            for name, skip_set in self.device_translated_interfaces.items():
+                dev_intf = dev.interface(name)
+                mgr_intf = self.interface(name)
+                for attr_name, val in dev_intf.get().items():
+                    if attr_name in skip_set:
+                        continue
+                    mgr_attr_name = prefix + attr_name
+                    mgr_intf.add_attribute(
+                        mgr_attr_name, val, dev_intf.get_data_type(attr_name)
+                    )
+
     @classmethod
     def scan_devices(cls, **kwargs):
         return cls.device_base_class.scan_devices(**kwargs)
@@ -105,24 +119,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     @lru_cache
     def dev_prefix(self, dev, prefix="d", suffix=""):
         return f"{prefix}{dev.addr_slug}{suffix}"
-
-
-    def init_interfaces(self):
-        """Add per-device interface attributes to feedback & command."""
-        super().init_interfaces()
-        for dev in self.devices:
-            prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
-            for name, skip_set in self.device_translated_interfaces.items():
-                dev_intf = dev.interface(name)
-                mgr_intf = self.interface(name)
-                for attr_name, val in dev_intf.get().items():
-                    if attr_name in skip_set:
-                        continue
-                    mgr_attr_name = prefix + attr_name
-                    mgr_intf.add_attribute(
-                        mgr_attr_name, val, dev_intf.get_data_type(attr_name)
-                    )
-
 
     ####################################################
     # Drive state FSM
@@ -443,8 +439,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
             updates = {
                 # Copy device fb_out to mgr fb_out, adding prefix
-                f"{prefix}{k}":v
-                for k,v in dev_fb_out.get().items()
+                f"{prefix}{k}": v
+                for k, v in dev_fb_out.get().items()
                 # ...but skip these keys
                 if k not in self.device_translated_interfaces["feedback_out"]
             }
@@ -453,9 +449,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return mgr_fb_out
 
     def set_command(self, **kwargs):
-        """
-        Set command for top-level manager and for drives.
-        """
+        """Set command for top-level manager and for drives."""
         # Initialize command out interface with previous values; this could
         # clobber parent class updates for regular device classes, but this
         # isn't a regular device and it inherits directly from `Device`
@@ -566,18 +560,19 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         """
         Run `init_sim()` on devices.
 
-        For configurations that include sim devices (even when the device
-        manager itself isn't running in sim mode).
+        For configurations that include sim devices (even when the
+        device manager itself isn't running in sim mode).
         """
         if sim_device_data is None:
             return  # No sim devices to configure
-        cls.device_base_class.init_sim(sim_device_data=sim_device_data, **kwargs)
+        cls.device_base_class.init_sim(
+            sim_device_data=sim_device_data, **kwargs
+        )
 
     def set_drive_command(self):
         mgr_vals = self.command_in.get()
         skip = self.device_translated_interfaces.get("command_in", set())
         for dev in self.devices:
-            updates = dict()
             if "command_in" in self.device_translated_interfaces:
                 # Copy mgr command_out to matching device command_in
                 dev_command_in = dev.interface("command_in")
@@ -585,10 +580,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 dev.set_command(
                     state=self.command_out.get("drive_state"),
                     **{
-                        k:mgr_vals[f"{prefix}{k}"]
+                        k: mgr_vals[f"{prefix}{k}"]
                         for k in dev_command_in.keys()
                         if k not in skip
-                    }
+                    },
                 )
             else:
                 dev.set_command(
