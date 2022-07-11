@@ -23,13 +23,24 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     command_in_defaults = dict(
         state_cmd="init",
-        state_log="",
-        command_complete=False,
-        drive_state="SWITCH ON DISABLED",
-        reset=False,
     )
-    command_out_defaults = dict(state_cmd=0, reset=0)
-    command_out_data_types = dict(state_cmd="uint8", reset="bit")
+    command_in_data_types = dict(
+        state_cmd="str",
+    )
+    command_out_defaults = dict(
+        state_cmd=0,
+        state_log="(Uninitialized)",
+        command_complete=False,
+        reset=0,
+        drive_state="SWITCH ON DISABLED",
+    )
+    command_out_data_types = dict(
+        state_cmd="uint8",
+        state_log="str",
+        command_complete="bit",
+        reset="bit",
+        drive_state="str",
+    )
 
     ####################################################
     # Initialization
@@ -163,8 +174,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.fsm_finalize_command(e)
         # Automatically return to SWITCH ON DISABLED after init
         self.logger.info("Devices all online; commanding stop state")
-        self.command_in.set(
-            state_cmd="stop",
+        self.command_out.update(
+            state_cmd=self.cmd_name_to_int_map["stop"],
             state_log="Automatic 'stop' command at init complete",
         )
 
@@ -237,8 +248,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
         # Set/clear reset command
         reset = getattr(e, "reset", False)
-        self.command_in.update(reset=reset)
-        if self.command_in.changed("reset"):
+        self.command_out.update(reset=reset)
+        if self.command_out.changed("reset"):
             self.logger.info(f"Reset command set to {reset}")
 
     #
@@ -253,6 +264,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     cmd_int_to_name_map = {v: k for k, v in cmd_name_to_int_map.items()}
 
+    @property
+    def state_cmd_str(self):
+        return self.cmd_int_to_name_map[self.command_out.get("state_cmd")]
+
     def timer_start(self, timeout=None):
         if timeout is None:
             timeout = self.mgr_config.get("goal_state_timeout", 30.0)
@@ -262,8 +277,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         if not hasattr(self, "_timeout") or time.time() <= self._timeout:
             return
 
-        msg = f"{self.command_in.get('state_cmd')} timeout:  {msg}"
-        self.command_in.set(state_cmd="fault", state_log=msg)
+        msg = f"{self.state_cmd_str} timeout:  {msg}"
+        fault_cmd = self.cmd_name_to_int_map["fault"]
+        self.command_out.update(state_cmd=fault_cmd, state_log=msg)
         del self._timeout
         raise HWDeviceTimeout(msg)
 
@@ -275,26 +291,31 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.query_devices(oper=False)
 
     def fsm_check_command(self, e, timeout=None):
-        cmd_name = self.fsm_command_from_event(e)
+        state_cmd_str = self.fsm_command_from_event(e)
+        state_cmd = self.cmd_name_to_int_map[state_cmd_str]
         if (
             e.src.startswith("init") and e.src != "init_complete"
-        ) and cmd_name != "init":
+        ) and state_cmd_str != "init":
             # Don't preempt init (fault)
-            msg = f"Ignoring {cmd_name} command in init state {e.src}"
-            self.command_in.set(state_cmd="init", state_log=msg)
-            if self.command_in.changed("state_cmd"):
+            msg = f"Ignoring {state_cmd_str} command in init state {e.src}"
+            state_cmd = self.cmd_name_to_int_map["init"]
+            self.command_out.update(state_cmd=state_cmd, state_log=msg)
+            if self.command_out.changed("state_cmd"):
                 self.logger.warning(msg)
             return False
-        elif e.src != f"{cmd_name}_command" and e.src.startswith(cmd_name):
+        elif e.src != f"{state_cmd_str}_command" and e.src.startswith(
+            state_cmd_str
+        ):
             # Already running
             self.logger.warning(
-                f"Ignoring {cmd_name} command from state {e.src}"
+                f"Ignoring {state_cmd_str} command from state {e.src}"
             )
             return False
         else:
-            self.logger.info(f"Received {cmd_name} command:  {e.msg}")
-            self.command_in.set(state_cmd=cmd_name, state_log=e.msg)
-            self.command_in.update(command_complete=False)
+            self.logger.info(f"Received {state_cmd_str} command:  {e.msg}")
+            self.command_out.update(
+                state_cmd=state_cmd, state_log=e.msg, command_complete=False
+            )
             self.timer_start(
                 timeout=timeout
                 or self.mgr_config.get("goal_state_timeout", 5.0)
@@ -317,11 +338,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.logger.info(
             f"{cmd_name} command:  Setting drive state command to {state}"
         )
-        self.command_in.update(drive_state=state)
+        self.command_out.update(drive_state=state)
 
     def fsm_finalize_command(self, e):
         cmd_name = self.fsm_command_from_event(e)
-        self.command_in.update(command_complete=True)
+        self.command_out.update(command_complete=True)
         self.logger.info(f"Command {cmd_name} completed")
 
     ####################################################
@@ -341,8 +362,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 self.logger.error("Ignoring unexpected exception; details:")
                 for line in traceback.format_exc().splitlines():
                     self.logger.error(line)
-                self.command_in.set(
-                    state_cmd="fault", msg_log="Unexpected exception"
+                self.command_out.update(
+                    state_cmd=self.cmd_name_to_int_map["fault"],
+                    msg_log="Unexpected exception"
                 )
             if self.fast_track:
                 # This update included a state transition; skip
@@ -413,34 +435,33 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     def get_feedback(self):
         """Process manager and device external feedback."""
-        fb_out = super().get_feedback()
+        mgr_fb_out = super().get_feedback()
 
         # Get device feedback
         for dev in self.devices:
-            dev.get_feedback()
-            # Copy device feedback to mgr feedback, adding prefix
-            skip = self.device_translated_interfaces["feedback_out"]
-            dev_intf = dev.interface("feedback_out")
+            dev_fb_out = dev.get_feedback()
             prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
             updates = {
+                # Copy device fb_out to mgr fb_out, adding prefix
                 f"{prefix}{k}":v
-                for k,v in dev_intf.get().items()
-                if k not in skip
+                for k,v in dev_fb_out.get().items()
+                # ...but skip these keys
+                if k not in self.device_translated_interfaces["feedback_out"]
             }
-            fb_out.update(**updates)
+            mgr_fb_out.update(**updates)
 
-        return fb_out
+        return mgr_fb_out
 
     def set_command(self, **kwargs):
         """
         Set command for top-level manager and for drives.
         """
-        # Initialize command in/out interfaces with previous cycle values
-        cmd_in = self.command_in
-        cmd_out = super().set_command(**cmd_in.get())
-
-        # Update incoming command
-        cmd_in.update(**kwargs)
+        # Initialize command out interface with previous values; this could
+        # clobber parent class updates for regular device classes, but this
+        # isn't a regular device and it inherits directly from `Device`
+        old_cmd_out = self.command_out.get().copy()
+        cmd_out = super().set_command(**kwargs)
+        cmd_out.update(**old_cmd_out)
 
         # Special cases where 'fault' overrides current command:
         if self.state.startswith("init"):
@@ -451,8 +472,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # Treat devices not operational as a fault
             fds = self.query_devices(oper=False)
             fd_addrs = ", ".join(str(d.address) for d in fds)
-            cmd_in.update(
-                state_cmd="fault",
+            cmd_out.update(
+                state_cmd=self.cmd_name_to_int_map["fault"],
                 state_log=f"Devices at ({fd_addrs}) not online and operational",
             )
         elif self.query_devices(state="FAULT") and self.query_devices(
@@ -461,9 +482,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # Devices went into FAULT state since last update
             fds = self.query_devices(state="FAULT")
             fd_addrs = ", ".join(str(d.address) for d in fds)
-            cmd_in.update(
-                state_cmd="fault",
-                state_log=f"Devices at ({fd_addrs}) in FAULT state",
+            cmd_out.update(
+                state_cmd=self.cmd_name_to_int_map["fault"],
+                state_log=f"Devices at ({fd_addrs}) in FAULT state"
             )
         elif self.query_devices(fault=True) and self.query_devices(
             fault="changed"
@@ -471,26 +492,46 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # Devices set `fault` since last update
             fds = self.query_devices(fault=True)
             fd_addrs = ", ".join(str(d.address) for d in fds)
-            cmd_in.update(
-                state_cmd="fault",
-                state_log=f"Devices at ({fd_addrs}) set fault",
+            cmd_out.update(
+                state_cmd=self.cmd_name_to_int_map["fault"],
+                state_log=f"Devices at ({fd_addrs}) set fault"
             )
+        elif kwargs.get("state_cmd", None) is None:
+            pass  # Use previous state_cmd value
+        elif kwargs["state_cmd"] not in self.cmd_name_to_int_map:
+            state_cmd = kwargs["state_cmd"]
+            self.logger.error(f"Invalid state command, '{state_cmd}'")
+            cmd_out.update(
+                state_cmd=self.cmd_name_to_int_map["fault"],
+                state_log=f"Invalid state command, '{state_cmd}'",
+            )
+        else:
+            # Take state_cmd from kwargs
+            state_cmd = kwargs["state_cmd"]
+            cmd_out.update(
+                state_cmd=self.cmd_name_to_int_map[state_cmd],
+            )
+            if cmd_out.changed("state_cmd"):
+                # Assume external command
+                cmd_out.update(
+                    state_log=f"External command '{state_cmd}'",
+                )
 
-        event = self.automatic_next_event()
-        if cmd_in.changed("state_cmd"):
+        if cmd_out.changed("state_cmd"):
             # Received new command to stop/start/fault.  Try it
             # by triggering the FSM event; a Canceled exception means
             # it can't be done, so ignore it.
-            event = f"{cmd_in.get('state_cmd')}_command"
+            event = f"{self.state_cmd_str}_command"
             try:
-                self.trigger(event, msg=cmd_in.get("state_log"))
+                self.trigger(event, msg=cmd_out.get("state_log"))
             except Canceled:
                 self.logger.warning(f"Unable to honor {event} command")
-        elif event is not None:
+        elif self.automatic_next_event() is not None:
             # Attempt automatic transition to next state
             try:
                 self.trigger(
-                    event, msg=f"Automatic transition from {self.state} state"
+                    self.automatic_next_event(),
+                    msg=f"Automatic transition from {self.state} state",
                 )
             except Canceled:
                 # `on_before_{event}()` method returned `False`,
@@ -501,10 +542,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 # State transition succeeded; fast-track the next update
                 self.fast_track = True
 
-        # Set command, incl. drive command, and return
-        state_cmd = self.cmd_name_to_int_map[cmd_in.get("state_cmd")]
-        reset = cmd_in.get("reset")
-        cmd_out.update(state_cmd=state_cmd, reset=reset)
+        # Set drive command and return
         self.set_drive_command()
         return cmd_out
 
@@ -515,9 +553,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             dev.write()
 
     def automatic_next_event(self):
-        state_cmd = self.command_in.get("state_cmd")
-        state_map = self.fsm_next_state_map[state_cmd]
-        event = state_map.get(self.state, f"{state_cmd}_command")
+        state_cmd_str = self.state_cmd_str
+        state_map = self.fsm_next_state_map[state_cmd_str]
+        event = state_map.get(self.state, f"{state_cmd_str}_command")
         return event
 
     ####################################################
@@ -541,11 +579,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         for dev in self.devices:
             updates = dict()
             if "command_in" in self.device_translated_interfaces:
-                # Copy mgr command_in to matching device command
+                # Copy mgr command_out to matching device command_in
                 dev_command_in = dev.interface("command_in")
                 prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
                 dev.set_command(
-                    state=self.command_in.get("drive_state"),
+                    state=self.command_out.get("drive_state"),
                     **{
                         k:mgr_vals[f"{prefix}{k}"]
                         for k in dev_command_in.keys()
@@ -554,7 +592,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 )
             else:
                 dev.set_command(
-                    state=self.command_in.get("drive_state"),
+                    state=self.command_out.get("drive_state"),
                 )
 
     def query_devices(self, **kwargs):
