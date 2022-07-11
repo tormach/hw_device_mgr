@@ -9,12 +9,9 @@ class HALHWDeviceMgr(HWDeviceMgr, HALCompDevice):
     data_type_class = HALCompDevice.data_type_class
     device_base_class = HALPinDevice
 
-    def init_devices(self, **kwargs):
-        super().init_devices(**kwargs)
-        self.hal_comp_ready()
-
-    def init_device_instances(self, **kwargs):
-        super().init_device_instances(comp=self.comp, **kwargs)
+    def init_devices(self, /, device_init_kwargs=dict(), **kwargs):
+        device_init_kwargs["comp"] = self.comp
+        super().init_devices(device_init_kwargs=device_init_kwargs, **kwargs)
 
 
 class HALSimHWDeviceMgr(HALHWDeviceMgr, SimHWDeviceMgr, HALPinSimDevice):
