@@ -45,6 +45,7 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         hdm_params.update(mgr_config)
         hdm_params.pop("devices")
         self.rosparams.update(hdm_params)
+        print(f"manager_ros_params fixture:  rosparams = {self.rosparams}")
 
     @pytest.fixture
     def sim_device_data_path(self, tmp_path, mock_rclpy):
