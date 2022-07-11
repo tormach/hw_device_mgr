@@ -8,9 +8,11 @@ from ....devices.tests.devices import (
     InovanceSV660,
     EVEXCRE,
 )
+from ....tests.interface import DebugInterface
 
 
 class HALHWMgrTestDevices(LCECSimDevice, CiA402SimDevice):
+    interface_class = DebugInterface
     category = "hal_hw_mgr_test_devices"
 
 
@@ -40,6 +42,7 @@ class HALHWMgrTestEVEXCRE(HALHWMgrTestDevices, EVEXCRE):
 
 
 class HALHWDeviceMgrTestCategory(HALSimHWDeviceMgr):
+    interface_class = DebugInterface
     category = "test_hal_hw_device_mgr"
     data_type_class = HALHWMgrTestDevices.data_type_class
     device_base_class = HALHWMgrTestDevices
