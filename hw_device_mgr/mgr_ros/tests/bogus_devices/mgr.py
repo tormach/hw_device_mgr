@@ -7,9 +7,11 @@ from ....mgr.tests.bogus_devices.mgr import (
     HwMgrTestInovanceSV660N,
     HwMgrTestEVEXCRE,
 )
+from ....tests.interface import DebugInterface
 
 
 class ROSHWDeviceMgrTestCategory(ROSSimHWDeviceMgr):
+    interface_class = DebugInterface
     category = "test_ros_hw_device_mgr"
     device_base_class = HwMgrTestDevices
     device_classes = (
