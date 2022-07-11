@@ -34,10 +34,6 @@
   command_in:
     # Mgr
     state_cmd: init
-    state_log: "Automatic transition from init_command state"
-    command_complete: False
-    drive_state: SWITCH ON DISABLED
-    reset: False
     # Drives
     # - CiA 402
     d.x.control_mode:  8  # MODE_CSP
@@ -45,6 +41,9 @@
   command_out:
     # Mgr
     state_cmd: 0  # init
+    state_log: "Automatic transition from init_command state"
+    command_complete: False
+    drive_state: SWITCH ON DISABLED
     reset: False
     # Drives
     # - CiA 402
@@ -105,16 +104,18 @@
     d.x.goal_reason:  Reached
   command_in:
     state_cmd:  stop
-    state_log:  Automatic 'stop' command at init complete
   command_out:
     state_cmd:  0x01  # stop
+    state_log:  Automatic 'stop' command at init complete
+    command_complete:  1
 - desc:  "Init:  Automatic 'stop' command"
   feedback_out:
     d.x.transition:  -1  # No transition
-  command_in:
+  command_out:
     state_log:  "Automatic transition from init_complete state"
+    command_complete:  0
 - desc:  "Init:  Complete"
-  command_in:
+  command_out:
     command_complete:  True
 - desc:  "Init:  Hold state"
 
@@ -125,12 +126,12 @@
 - desc:  "Enable:  Receive external 'start' command"
   command_in:
     state_cmd:  start
-    state_log:  state command feedback changed
-    command_complete:  False
+  command_out:
     # Controller commands drive state SWITCHED ON
     drive_state:  SWITCHED ON
-  command_out:
     state_cmd:  2  # start
+    state_log:  External command 'start'
+    command_complete:  False
     d.x.control_word:  0x0006  # READY TO SWITCH ON
   sim_feedback:
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
@@ -157,14 +158,12 @@
     # Reached pre-operational SWITCHED ON goal
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
-  command_in:
+  command_out:
     # Continue with OPERATION ENABLED goal
     drive_state:  OPERATION ENABLED
     # Reset high for one cycle
-    reset:  True
-  command_out:
-    d.x.control_word:  0x000F  # OPERATION ENABLED
     reset:  1
+    d.x.control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
     d.x.status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "Enable:  Command complete"
@@ -176,10 +175,8 @@
     d.x.transition:  4
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
-  command_in:
-    command_complete:  True
-    reset:  False
   command_out:
+    command_complete:  True
     reset:  0
 - desc:  "Enable:  Hold state OPERATION ENABLED x1"
   feedback_out:
@@ -206,11 +203,11 @@
     d.1.goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
   command_in:
     state_cmd:  fault
+  command_out:
+    state_cmd:  0x04  # fault
     state_log:  Devices at ((0, 11)) set fault
     command_complete:  False
     drive_state:  FAULT
-  command_out:
-    state_cmd:  0x04  # fault
     d.x.control_word:  0x0002  # QUICK STOP ACTIVE
     d.1.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -233,9 +230,8 @@
     d.x.transition:  11
     d.x.goal_reached:  False
     d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
-  command_in:
-    state_log:  Devices at ((0, 11)) in FAULT state
   command_out:
+    state_log:  Devices at ((0, 11)) in FAULT state
     # Manager commands TRANSITION_12 to SWITCH ON DISABLED
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -254,7 +250,7 @@
     d.x.transition:  12
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
-  command_in:
+  command_out:
     # Manager has all drives in FAULT mode
     command_complete:  True
 - desc:  "Sim fault:  Hold fault command x1"
@@ -265,11 +261,11 @@
   command_in:
     # Manager acts on 'start' command from feedback; commands drives SWITCHED ON
     state_cmd:  start
-    state_log:  state command feedback changed
-    command_complete:  False
-    drive_state:  SWITCHED ON
   command_out:
     state_cmd:  0x02  # start
+    state_log:  External command 'start'
+    command_complete:  False
+    drive_state:  SWITCHED ON
     d.x.control_word:  0x0006  # READY TO SWITCH ON
     d.1.control_word:  0x0080  # Clear fault
   sim_feedback:
@@ -347,10 +343,10 @@
     d.x.transition:  -1  # No transition
   command_in:
     state_cmd:  fault
-    state_log:  Devices at ((0, 12)) set fault
-    drive_state:  FAULT
   command_out:
     state_cmd:  0x04  # fault
+    state_log:  Devices at ((0, 12)) set fault
+    drive_state:  FAULT
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
     d.2.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
@@ -371,11 +367,11 @@
   command_in:
     # Controller sees FAULT state and commands hold at that state
     state_cmd:  fault
+  command_out:
+    state_cmd:  0x04  # fault
     state_log:  Devices at ((0, 12)) in FAULT state
     command_complete:  True
     drive_state:  FAULT
-  command_out:
-    state_cmd:  0x04  # fault
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
@@ -393,11 +389,11 @@
 - desc:  "Disable:  Command disable"
   command_in:
     state_cmd:  stop
-    state_log:  state command feedback changed
-    drive_state:  SWITCH ON DISABLED
-    # Controller commands disable
   command_out:
     state_cmd:  0x01  # stop
+    state_log:  External command 'stop'
+    command_complete:  False
+    drive_state:  SWITCH ON DISABLED
     d.2.control_word:  0x0080  # Clear fault
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -412,6 +408,7 @@
     d.2.fault:  False
     d.2.transition:  15
   command_out:
+    command_complete:  True
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
 - desc:  "Disable:  Hold state x1"
   feedback_out:
@@ -419,38 +416,6 @@
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
 - desc:  "Disable:  Hold state x2"
-
-#
-# Controller commands FAULT in reaction to quick_stop input; hold
-# disabled state
-#
-- desc:  "Ext quick_stop noop:  Command FAULT"
-  command_in:
-    # Controller commands FAULT
-    state_cmd:  fault
-    state_log:  quick_stop pin high
-    drive_state:  FAULT
-  command_out:
-    state_cmd:  0x04  # fault
-- desc:  "Ext fault noop:  Clear quick stop and hold fault state"
-  command_in:
-    state_log:  state command feedback changed
-- desc:  "Ext fault noop:  Hold fault state"
-- desc:  "Ext fault noop:  External stop command, but quick_stop still set"
-  command_in:
-    state_log:  quick_stop pin high
-- desc:  "Ext fault noop:  Manager forces fault command"
-  command_in:
-    state_log:  state command feedback changed
-- desc:  "Ext fault noop:  Hold fault state"
-- desc:  "Ext fault noop:  External quick_stop pin cleared and stop command"
-  command_in:
-    state_cmd:  stop
-    drive_state:  SWITCH ON DISABLED
-  command_out:
-    state_cmd:  0x01  # stop
-- desc:  "Ext fault noop:  Hold stop state"
-
 
 #
 # Controller moves to OPERATION ENABLED, then commands homing
@@ -464,11 +429,12 @@
 - desc:  "Home:  Command OPERATION ENABLED"
   command_in:
     state_cmd:  start
+  command_out:
+    state_cmd:  2  # start
+    state_log:  External command 'start'
     command_complete:  False
     # Controller commands drive state SWITCHED ON
     drive_state:  SWITCHED ON
-  command_out:
-    state_cmd:  2  # start
     d.x.control_word:  0x0006  # READY TO SWITCH ON
   sim_feedback:
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
@@ -494,10 +460,8 @@
     d.x.transition:  3
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
-  command_in:
-    drive_state:  OPERATION ENABLED
-    reset:  True
   command_out:
+    drive_state:  OPERATION ENABLED
     reset:  1
     d.x.control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
@@ -512,12 +476,11 @@
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
   command_in:
-    command_complete:  True
-    reset:  False
     # Controller commands homing start
     d.0.home_request:  True
     d.1.home_request:  True
   command_out:
+    command_complete:  True
     reset:  0
     d.0.control_mode:  6  # MODE_HM
     d.1.control_mode:  6  # MODE_HM
@@ -572,10 +535,11 @@
     d.x.home_success:  False
   command_in:
     state_cmd:  stop
-    state_log:  Automatic 'stop' command at home complete
-    drive_state:  SWITCH ON DISABLED
   command_out:
     state_cmd:  0x01  # stop
+    state_log:  External command 'stop'
+    command_complete:  False
+    drive_state:  SWITCH ON DISABLED
     d.x.control_word:  0x0002  # QUICK STOP
   sim_feedback:
     d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
@@ -588,8 +552,6 @@
     d.x.transition:  11
     d.x.goal_reached:  False
     d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED
-  command_in:
-    state_log:  Automatic transition from home_complete state
   command_out:
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -603,7 +565,7 @@
     d.x.transition:  12
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
-  command_in:
+  command_out:
     command_complete:  True
 
 - desc:  "Home:  Hold SWITCH ON DISABLED x1"
