@@ -33,14 +33,14 @@
     d.x.goal_reason:  Offline
   command_in:
     # Mgr
-    state_cmd: init
+    state_cmd:  0  # init
     # Drives
     # - CiA 402
     d.x.control_mode:  8  # MODE_CSP
     d.x.home_request: False
   command_out:
     # Mgr
-    state_cmd: 0  # init
+    state:  0  # init
     state_log: "Automatic transition from init_command state"
     command_complete: False
     drive_state: SWITCH ON DISABLED
@@ -103,9 +103,9 @@
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
   command_in:
-    state_cmd:  stop
+    state_cmd:  1  # stop
   command_out:
-    state_cmd:  0x01  # stop
+    state:  1  # stop
     state_log:  Automatic 'stop' command at init complete
     command_complete:  1
 - desc:  "Init:  Automatic 'stop' command"
@@ -125,11 +125,11 @@
 #
 - desc:  "Enable:  Receive external 'start' command"
   command_in:
-    state_cmd:  start
+    state_cmd:  2  # start
   command_out:
     # Controller commands drive state SWITCHED ON
     drive_state:  SWITCHED ON
-    state_cmd:  2  # start
+    state:  2  # start
     state_log:  External command 'start'
     command_complete:  False
     d.x.control_word:  0x0006  # READY TO SWITCH ON
@@ -202,9 +202,9 @@
     d.1.goal_reached:  False
     d.1.goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
   command_in:
-    state_cmd:  fault
+    state_cmd:  4  # fault
   command_out:
-    state_cmd:  0x04  # fault
+    state:  4  # fault
     state_log:  Devices at ((0, 11)) set fault
     command_complete:  False
     drive_state:  FAULT
@@ -260,9 +260,9 @@
 - desc:  "Sim fault:  External 'start' command"
   command_in:
     # Manager acts on 'start' command from feedback; commands drives SWITCHED ON
-    state_cmd:  start
+    state_cmd:  2  # start
   command_out:
-    state_cmd:  0x02  # start
+    state:  2  # start
     state_log:  External command 'start'
     command_complete:  False
     drive_state:  SWITCHED ON
@@ -342,9 +342,9 @@
     d.1.goal_reason:  Reached
     d.x.transition:  -1  # No transition
   command_in:
-    state_cmd:  fault
+    state_cmd:  4  # fault
   command_out:
-    state_cmd:  0x04  # fault
+    state:  4  # fault
     state_log:  Devices at ((0, 12)) set fault
     drive_state:  FAULT
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
@@ -366,9 +366,9 @@
     d.2.goal_reason:  Reached
   command_in:
     # Controller sees FAULT state and commands hold at that state
-    state_cmd:  fault
+    state_cmd:  4  # fault
   command_out:
-    state_cmd:  0x04  # fault
+    state:  4  # fault
     state_log:  Devices at ((0, 12)) in FAULT state
     command_complete:  True
     drive_state:  FAULT
@@ -388,9 +388,9 @@
 #
 - desc:  "Disable:  Command disable"
   command_in:
-    state_cmd:  stop
+    state_cmd:  1  # stop
   command_out:
-    state_cmd:  0x01  # stop
+    state:  1  # stop
     state_log:  External command 'stop'
     command_complete:  False
     drive_state:  SWITCH ON DISABLED
@@ -428,9 +428,9 @@
 # OPERATION ENABLED -> SWITCH ON DISABLED
 - desc:  "Home:  Command OPERATION ENABLED"
   command_in:
-    state_cmd:  start
-  command_out:
     state_cmd:  2  # start
+  command_out:
+    state:  2  # start
     state_log:  External command 'start'
     command_complete:  False
     # Controller commands drive state SWITCHED ON
@@ -534,9 +534,9 @@
     d.x.control_mode_fb:  8  # MODE_CSP
     d.x.home_success:  False
   command_in:
-    state_cmd:  stop
+    state_cmd:  1  # stop
   command_out:
-    state_cmd:  0x01  # stop
+    state:  1  # stop
     state_log:  External command 'stop'
     command_complete:  False
     drive_state:  SWITCH ON DISABLED
