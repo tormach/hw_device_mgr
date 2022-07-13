@@ -48,6 +48,22 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
             self.obj_interface_to_test_case_key(k): v for k, v in data.items()
         }
 
+    def test_state_values(self, obj):
+        values = dict()
+        print(f"cmd_name_to_int_map:  {obj.cmd_name_to_int_map}")
+        print(f"cmd_int_to_name_map:  {obj.cmd_int_to_name_map}")
+        for attr in dir(obj):
+            if not attr.startswith("STATE_"):
+                continue
+            key = attr.split("_")[1].lower()
+            val = getattr(obj, attr)
+            assert key in obj.cmd_name_to_int_map
+            assert obj.cmd_name_to_int_map[key] == val
+            assert val in obj.cmd_int_to_name_map
+            assert obj.cmd_int_to_name_map[val] == key
+            values[key] = val
+        assert len(values) == 4
+
     def test_init(self, obj, all_device_data):
         super().test_init(obj)
         print(obj.device_base_class.scan_devices())
