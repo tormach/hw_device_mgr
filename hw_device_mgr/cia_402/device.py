@@ -492,13 +492,13 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice):
             # Log changes
             if self.sim_feedback.changed("control_mode_fb"):
                 cm = self.sim_feedback.get("control_mode_fb")
-                self.logger.info(f"{self} next control_mode_fb:  0x{cm:04X}")
+                self.logger.info(f"{self} sim control_mode_fb:  0x{cm:04X}")
             if self.sim_feedback.changed("status_word"):
                 sw = self.sim_feedback.get("status_word")
                 flags = ",".join(k for k, v in sw_flags.items() if v)
                 flags = f" flags:  {flags}" if flags else ""
                 self.logger.info(
-                    f"{self} sim next status_word:  0x{sw:04X} {state} {flags}"
+                    f"{self} sim status_word:  0x{sw:04X} {state} {flags}"
                 )
 
         return sfb
