@@ -46,6 +46,18 @@ class TestHALHWDeviceMgr(BaseHALMgrTestClass, _TestHWDeviceMgr, _TestHALDevice):
             assert val == obj.feedback_in.get(name)
         print()
 
+    def munge_interface_data(self, interface):
+        # `HALDevice.set_command()` takes no arguments, and reads from HAL pins
+        # instead.
+        data = super().munge_interface_data(interface)
+        if interface != "command_in":
+            return data  # Do the usual thing for other interfaces
+        # For `command_in`, write HAL pins
+        print("      (Setting command_in HAL pins)")
+        for key, val in data.items():
+            self.set_pin(key, val)
+        return dict()
+
     def post_write_actions(self):
         super().post_write_actions()
         for dev in self.obj.devices:

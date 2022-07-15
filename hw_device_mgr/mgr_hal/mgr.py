@@ -25,6 +25,13 @@ class HALHWDeviceMgr(HALCompDevice, HWDeviceMgr):
         device_init_kwargs["comp"] = self.comp
         super().init_devices(device_init_kwargs=device_init_kwargs, **kwargs)
 
+    def set_command(self):
+        # Read command from HAL pins
+        # FIXME this needs to be better formalized
+        pins = self.pins["command_in"]
+        vals = {p: pins[p].get() for p in pins.keys()}
+        super().set_command(**vals)
+
 
 class HALSimHWDeviceMgr(HALHWDeviceMgr, SimHWDeviceMgr, HALPinSimDevice):
     """Hardware device manager with HAL pins."""
