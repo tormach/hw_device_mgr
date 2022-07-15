@@ -95,6 +95,7 @@ class Device(abc.ABC):
 
     def read(self):
         """Read `feedback_in` from hardware interface."""
+        self._interfaces["feedback_in"].set()
 
     def get_feedback(self):
         """Process `feedback_in` and return `feedback_out` interface."""
@@ -369,7 +370,7 @@ class SimDevice(Device):
         """Read `feedback_in` from hardware interface."""
         super().read()
         sfb = self._interfaces["sim_feedback"].get()
-        self._interfaces["feedback_in"].set(**sfb)
+        self._interfaces["feedback_in"].update(**sfb)
 
     def set_sim_feedback(self):
         """Simulate feedback from command and feedback."""
