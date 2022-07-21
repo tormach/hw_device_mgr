@@ -48,6 +48,9 @@ class Interface:
         val_old = self.values_old[key]
         return (val, val_old) if return_vals else val != val_old
 
+    def rising_edge(self, key):
+        return self.values[key] and not self.values_old[key]
+
     def __str__(self):
         res = f"Interface {self.name} ("
         res += ", ".join([f"{k}={v}" for k, v in self.values.items()])
