@@ -173,10 +173,10 @@ class CiA402Device(CiA301Device):
                 goal_reasons.append(f"state flag {flag_name} != {not flag_val}")
 
         if not goal_reached:
-            fb_out.update(
-                goal_reached=False, goal_reason="; ".join(goal_reasons)
-            )
-            self.logger.debug(f"Device {self.address}:  Goal not reached:")
+            goal_reason = "; ".join(goal_reasons)
+            fb_out.update(goal_reached=False, goal_reason=goal_reason)
+            if fb_out.changed("goal_reason"):
+                self.logger.debug(f"{self}:  Goal not reached: {goal_reason}")
         return fb_out
 
     state_bits = {
