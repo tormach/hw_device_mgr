@@ -54,20 +54,26 @@ class ErrorDevice(Device):
 
     def get_feedback(self):
         fb_out = super().get_feedback()
-        if not fb_out.get("error_code"):
+        error_code = self.feedback_in.get("error_code")
+        if not error_code:
             self.feedback_out.update(**self.no_error)
             return fb_out
 
         error_info = self.error_descriptions().get(error_code, None)
         if error_info is None:
-            self.feedback_out.update(
+            fb_out.update(
                 description=f"Unknown error code {error_code}",
                 advice="Please consult with hardware vendor",
                 error_code=error_code,
             )
             return fb_out
-
-        self.feedback_out.update(error_code=error_code, **error_info)
+        else:
+            fb_out.update(error_code=error_code, **error_info)
+        if fb_out.changed("error_code"):
+            msg = "error code {}:  {}".format(
+                error_code, fb_out.get("description")
+            )
+            self.logger.error(msg)
         return fb_out
 
 
