@@ -34,6 +34,7 @@
   command_in:
     # Mgr
     state_cmd:  0  # init
+    state_set:  0  # don't latch in state_cmd
     # Drives
     # - CiA 402
     d.x.control_mode:  8  # MODE_CSP
@@ -123,9 +124,12 @@
 # Enable drive
 # CiA 402 SWITCH ON DISABLED -> OPERATION ENABLED
 #
-- desc:  "Enable:  Receive external 'start' command"
+- desc:  "Enable:  Receive external 'start' command:  set state_cmd"
   command_in:
     state_cmd:  2  # start
+- desc:  "Enable:  Receive external 'start' command:  set state_set"
+  command_in:
+    state_set:  1  # set command latch
   command_out:
     # Controller commands drive state SWITCHED ON
     drive_state:  SWITCHED ON
@@ -144,6 +148,8 @@
     d.x.transition:  2
     d.x.goal_reached:  False
     d.x.goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
+  command_in:
+    state_set:  0  # clear command latch
   command_out:
     d.x.control_word:  0x0007  # SWITCHED ON
   sim_feedback:
@@ -261,6 +267,7 @@
   command_in:
     # Manager acts on 'start' command from feedback; commands drives SWITCHED ON
     state_cmd:  2  # start
+    state_set:  1  # set command latch
   command_out:
     state:  2  # start
     state_log:  External command 'start'
@@ -289,6 +296,8 @@
     d.x.transition:  2
     d.x.goal_reached:  False
     d.x.goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
+  command_in:
+    state_set:  0  # clear command latch
   command_out:
     d.1.control_word:  0x0006  # READY TO SWITCH ON
     d.x.control_word:  0x0007  # SWITCHED ON
@@ -389,6 +398,7 @@
 - desc:  "Disable:  Command disable"
   command_in:
     state_cmd:  1  # stop
+    state_set:  1  # set command latch
   command_out:
     state:  1  # stop
     state_log:  External command 'stop'
@@ -407,6 +417,8 @@
     d.x.state:  SWITCH ON DISABLED
     d.2.fault:  False
     d.2.transition:  15
+  command_in:
+    state_set:  0  # clear command latch
   command_out:
     command_complete:  True
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
@@ -416,6 +428,31 @@
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
 - desc:  "Disable:  Hold state x2"
+
+#
+# Check state_set command latch:  only has effect on rising edge
+#
+# The next steps should do nothing:  The only state_set rising edge is
+# in the first step when state_cmd hasn't changed; following state_cmd
+# changes are not followed by state_set rising edge (and high, low,
+# falling edge should do nothing)
+#
+- desc:  "Command latch:  Set latch (but don't touch command)"
+  command_in:
+    state_set:  1  # set command latch
+- desc:  "Command latch:  Set command start (but not latch)"
+  command_in:
+    state_cmd:  2  # start
+- desc:  "Command latch:  Clear latch (but don't touch command)"
+  command_in:
+    state_set:  0  # clear command latch
+- desc:  "Command latch:  Set command stop (but not latch)"
+  command_in:
+    state_cmd:  1  # stop
+- desc:  "Command latch:  Clear latch (but don't touch command)"
+  command_in:
+    state_set:  0  # clear command latch
+
 
 #
 # Controller moves to OPERATION ENABLED, then commands homing
@@ -429,6 +466,7 @@
 - desc:  "Home:  Command OPERATION ENABLED"
   command_in:
     state_cmd:  2  # start
+    state_set:  1  # set command latch
   command_out:
     state:  2  # start
     state_log:  External command 'start'
@@ -447,6 +485,8 @@
     d.x.transition:  2
     d.x.goal_reached:  False
     d.x.goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
+  command_in:
+    state_set:  0  # clear command latch
   command_out:
     d.x.control_word:  0x0007  # SWITCHED ON
   sim_feedback:
@@ -535,6 +575,7 @@
     d.x.home_success:  False
   command_in:
     state_cmd:  1  # stop
+    state_set:  1  # set command latch
   command_out:
     state:  1  # stop
     state_log:  External command 'stop'
@@ -552,6 +593,8 @@
     d.x.transition:  11
     d.x.goal_reached:  False
     d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED
+  command_in:
+    state_set:  0  # clear command latch
   command_out:
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:

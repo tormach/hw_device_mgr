@@ -28,9 +28,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     command_in_defaults = dict(
         state_cmd=STATE_INIT,
+        state_set=False,
     )
     command_in_data_types = dict(
         state_cmd="uint8",
+        state_set="bit",
     )
     command_out_defaults = dict(
         state=0,
@@ -504,8 +506,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 state=self.STATE_FAULT,
                 state_log=f"Invalid state command, '{state_cmd}'",
             )
-        else:
-            # Take state_cmd from kwargs
+        elif self.command_in.rising_edge("state_set"):
+            # state_set went high; latch state_cmd from kwargs
             cmd_out.update(
                 state=kwargs["state_cmd"],
             )
