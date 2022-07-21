@@ -113,10 +113,11 @@ class LCECCommand(EtherCATCommand):
             "download",
             f"--master={address[0]}",
             f"--position={address[1]}",
+            f"--type={datatype.igh_type}",
+            "--",
             f"0x{index:04X}",
             f"0x{subindex:02X}",
             str(value),
-            f"--type={datatype.igh_type}",
             log_lev="info",
             dry_run=dry_run,
         )
