@@ -27,6 +27,9 @@ packages = (
     + [f"hw_device_mgr.{p}" for p in pkgs_t]
     + [f"hw_device_mgr.{p}.tests" for p in pkgs_t]
     + [f"hw_device_mgr.{p}.tests.bogus_devices" for p in pkgs_bd]
+    + [
+        "hw_device_mgr.devices.device_xml",
+    ]
 )
 
 setup(
