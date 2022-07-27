@@ -33,9 +33,15 @@ class HALPinDevice(Device, HALMixin):
         """
         return f"{self.addr_slug}{self.slug_separator}"
 
-    def init(self, /, comp, **kwargs):
+    def init(self, *, comp=None, **kwargs):
+        # Set (or ensure) self.comp
+        if comp is not None:
+            self.comp = comp
+        else:
+            assert hasattr(self, "comp")  # HALCompDevice already set
+
+        # Run parent init() to populate interfaces
         super().init(**kwargs)
-        self.comp = comp
 
         # Get specs for all pins in all interfaces; shared pin names must match,
         # except for direction, which becomes HAL_IO if different
@@ -121,9 +127,6 @@ class HALCompDevice(HALPinDevice):
 
     def init(self, **kwargs):
         self.comp = self.hal.component(self.hal_comp_name or self.name)
-        self.logger.info(f"Initialized '{self.compname}' HAL component")
-        super().init(comp=self.comp, **kwargs)
-
-    def hal_comp_ready(self):
+        super().init(**kwargs)
         self.comp.ready()
-        self.logger.info("%s: HAL component ready" % self.name)
+        self.logger.info(f"HAL component '{self.compname}' ready")
