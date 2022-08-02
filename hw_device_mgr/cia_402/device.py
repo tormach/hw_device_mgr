@@ -345,12 +345,12 @@ class CiA402Device(CiA301Device):
             if self.command_in.changed("home_request"):
                 # New request
                 self._home_request_start = time()
-                self.logger.info(
-                    f"Device {self.address}:  Homing operation requested"
-                )
+                self.logger.info(f"{self}:  Homing operation requested")
             if self.feedback_out.get("control_mode_fb") == self.MODE_HM:
                 # Only set HOMING_START control word bit in MODE_HM
                 home_request = True
+        elif self.command_in.changed("home_request"):  # home_request cleared
+            self.logger.info(f"{self}:  Homing operation complete")
 
         # Add flags and return
         return self._add_control_word_flags(
