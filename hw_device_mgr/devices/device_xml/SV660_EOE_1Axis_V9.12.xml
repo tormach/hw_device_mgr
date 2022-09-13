@@ -2541,6 +2541,17 @@
                     <Access>rw</Access>
                   </Flags>
                 </SubItem>
+		<!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
+                <SubItem>
+                  <SubIdx>24</SubIdx>
+                  <Name>EtherCAT forced DO output logic in non-OP status</Name>
+                  <Type>UINT</Type>
+                  <BitSize>16</BitSize>
+                  <BitOffs>112</BitOffs>
+                  <Flags>
+                    <Access>rw</Access>
+                  </Flags>
+                </SubItem>
               </DataType>
               <DataType>
                 <Name>DT2005</Name>
@@ -7295,6 +7306,14 @@
                       <DefaultValue>0</DefaultValue>
                     </Info>
                   </SubItem>
+                  <SubItem>
+                    <Name>EtherCAT forced DO output logic in non-OP status</Name>
+                    <Info>
+                      <MinValue>0</MinValue>
+                      <MaxValue>7</MaxValue>
+                      <DefaultValue>1</DefaultValue>
+                    </Info>
+                </SubItem>
                 </Info>
                 <Flags>
                   <Access>ro</Access>
