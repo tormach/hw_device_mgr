@@ -1,5 +1,5 @@
 from .data_types import CiA301DataType
-from .command import CiA301Command, CiA301SimCommand
+from .command import CiA301Command, CiA301SimCommand, CiA301CommandException
 from .sdo import CiA301SDO
 from ..logging import Logging
 from functools import cached_property
@@ -105,11 +105,27 @@ class CiA301Config:
         ix = (dtc.uint16(ix[0]), dtc.uint8(ix[1]))
         return ix
 
+    @cached_property
+    def sdos(self):
+        assert self.model_id in self._model_sdos
+        return self._model_sdos[self.model_id].values()
+
     def sdo(self, ix):
         if isinstance(ix, self.sdo_class):
             return ix
         ix = self.sdo_ix(ix)
         return self._model_sdos[self.model_id][ix]
+
+    def dump_param_values(self):
+        res = dict()
+        for sdo in self.sdos:
+            try:
+                res[sdo] = self.upload(sdo, stderr_to_devnull=True)
+            except CiA301CommandException as e:
+                # Objects may not exist, like variable length PDO mappings
+                self.logger.debug(f"Upload {sdo} failed:  {e}")
+                pass
+        return res
 
     @classmethod
     def add_device_dcs(cls, dcs_data):
