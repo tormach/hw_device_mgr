@@ -103,10 +103,12 @@ class LCECCommand(EtherCATCommand):
             f"--type={datatype.igh_type}",
             **kwargs,
         )
-        # FIXME Handle non-int types
-        val_hex, val = output[0].split(" ", 1)
-        val = int(val, 10)
-        return val
+        if datatype.shared_name == "str":
+            return output[0]
+        else:
+            val_hex, val = output[0].split(" ", 1)
+            val = int(val, 10)
+            return val
 
     def download(
         self,

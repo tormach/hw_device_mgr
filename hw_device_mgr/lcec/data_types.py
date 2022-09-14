@@ -18,5 +18,5 @@ class LCECDataType(EtherCATDataType, HALDataType):
         uint64=dict(igh_type="uint64"),
         float=dict(igh_type="float"),
         double=dict(igh_type="double"),
-        # Strings not usable by `ethercat` tool
+        str=dict(igh_type="string"),
     )
