@@ -143,7 +143,7 @@ class CiA301Config:
     # Param read/write
     #
 
-    def upload(self, sdo):
+    def upload(self, sdo, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         res_raw = self.command().upload(
@@ -151,10 +151,11 @@ class CiA301Config:
             index=sdo.index,
             subindex=sdo.subindex,
             datatype=sdo.data_type,
+            **kwargs,
         )
         return sdo.data_type(res_raw)
 
-    def download(self, sdo, val, dry_run=False, force=False):
+    def download(self, sdo, val, dry_run=False, force=False, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         if not force:
@@ -164,6 +165,7 @@ class CiA301Config:
                 index=sdo.index,
                 subindex=sdo.subindex,
                 datatype=sdo.data_type,
+                **kwargs,
             )
             if sdo.data_type(res_raw) == val:
                 return  # SDO value already correct
@@ -177,6 +179,7 @@ class CiA301Config:
             subindex=sdo.subindex,
             value=val,
             datatype=sdo.data_type,
+            **kwargs,
         )
 
     #
