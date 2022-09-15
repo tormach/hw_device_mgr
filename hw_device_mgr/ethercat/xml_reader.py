@@ -185,7 +185,7 @@ class EtherCATXMLReader(ConfigIO):
         vendors = self.tree.xpath("/EtherCATInfo/Vendor")
         if len(vendors) != 1:
             raise RuntimeError(
-                f"{len(vendors)} <Vendor> sections in {self.esi_key}"
+                f"{len(vendors)} <Vendor> sections in XML"
             )
         return vendors[0]
 
@@ -440,7 +440,7 @@ class EtherCATXMLReader(ConfigIO):
                     ecat_type = self.data_type_class.by_name(type_name)
                 except KeyError as e:
                     print(self.data_type_class._name_re_registry)
-                    raise KeyError(f"Reading {self.esi_key}:  {str(e)}")
+                    raise KeyError(f"Reading XML:  {str(e)}")
                 self.safe_set(osub, "DataType", ecat_type)
 
                 # Flatten out Flags, Info
