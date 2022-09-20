@@ -27,12 +27,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 # Install python modules
 ament_python_install_package(${PROJECT_NAME})
 
-# Install python scripts
-install(PROGRAMS
-  scripts/hw_device_mgr
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 #**********
 #* Tests **
 #**********
