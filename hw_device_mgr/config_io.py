@@ -1,6 +1,6 @@
 import ruamel.yaml
 from pathlib import Path
-from importlib.resources import open_binary
+from importlib.resources import open_binary, path
 
 
 class ConfigIO:
@@ -14,6 +14,12 @@ class ConfigIO:
     def open_resource(cls, package, resource):
         """Return open file object for importlib package resource."""
         return open_binary(package, resource)
+
+    @classmethod
+    def resource_path(cls, package, resource):
+        """Return resource path as a `str` (may not actually exist)."""
+        with path(package, resource) as p:
+            return str(p)
 
     @classmethod
     def load_yaml_path(cls, path):
