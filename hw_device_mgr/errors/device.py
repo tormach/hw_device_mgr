@@ -16,11 +16,14 @@ class ErrorDevice(Device):
 
     device_error_dir = "device_err"
 
-    feedback_data_types = dict(error_code="uint32")
-    feedback_defaults = dict(
+    feedback_in_data_types = dict(error_code="uint32")
+    feedback_in_defaults = dict(error_code=0)
+
+    feedback_out_defaults = dict(
         error_code=0, description="No error", advice="No error"
     )
-    no_error = feedback_defaults
+
+    no_error = feedback_out_defaults
 
     data_type_class = DataType
 
@@ -49,22 +52,29 @@ class ErrorDevice(Device):
                     errs[int(err_code_str, 0)] = err_data
         return cls._error_descriptions[cls.name]
 
-    def set_feedback(self, error_code=0, **kwargs):
-        super().set_feedback(**kwargs)
+    def get_feedback(self):
+        fb_out = super().get_feedback()
+        error_code = self.feedback_in.get("error_code")
         if not error_code:
-            self.feedback.update(**self.no_error)
-            return
+            self.feedback_out.update(**self.no_error)
+            return fb_out
 
         error_info = self.error_descriptions().get(error_code, None)
         if error_info is None:
-            self.feedback.update(
+            fb_out.update(
                 description=f"Unknown error code {error_code}",
                 advice="Please consult with hardware vendor",
                 error_code=error_code,
             )
-            return
-
-        self.feedback.update(error_code=error_code, **error_info)
+            return fb_out
+        else:
+            fb_out.update(error_code=error_code, **error_info)
+        if fb_out.changed("error_code"):
+            msg = "error code {}:  {}".format(
+                error_code, fb_out.get("description")
+            )
+            self.logger.error(msg)
+        return fb_out
 
 
 class ErrorSimDevice(ErrorDevice, SimDevice):
