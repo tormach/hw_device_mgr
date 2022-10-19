@@ -1,4 +1,6 @@
 from setuptools import setup
+from setuptools.command.install import install
+import subprocess
 
 package_name = "hw_device_mgr"
 
@@ -25,6 +27,7 @@ pkgs_t = [
 packages = (
     [
         "hw_device_mgr",
+        "hw_device_mgr.latency",
         "hw_device_mgr.tests",
         "hw_device_mgr.tests.bogus_devices",
     ]
@@ -36,6 +39,14 @@ packages = (
         "hw_device_mgr.devices.device_err",
     ]
 )
+
+class CustomInstall(install):
+
+    def run(self):
+        """Run halcompile on `multilatency.comp`."""
+        comp_src = "hw_device_mgr/latency/multilatency.comp"
+        subprocess.check_call(["/usr/bin/env", "halcompile", "--install", comp_src])
+        super().run()
 
 setup(
     name=package_name,
@@ -68,7 +79,10 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "hw_device_mgr = hw_device_mgr.mgr_ros_hal.__main__:main"
+            "hw_device_mgr = hw_device_mgr.mgr_ros_hal.__main__:main",
+            "ecat_pcap_decode = hw_device_mgr.latency.ecat_pcap_decode:main",
+            "halsampler_decode = hw_device_mgr.latency.halsampler_decode:main",
         ]
     },
+    cmdclass={'install': CustomInstall},
 )
