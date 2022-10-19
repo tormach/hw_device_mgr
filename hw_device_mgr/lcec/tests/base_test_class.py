@@ -45,7 +45,10 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
         commands.  Patches `subprocess.check_output()`.
         """
 
-        def emulate_ethercat_command(args):
+        def emulate_ethercat_command(args, **kwargs):
+            # kwargs might be set by `subprocess.check_output`; check known args
+            kwargs.pop("stderr", None)
+            assert not kwargs, f"Non-empty kwargs:  {kwargs}"
             print(f'mocking command: {" ".join(args)}')
             # Parse out args, kwargs
             assert args.pop(0) == "ethercat"
