@@ -221,13 +221,16 @@ class CiA301Config:
           dictionary keys to values; values may be a single scalar
           applied to all `positions`, or a `list` of scalars applied
           to corresponding entries in `positions`
+          May also be a dict with two keys, "value" and "optional". If "optional"
+          is True, this value will only be applied if the skip_optional parameter 
+          is set to false on gen_config calls.
         """
         assert config
         cls._device_config.clear()
         cls._device_config.extend(config)
 
     @classmethod
-    def munge_config(cls, config_raw, position):
+    def munge_config(cls, config_raw, position, skip_optional = True):
         config_cooked = config_raw.copy()
         # Convert model ID ints
         model_id = (config_raw["vendor_id"], config_raw["product_code"])
@@ -237,6 +240,17 @@ class CiA301Config:
         config_cooked["param_values"] = dict()
         for ix, val in config_raw.get("param_values", dict()).items():
             ix = cls.sdo_class.parse_idx_str(ix)
+            # param_keys value can either be stored directly as a scalar or list
+            # (to be applied universally) or as a dict with the key "optional"
+            # which specifies that this is a low priority value that can be skipped
+            if isinstance(val, dict):
+                if "optional" in val:
+                    if val["optional"] == True and skip_optional:
+                        # Skip this item and don't add it to config_cooked
+                        continue
+                    else:
+                        val = val["value"]
+
             if isinstance(val, list):
                 pos_ix = config_raw["positions"].index(position)
                 val = val[pos_ix]
@@ -244,8 +258,8 @@ class CiA301Config:
         # Return pruned config dict
         return config_cooked
 
-    @classmethod
-    def gen_config(cls, model_id, address):
+    @classmethod 
+    def find_config(cls, model_id, address):
         bus, position = address
         # Find matching config
         for conf in cls._device_config:
@@ -260,8 +274,14 @@ class CiA301Config:
             break
         else:
             raise KeyError(f"No config for device at {address}")
+        return conf
+
+    @classmethod
+    def gen_config(cls, model_id, address, skip_optional = True):
+        bus, position = address
+        conf = cls.find_config(model_id, address)
         # Prune & return config
-        return cls.munge_config(conf, position)
+        return cls.munge_config(conf, position, skip_optional)
 
     @cached_property
     def config(self):

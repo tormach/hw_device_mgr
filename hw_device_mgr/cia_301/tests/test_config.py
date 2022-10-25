@@ -72,6 +72,26 @@ class TestCiA301Config(BaseCiA301TestClass):
         for sdo_ix, val in obj.config["param_values"].items():
             assert obj.upload(sdo_ix) == val
 
+    def test_load_optional_params(self, obj):
+        from pprint import pprint
+        # Get the un-pruned config to compare against after munging
+        raw_params = obj.find_config(obj.model_id, obj.address)["param_values"]
+        optional_param_names = set([key for (key, val) in raw_params.items() if isinstance(val, dict) and val["optional"] == True])
+        required_param_names = set([key for (key, val) in raw_params.items() if (isinstance(val, dict) and val["optional"] == False) or (not isinstance(val, dict))])
+        
+        # Get params through the normal munging process
+        normal_params = set(obj.gen_config(obj.model_id, obj.address)["param_values"].keys())
+        full_params = set(obj.gen_config(obj.model_id, obj.address, skip_optional = False)["param_values"].keys())
+
+
+        # Full parameter list should always include all of the non-optional params
+        assert full_params.intersection(normal_params) == normal_params
+        assert len(full_params) >= len(normal_params)
+
+        # Removing the set of non-optional params from the full list should always
+        # give us the list of optional params
+        assert len(full_params - normal_params) == len(optional_param_names)
+
     def test_add_device_dcs(self, obj, config_cls, dcs_data):
         print("model_id:", obj.model_id)
         print("config_cls._model_dcs:", config_cls._model_dcs)
