@@ -56,6 +56,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.state = "init_command"  # Used by FysomGlobalMixin
         super().__init__()
 
+    # mgr_config and device_config are YAML loaded by __main__ and passed in 
     def init(self, /, mgr_config, device_config, **kwargs):
         """Initialize Manager instance."""
         self.mgr_config = mgr_config

@@ -37,9 +37,10 @@ class CiA301Config:
     # Mapping of model_id to a dict of (index, subindex) to DC object
     _model_dcs = dict()
 
-    def __init__(self, address=None, model_id=None):
+    def __init__(self, address=None, model_id=None, skip_optional_config_values = True):
         self.address = address
         self.model_id = self.format_model_id(model_id)
+        self.skip_optional_config_values = skip_optional_config_values
 
     @classmethod
     def format_model_id(cls, model_id):
@@ -285,7 +286,7 @@ class CiA301Config:
 
     @cached_property
     def config(self):
-        return self.gen_config(self.model_id, self.address)
+        return self.gen_config(self.model_id, self.address, self.skip_optional_config_values)
 
     def get_device_params_nv(self):
         """
@@ -340,12 +341,12 @@ class CiA301Config:
     #
 
     @classmethod
-    def scan_bus(cls, bus=0, **kwargs):
+    def scan_bus(cls, bus=0, skip_optional_config_values=True, **kwargs):
         """Return a `list` of configuration objects for each device."""
         res = list()
         for address, model_id in cls.command().scan_bus(bus=bus, **kwargs):
             model_id = cls.format_model_id(model_id)
-            config = cls(address=address, model_id=model_id, **kwargs)
+            config = cls(address=address, model_id=model_id, skip_optional_config_values=skip_optional_config_values, **kwargs)
             res.append(config)
         return res
 
