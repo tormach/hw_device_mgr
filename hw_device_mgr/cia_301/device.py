@@ -197,9 +197,7 @@ class CiA301SimDevice(CiA301Device, SimDevice):
 
     @classmethod
     def sim_device_data_address(cls, sim_device_data):
-        model_id = sim_device_data["bus"], sim_device_data["position"]
-        sim_device_data["model_id"] = model_id
-        return model_id
+        return sim_device_data["address"]
 
     @classmethod
     def init_sim(cls, *, sim_device_data, sdo_data, dcs_data):

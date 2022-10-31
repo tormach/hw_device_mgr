@@ -42,6 +42,13 @@ class CiA301Command(abc.ABC):
     ):
         """Download a value to a device SDO."""
 
+    @classmethod
+    def decode_address(cls, address):
+        master, position, alias = address
+        if alias:
+            position = 0
+        return master, position, alias
+
 
 class CiA301SimCommand(CiA301Command):
     """Simulated CiA 301 device."""
@@ -87,7 +94,7 @@ class CiA301SimCommand(CiA301Command):
     def scan_bus(self, bus=0):
         res = list()
         for dd in self.sim_device_data.values():
-            if dd["bus"] != bus:
+            if dd["address"][0] != bus:
                 continue
             res.append([dd["address"], dd["model_id"]])
         return res

@@ -242,7 +242,7 @@ class CiA301Config:
         cls._device_config.extend(config)
 
     @classmethod
-    def munge_config(cls, config_raw, position, skip_optional = True):
+    def munge_config(cls, config_raw, address, skip_optional = True):
         config_cooked = config_raw.copy()
         # Convert model ID ints
         model_id = (config_raw["vendor_id"], config_raw["product_code"])
@@ -264,24 +264,21 @@ class CiA301Config:
                         val = val["value"]
 
             if isinstance(val, list):
-                pos_ix = config_raw["positions"].index(position)
+                pos_ix = config_raw["addresses"].index(address)
                 val = val[pos_ix]
             config_cooked["param_values"][ix] = val
         # Return pruned config dict
         return config_cooked
 
-    @classmethod 
+    @classmethod
     def find_config(cls, model_id, address):
-        bus, position = address
         # Find matching config
         for conf in cls._device_config:
             if "vendor_id" not in conf:
                 continue  # In tests only
             if model_id != (conf["vendor_id"], conf["product_code"]):
                 continue
-            if bus != conf["bus"]:
-                continue
-            if position not in conf["positions"]:
+            if address not in conf["addresses"]:
                 continue
             break
         else:
@@ -293,7 +290,7 @@ class CiA301Config:
         bus, position = address
         conf = cls.find_config(model_id, address)
         # Prune & return config
-        return cls.munge_config(conf, position, skip_optional)
+        return cls.munge_config(conf, address, skip_optional)
 
     @cached_property
     def config(self):

@@ -11,10 +11,13 @@ class TestCiA301Command(BaseCiA301TestClass):
 
     def test_scan_bus(self, obj, bus, all_device_data):
         bus_data = obj.scan_bus(bus=bus)
+        assert bus_data
         for actual in bus_data:
             expected = all_device_data[actual[0]]
             actual_address, actual_model_id = actual
+            print(f"address:  {expected['address']} =? {actual_address}")
             assert expected["address"] == actual_address
+            print(f"model_id:  {expected['model_id']} =? {actual_model_id}")
             assert expected["model_id"] == actual_model_id
 
     def random(self, data_type):

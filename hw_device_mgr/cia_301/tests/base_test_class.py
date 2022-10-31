@@ -73,6 +73,11 @@ class BaseCiA301TestClass(BaseTestClass):
         `vendor_id` and `product_code` keys may be replaced with a `category`
         key matching a parent of classes listed; this fixture will re-add those
         keys.
+
+        The `addresses` key contains a list of device addresses.  To be reusable
+        for EtherCAT, addresses are lists of two or three integers, `[bus,
+        position, (optional) alias]`.  Plain CiA301 devices don't use aliases,
+        so the `alias` element is removed.
         """
         new_device_config = list()
         for conf in device_config:
@@ -84,6 +89,9 @@ class BaseCiA301TestClass(BaseTestClass):
             new_device_config.append(conf)
             model_id = device_cls.device_model_id()
             conf["vendor_id"], conf["product_code"] = model_id
+            conf["addresses"] = [
+                cls.munge_test_address(a) for a in conf["addresses"]
+            ]
         assert new_device_config  # Sanity check not empty
         return new_device_config
 
@@ -144,12 +152,12 @@ class BaseCiA301TestClass(BaseTestClass):
 
         Device data is reformatted for ease of use in a `list` of `dict`:
         `model_key`:   `bogus_devices.device` model class attribute
-        `bus`, `position`:  Device address
+        `address`:  Device address, `(bus, position, (optional) alias)`
         `params`:  `dict` of SDO initial values
           `(idx, subidx)`:  Initial value, `DataType` instance
 
-        The same data is available in the test object `dev_data` as a
-        `dict` with device address key `(bus, position)`.
+        The same data is available in the test object `dev_data` as a `dict`
+        with device address key `(bus, position, (optional) alias)`.
         """
         request.instance.sim_device_data = self.command_class.sim_device_data
         yield request.instance.sim_device_data
@@ -240,8 +248,6 @@ class BaseCiA301TestClass(BaseTestClass):
         for dev in sim_device_data:
             # Replace model_id key
             dev["vendor_id"], dev["product_code"] = dev.pop("model_id")
-            # For test fixture
-            dev["test_address"] = (dev["bus"], dev["position"])
         return sim_device_data
 
     @classmethod
@@ -311,7 +317,7 @@ class BaseCiA301TestClass(BaseTestClass):
             if "_dcs_data" in metafunc.fixturenames:
                 names.append("_dcs_data")
             for dev in dev_data:
-                ids.append(f"{dev['test_name']}@{dev['test_address']}")
+                ids.append(f"{dev['test_name']}@{dev['address']}")
                 dev_vals = [dev]
                 device_cls = self.test_category_class(dev["test_category"])
                 assert device_cls is not None
@@ -337,7 +343,7 @@ class BaseCiA301TestClass(BaseTestClass):
                 ids.append(dev_cls.test_category)
         elif "bus" in metafunc.fixturenames:
             names.append("bus")
-            vals = list(d for d in {d["bus"] for d in dev_data})
+            vals = list({d["address"][0] for d in dev_data})
             ids.extend(f"bus{b}" for b in vals)
         if names:
             metafunc.parametrize(",".join(names), vals, ids=ids, scope="class")

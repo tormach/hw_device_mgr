@@ -10,8 +10,16 @@
   # vendor_id:  0xB090C0
   # product_code:  0xB0905010
 
-  bus: 0
-  positions: [10, 11, 12, 13, 14, 15]
+  addresses:
+    # [bus, position, (optional) alias]; alias (default 0) is used by
+    # EtherCAT devices and non-zero entries will be ignored for plain
+    # cia_301 device tests
+    - [0, 10]
+    - [0, 11]
+    - [0, 12]
+    - [0, 13]
+    - [0, 0, 4]
+    - [0, 0, 5]
 
   dc_conf:
     sync0Shift: 500000
@@ -66,8 +74,16 @@
   # vendor_id:  0xB090C0
   # product_code:  0xB0905011
 
-  bus: 0
-  positions: [10, 11, 12, 13, 14, 15]
+  addresses:
+    # [bus, position, (optional) alias]; alias (default 0) is used by
+    # EtherCAT devices and non-zero entries will be ignored for plain
+    # cia_301 device tests
+    - [0, 10]
+    - [0, 11]
+    - [0, 12]
+    - [0, 13]
+    - [0, 0, 4]
+    - [0, 0, 5]
 
   # Sync manager configuration
   sync_manager:
@@ -151,8 +167,11 @@
   # vendor_id:  0xB090C0
   # product_code:  0xB0901010
 
-  bus: 0
-  positions: [16, 17]
+  addresses:
+    # [bus, alias, position]; alias is used by EtherCAT devices and
+    # will be ignored for plain cia_301 device tests
+    - [0, 16]
+    - [0, 17]
 
   config_pdos:  False
 
