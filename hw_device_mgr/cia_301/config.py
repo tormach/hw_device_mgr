@@ -47,19 +47,19 @@ class CiA301Config:
         assert None not in model_id
         return tuple(cls.data_type_class.uint32(i) for i in model_id)
 
-    @property
+    @cached_property
     def vendor_id(self):
         return self.model_id[0]
 
-    @property
+    @cached_property
     def product_code(self):
         return self.model_id[1]
 
-    @property
+    @cached_property
     def bus(self):
         return self.address[0]
 
-    @property
+    @cached_property
     def position(self):
         return self.address[1]
 
