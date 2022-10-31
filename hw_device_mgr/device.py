@@ -347,7 +347,7 @@ class SimDevice(Device):
 
     @classmethod
     def sim_device_data_address(cls, sim_device_data):
-        return sim_device_data["position"]
+        return sim_device_data["address"]
 
     @classmethod
     def init_sim(cls, /, sim_device_data):
