@@ -2,13 +2,15 @@ import abc
 from ..cia_301.device import CiA301Device, CiA301SimDevice
 from .config import EtherCATConfig, EtherCATSimConfig
 from .data_types import EtherCATDataType
+from functools import cached_property
 
 
 class EtherCATDevice(CiA301Device, abc.ABC):
     """
     Abstract class representing an EtherCAT CoE device.
 
-    Device instances are addressed by `(master, position)`.
+    Device instances are addressed by `(master, alias, position)`.  For no
+    alias, use 0; with alias, use position 0.
 
     Device model subclasses have matching XML description and other features
     specific to that model.
@@ -30,13 +32,17 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         self.add_device_sdos_from_esi(LcId=LcId)
         self.add_device_dcs_from_esi(LcId=LcId)
 
-    @property
+    @cached_property
     def master(self):
         return self.address[0]
 
-    @property
-    def position(self):
+    @cached_property
+    def alias(self):
         return self.address[1]
+
+    @cached_property
+    def position(self):
+        return self.address[2]
 
     @classmethod
     def read_device_sdos_from_esi(cls, LcId="1033"):

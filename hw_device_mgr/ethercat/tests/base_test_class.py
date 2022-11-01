@@ -37,6 +37,9 @@ class BaseEtherCATTestClass(BaseCiA402TestClass):
         ]
     )
 
+    # Length of device address tuple:  Add `alias` field
+    address_tuple_length = 3
+
     @classmethod
     def init_sim_sdo_kwargs(cls, **kwargs):
         """SDO and DC data are generated from ESI."""
