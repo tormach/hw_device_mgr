@@ -27,9 +27,8 @@ class HALPinDevice(Device, HALMixin):
         """
         HAL pin prefix for this device.
 
-        Pin prefix is computed by separating numeric components of the
-        device `address` string with `.` and adding a final `.`, e.g.
-        `(0,5)` -> `0.5.`.
+        Pin prefix is formed with the address slug followed by the slug
+        separator.
         """
         return f"{self.addr_slug}{self.slug_separator}"
 
