@@ -55,8 +55,13 @@ class LCECCommand(EtherCATCommand):
                 # === Master 0, Slave 0 ===
                 m = self._device_location_re.match(line)
                 master, position = m.groups()
-                device = [(int(master), int(position))]
+                device = [(int(master), int(position), 0)]
                 devices.append(device)
+            elif line.startswith("Alias:"):
+                #  Alias: 4
+                alias = int(line.split(":", 1)[1].strip())
+                addr = device[-1][0:2] + (alias,)
+                device[0] = addr
             elif line.startswith("Vendor Id:"):
                 #  Vendor Id:       0x00100000
                 vi = line.split(":", 1)[1].strip()
@@ -94,10 +99,12 @@ class LCECCommand(EtherCATCommand):
     ):
         index = self.data_type_class.uint16(index)
         subindex = self.data_type_class.uint16(subindex)
+        master, position, alias = self.decode_address(address)
         output = self._ethercat(
             "upload",
-            f"--master={address[0]}",
-            f"--position={address[1]}",
+            f"--master={master}",
+            f"--position={position}",
+            f"--alias={alias}",
             f"0x{index:04X}",
             f"0x{subindex:02X}",
             f"--type={datatype.igh_type}",
@@ -119,10 +126,12 @@ class LCECCommand(EtherCATCommand):
         datatype=None,
         **kwargs,
     ):
+        master, position, alias = self.decode_address(address)
         self._ethercat(
             "download",
-            f"--master={address[0]}",
-            f"--position={address[1]}",
+            f"--master={master}",
+            f"--position={position}",
+            f"--alias={alias}",
             f"--type={datatype.igh_type}",
             "--",
             f"0x{index:04X}",

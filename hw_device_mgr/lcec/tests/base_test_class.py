@@ -64,6 +64,8 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
                     k, v = (arg[2:], True)
                 kwargs[k] = v
                 args.pop(ix)
+            if "alias" not in kwargs:
+                kwargs["alias"] = "0"
             # Emulate commands
             if cmd in ("upload", "download"):
                 ix = tuple(int(x, 16) for x in (args.pop(0), args.pop(0)))
@@ -73,8 +75,15 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
                 sdo = self.sdo_class(
                     index=ix[0], subindex=ix[1], data_type=dt.shared_name
                 )
-                address = (int(kwargs["master"]), int(kwargs["position"]))
-                params = self.command_class.sim_sdo_values[address]
+                address = tuple(
+                    int(kwargs[k]) for k in ("master", "position", "alias")
+                )
+                sim_sdo_values = self.command_class.sim_sdo_values
+                key = self.config_class.address_in_canon_addresses(
+                    address, sim_sdo_values
+                )
+                assert key is not None
+                params = sim_sdo_values[key]
                 if cmd == "download":
                     val = args.pop(0)
                     assert val is not None
@@ -94,7 +103,9 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
             elif cmd == "slaves":
                 res = ""
                 for data in self.command_class.sim_device_data.values():
-                    _res = "=== Master {bus}, Slave {position} ===\n"
+                    _res = "=== Master {address[0]}, Slave {address[1]} ===\n"
+                    if data["address"][2]:
+                        _res += "Alias: {address[2]}\n"
                     _res += "Identity:\n"
                     _res += "  Vendor Id:       0x{vendor_id:08x}\n"
                     _res += "  Product code:    0x{product_code:08x}\n"

@@ -4,10 +4,10 @@ from .data_types import LCECDataType
 from .config import LCECConfig, LCECSimConfig
 
 
-class LCECDevice(HALPinDevice, EtherCATDevice):
+class LCECDevice(EtherCATDevice, HALPinDevice):
     data_type_class = LCECDataType
     config_class = LCECConfig
 
 
-class LCECSimDevice(LCECDevice, HALPinSimDevice, EtherCATSimDevice):
+class LCECSimDevice(LCECDevice, EtherCATSimDevice, HALPinSimDevice):
     config_class = LCECSimConfig

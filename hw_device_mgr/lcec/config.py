@@ -47,7 +47,8 @@ class LCECConfig(EtherCATConfig):
             master, bus_conf = masters[dev.bus]
             slave_xml = etree.Element(
                 "slave",
-                idx=str(dev.position),
+                idx=str(0 if dev.alias else dev.position),
+                alias=str(dev.alias),
                 type="generic",
                 vid=str(dev.vendor_id),
                 pid=str(dev.product_code),
