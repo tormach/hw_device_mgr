@@ -25,11 +25,18 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         yield self.obj
 
     test_case_key_re = re.compile(r"^d\.([x0-9])\.(.*)$")
-    drive_interface_key_re = re.compile(r"^d([0-9])\.([0-9]+)\.(.*)$")
+    drive_interface_key_re = re.compile(r"^d([0-9])\.([0-9]+)\.([0-9]+)\.(.*)$")
 
     @cached_property
     def drive_addr_to_index_map(self):
-        return {d.address: i for i, d in enumerate(self.obj.devices)}
+        """Map drive address (& all aliases) to `mgr.devices` list index."""
+        config_class = self.device_base_class.config_class
+        index_map = dict()
+        for i, d in enumerate(self.obj.devices):
+            index_map[d.address] = i
+            for addr in config_class.address_aliases(d.address):
+                index_map[addr] = i
+        return index_map
 
     @lru_cache
     def obj_interface_to_test_case_key(self, interface_key):

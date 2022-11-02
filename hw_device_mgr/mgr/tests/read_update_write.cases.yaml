@@ -211,7 +211,7 @@
     state_cmd:  4  # fault
   command_out:
     state:  4  # fault
-    state_log:  Devices at ((0, 11)) set fault
+    state_log:  Devices at ((0, 11, 0)) set fault
     command_complete:  False
     drive_state:  FAULT
     d.x.control_word:  0x0002  # QUICK STOP ACTIVE
@@ -237,7 +237,7 @@
     d.x.goal_reached:  False
     d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
   command_out:
-    state_log:  Devices at ((0, 11)) in FAULT state
+    state_log:  Devices at ((0, 11, 0)) in FAULT state
     # Manager commands TRANSITION_12 to SWITCH ON DISABLED
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -354,7 +354,7 @@
     state_cmd:  4  # fault
   command_out:
     state:  4  # fault
-    state_log:  Devices at ((0, 12)) set fault
+    state_log:  Devices at ((0, 12, 0)) set fault
     drive_state:  FAULT
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -378,7 +378,7 @@
     state_cmd:  4  # fault
   command_out:
     state:  4  # fault
-    state_log:  Devices at ((0, 12)) in FAULT state
+    state_log:  Devices at ((0, 12, 0)) in FAULT state
     command_complete:  True
     drive_state:  FAULT
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
