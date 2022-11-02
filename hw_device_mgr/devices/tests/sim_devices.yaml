@@ -1,50 +1,43 @@
 # Test multiple drives
 - test_category:  elmo_gold_420_test
-  bus:  0
-  position:  10
+  address:  [0, 10]
   params:
     605A-00h: 3
     607D-01h:  -50000
     607D-02h:  50000
 - test_category:  elmo_gold_520_test
-  bus:  0
-  position:  11
+  address:  [0, 11]
   params:
     605A-00h: 3
     607D-01h:  -40000
     607D-02h:  40000
 - test_category:  elmo_gold_420_test
-  bus:  0
-  position:  12
+  address:  [0, 12]
   params:
     605A-00h: 3
     607D-01h:  -10000
     607D-02h:  10000
 - test_category:  inovance_is620n_test
-  bus:  0
-  position:  13
+  address:  [0, 13]
   params:
     200C-0Eh: 3
     605A-00h: 3
     607D-01h:  -20000
     607D-02h:  20000
 - test_category:  inovance_sv660n_test
-  bus:  0
-  position:  14
+  address:  [0, 14, 2]
   params:
     605A-00h: 3
     607D-01h:  -30000
     607D-02h:  30000
 - test_category:  inovance_sv660n_test
-  bus:  0
-  position:  15
+  address:  [0, 15, 3]
   params:
     605A-00h: 3
     607D-01h:  -35000
     607D-02h:  35000
 - test_category:  everest_xcr_e_test
-  bus:  0
-  position:  16
+  address:  [0, 16]
   params:
     605A-00h: 7
     607D-01h:  1000
