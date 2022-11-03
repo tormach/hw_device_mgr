@@ -25,6 +25,11 @@ class TestLCECDataType(
 
     def test_igh_type_attr(self):
         for shared_name in self.defined_shared_types:
+            if shared_name not in self.data_type_class.subtype_data:
+                # LinuxCNC HAL doesn't have 64-bit int types
+                assert shared_name.endswith("64")
+                print(f"Skipping 64-bit int type {shared_name}")
+                continue
             cls = self.data_type_class.by_shared_name(shared_name)
             print("cls:", cls)
             assert hasattr(cls, "igh_type")

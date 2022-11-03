@@ -6,6 +6,7 @@ from ....cia_402.device import CiA402SimDevice
 class BogusLCECDevice(LCECSimDevice, RelocatableESIDevice):
     category = "bogus_lcec_devices"
     vendor_id = 0xB090C0
+    xml_description_package = "hw_device_mgr.devices.device_xml"
 
 
 class BogusLCECV1Servo(BogusLCECDevice, CiA402SimDevice):

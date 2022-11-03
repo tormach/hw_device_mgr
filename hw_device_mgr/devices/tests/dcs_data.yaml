@@ -1,0 +1,47 @@
+elmo_gold_420_test:
+  - Name:  DC Sync
+    Desc:  DC for synchronization
+    AssignActivate:  0x300
+    CycleTimeSync0: 0
+    ShiftTimeSync0: 0
+    CycleTimeSync1: 0
+  - Name:  DC Off
+    Desc:  DC unused
+    AssignActivate:  0x0
+elmo_gold_520_test:
+  - Name:  DC Sync
+    Desc:  DC for synchronization
+    AssignActivate:  0x300
+    CycleTimeSync0: 0
+    ShiftTimeSync0: 0
+    CycleTimeSync1: 0
+  - Name:  DC Off
+    Desc:  DC unused
+    AssignActivate:  0x0
+inovance_is620n_test:
+  - Name:  DC
+    Desc:  DC-Synchron
+    AssignActivate:  0x300
+    CycleTimeSync0: 0
+    ShiftTimeSync0: 0
+    CycleTimeSync1: 0
+inovance_sv660n_test:
+  - Name:  DC
+    Desc:  DC-Synchron
+    AssignActivate:  0x300
+    CycleTimeSync0: 0
+    ShiftTimeSync0: 0
+    CycleTimeSync1: 0
+everest_xcr_e_test:
+  - Name:  Synchron
+    Desc:  SM-Synchron
+    AssignActivate:  0x0
+    CycleTimeSync0: 0
+    ShiftTimeSync0: 0
+    CycleTimeSync1: 0
+  - Name:  DCSync
+    Desc:  DC-Synchron
+    AssignActivate:  0x300
+    CycleTimeSync0: 0
+    ShiftTimeSync0: 0
+    CycleTimeSync1: 0
