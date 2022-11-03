@@ -15,6 +15,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     data_type_class = CiA402Device.data_type_class
     device_base_class = CiA402Device
     device_classes = None
+    slug_separator = ""
 
     @classmethod
     def device_model_id(cls):
@@ -89,7 +90,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     def init_device_instances(self, **kwargs):
         for i, dev in enumerate(self.devices):
-            dev.init(index=i, **kwargs)
+            dev.init(**kwargs)
             self.logger.info(f"Adding device #{i}: {dev}")
 
     ####################################################
@@ -402,7 +403,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     ####################################################
     # Execution
 
-    def run(self):
+    def run_loop(self):
         """Program main loop."""
         update_period = 1.0 / self.mgr_config.get("update_rate", 10.0)
         while not self.shutdown:
@@ -423,6 +424,21 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 self.fast_track = False
                 continue
             time.sleep(update_period)
+
+    def run(self):
+        """Program main."""
+        try:
+            self.run_loop()
+        except KeyboardInterrupt:
+            self.logger.info("Exiting at keyboard interrupt")
+            return 0
+        except Exception:
+            self.logger.error("Exiting at unrecoverable exception:")
+            for line in traceback.format_exc().splitlines():
+                self.logger.error(line)
+            return 1
+        self.logger.info("Exiting")
+        return 0
 
     def read_update_write(self):
         """

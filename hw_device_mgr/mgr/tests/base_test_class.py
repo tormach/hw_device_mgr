@@ -21,14 +21,16 @@ class BaseMgrTestClass(BaseDevicesTestClass):
     # major reason for the separate test base classes:  to provide relevant
     # fixtures without dragging in irrelevant tests.)
 
-    # test_read_update_write() configuration
-    read_update_write_yaml = "mgr/tests/read_update_write.cases.yaml"
+    # test_read_update_write() configuration:
+    # CiA NMT init online & operational status
+    read_update_write_package = "hw_device_mgr.mgr.tests"
 
     # Manager configuration
-    mgr_config_yaml = "mgr/tests/bogus_devices/mgr_config.yaml"
+    mgr_config_package = "hw_device_mgr.mgr.tests.bogus_devices"
+    mgr_config_yaml = "mgr_config.yaml"
 
     # Device model SDOs; for test fixture
-    device_sdos_yaml = "devices/tests/sim_sdo_data.yaml"
+    device_sdos_package = "hw_device_mgr.devices.tests"
 
     # Manager class
     device_class = HWDeviceMgrTest
@@ -47,8 +49,10 @@ class BaseMgrTestClass(BaseDevicesTestClass):
 
     @pytest.fixture
     def mgr_config(self):
-        self.mgr_config = self.load_yaml(self.mgr_config_yaml)
-        return self.mgr_config
+        rsrc = self.mgr_config_package, self.mgr_config_yaml
+        mgr_config = self.load_yaml_resource(*rsrc)
+        assert mgr_config, f"Empty YAML package resource {rsrc}"
+        return mgr_config
 
     @pytest.fixture
     def device_cls(self, device_config, extra_fixtures):

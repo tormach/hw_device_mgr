@@ -25,7 +25,9 @@ class CiA301Command(abc.ABC):
         """Scan bus, returning list of addresses and IDs for each device."""
 
     @abc.abstractmethod
-    def upload(self, address=None, index=None, subindex=0, datatype=None):
+    def upload(
+        self, address=None, index=None, subindex=0, datatype=None, **kwargs
+    ):
         """Upload a value from a device SDO."""
 
     @abc.abstractmethod
@@ -36,6 +38,7 @@ class CiA301Command(abc.ABC):
         subindex=0,
         value=None,
         datatype=None,
+        **kwargs,
     ):
         """Download a value to a device SDO."""
 

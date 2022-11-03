@@ -5,6 +5,7 @@ from ....cia_402.device import CiA402SimDevice
 class BogusEtherCATDevice(RelocatableESIDevice):
     category = "bogus_ethercat_devices"
     vendor_id = 0xB090C0
+    xml_description_package = "hw_device_mgr.devices.device_xml"
 
 
 class BogusEtherCATServo(BogusEtherCATDevice, CiA402SimDevice):
