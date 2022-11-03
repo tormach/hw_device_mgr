@@ -20,6 +20,11 @@ class TestHALDataType(BaseHALTestClass, _TestDataType):
 
     def test_hal_type_str(self):
         for shared_name, exp_str in self.sname_to_typestr.items():
+            if shared_name not in self.data_type_class.subtype_data:
+                # LinuxCNC HAL doesn't have 64-bit int types
+                assert shared_name.endswith("64")
+                print(f"Skipping 64-bit int type {shared_name}")
+                continue
             cls = self.data_type_class.by_shared_name(shared_name)
             exp_int = self.data_type_class.hal_enum(exp_str[4:])
             cls_str, cls_int = (cls.hal_type_str(), cls.hal_type)

@@ -1,6 +1,7 @@
 from ..device import Device, SimDevice
 from .config import CiA301Config, CiA301SimConfig
 from .data_types import CiA301DataType
+from functools import cached_property, lru_cache
 
 
 class CiA301Device(Device):
@@ -19,6 +20,9 @@ class CiA301Device(Device):
     feedback_in_data_types = dict(online="bit", oper="bit")
     feedback_in_defaults = dict(online=False, oper=False)
 
+    feedback_out_data_types = feedback_in_data_types
+    feedback_out_defaults = feedback_in_defaults
+
     def __init__(self, address=None, **kwargs):
         if isinstance(address, self.config_class):
             self.config = address
@@ -30,6 +34,7 @@ class CiA301Device(Device):
         super().__init__(address=address, **kwargs)
 
     @classmethod
+    @lru_cache
     def device_model_id(cls):
         """
         Return unique device model identifier.
@@ -40,7 +45,7 @@ class CiA301Device(Device):
         model_id = cls.vendor_id, cls.product_code
         return cls.config_class.format_model_id(model_id)
 
-    @property
+    @cached_property
     def model_id(self):
         return self.device_model_id()
 
@@ -49,8 +54,9 @@ class CiA301Device(Device):
         assert device_config
         cls.config_class.set_device_config(device_config)
 
-    def write_config_param_values(self):
-        self.config.write_config_param_values()
+    def init(self, **kwargs):
+        super().init(**kwargs)
+        self.config.initialize_params()
 
     def get_feedback(self):
         fb_out = super().get_feedback()
@@ -80,8 +86,8 @@ class CiA301Device(Device):
     def munge_sdo_data(cls, sdo_data):
         # Turn per-model name SDO data from YAML into per-model_id SDO data
         res = dict()
-        for model_name, sd in sdo_data.items():
-            device_cls = cls.get_model_by_name(model_name)
+        for model_id, sd in sdo_data.items():
+            device_cls = cls.get_model(model_id)
             model_id = device_cls.device_model_id()
             res[model_id] = sd
         assert res
@@ -97,6 +103,16 @@ class CiA301Device(Device):
         SDOs for this `model_id`.
         """
         cls.config_class.add_device_sdos(cls.munge_sdo_data(sdo_data))
+
+    @classmethod
+    def add_device_dcs(cls, dcs_data):
+        """
+        Configure device distributed clocks.
+
+        Pass to the `Config` class the information needed to configure
+        DCs for this `model_id`.
+        """
+        cls.config_class.add_device_dcs(dcs_data)
 
     @classmethod
     def get_device(cls, address=None, **kwargs):
@@ -178,10 +194,11 @@ class CiA301SimDevice(CiA301Device, SimDevice):
         return model_id
 
     @classmethod
-    def init_sim(cls, *, sim_device_data, sdo_data):
+    def init_sim(cls, *, sim_device_data, sdo_data, dcs_data):
         super().init_sim(sim_device_data=sim_device_data)
         sim_device_data = cls._sim_device_data[cls.category]
         cls.add_device_sdos(sdo_data)
+        cls.add_device_dcs(dcs_data)
         cls.config_class.init_sim(sim_device_data=sim_device_data)
 
     def set_sim_feedback(self, **kwargs):

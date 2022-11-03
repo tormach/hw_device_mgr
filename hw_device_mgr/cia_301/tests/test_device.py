@@ -10,8 +10,8 @@ class TestCiA301Device(BaseCiA301TestClass, _TestDevice):
         *_TestDevice.expected_mro,
     ]
 
-    # Test CiA NMT init:  online & operational status
-    read_update_write_yaml = "cia_301/tests/read_update_write.cases.yaml"
+    # CiA NMT init online & operational status test cases
+    read_update_write_package = "hw_device_mgr.cia_301.tests"
 
     @pytest.fixture
     def obj(self, device_cls, sim_device_data):

@@ -1,0 +1,495 @@
+# From Inovance SV660N "Advanced User Guide", table 9.2 "Communication
+# Faults and Warning Codes"
+#
+# Parameter 603Fh shows the basic error code, but the
+# manufacturer-specific SV660N parameter 2008-2Eh "Inner error code"
+# shows an extended error value.  The manual's table 9.2 shows
+# e.g. "fault" E101, with "display" broken down into E101.0 and E101.1
+# with different "name" and occasional differences in "fault range"
+# column ("type" and "resettable or not" columns appear not to
+# change).
+#
+# key:  "Display" column code with decimal prepended (as 2008-2Eh)
+# display:  "Display" column; code displayed on drive LED panel
+# description:  "Name" column
+# type:  "Type" column; indicates severity, with 1 most severe
+# resettable:  "Resettable" column; indicates whether resettable
+#   without power cycle
+
+'0x0101':
+  display: E101.0
+  description: System parameter error
+  type: 1
+  resettable: false
+'0x1101':
+  display: E101.1
+  description: Parameters in group 2000h/2001h being abnormal
+  type: 1
+  resettable: false
+'0x0102':
+  display: E102.0
+  description: Logic configuration fault
+  type: 1
+  resettable: false
+'0x8102':
+  display: E102.8
+  description: Software version mismatch
+  type: 1
+  resettable: false
+'0x1104':
+  display: E104.1
+  description: MCU running timeout
+  type: 1
+  resettable: false
+'0x2104':
+  display: E104.2
+  description: Current loop running timeout
+  type: 1
+  resettable: false
+'0x4104':
+  display: E104.4
+  description: Reference update timeout
+  type: 1
+  resettable: false
+'0x0105':
+  display: E105.0
+  description: Internal program error
+  type: 1
+  resettable: false
+'0x0108':
+  display: E108.0
+  description: Parameter write timeout
+  type: 1
+  resettable: true
+'0x1108':
+  display: E108.1
+  description: Parameter read timeout
+  type: 1
+  resettable: true
+'0x2108':
+  display: E108.2
+  description: Invalid check on data written in EEPROM
+  type: 1
+  resettable: true
+'0x3108':
+  display: E108.3
+  description: Invalid check on data read in EEPROM
+  type: 1
+  resettable: true
+'0x0120':
+  display: E120.0
+  description: Unknown encoder type
+  type: 1
+  resettable: false
+'0x1120':
+  display: E120.1
+  description: Unknown motor model
+  type: 1
+  resettable: false
+'0x2120':
+  display: E120.2
+  description: Unknown drive model
+  type: 1
+  resettable: false
+'0x5120':
+  display: E120.5
+  description: Mismatch of the motor current and drive current
+  type: 1
+  resettable: false
+'0x6120':
+  description: Mismatch of FPGA and motor model
+  type: 1
+  resettable: false
+'0x0122':
+  display: E122.0
+  description: Multi-turn absolute encoder setting error
+  type: 2
+  resettable: true
+'0x1122':
+  display: E122.1
+  description: Different DIs allocated with the same function
+  type: 2
+  resettable: true
+'0x3122':
+  display: E122.3
+  description: Upper limit invalid
+  type: 2
+  resettable: true
+'0x0136':
+  display: E136.0
+  description: Encoder parameter error
+  type: 1
+  resettable: false
+'0x1136':
+  display: E136.1
+  description: Encoder communication error
+  type: 1
+  resettable: false
+'0x0150':
+  display: E150.0
+  description: STO signal input protection activated
+  type: 1
+  resettable: true
+'0x1150':
+  display: E150.1
+  description: STO signal input error
+  type: 1
+  resettable: true
+'0x2150':
+  display: E150.2
+  description: Abnormal voltage detected
+  type: 1
+  resettable: true
+'0x3150':
+  display: E150.3
+  description: STO upstream optocoupler detection failure
+  type: 1
+  resettable: true
+'0x4150':
+  display: E150.4
+  description: PWM Buffer detection failure
+  type: 1
+  resettable: true
+'0x0201':
+  display: E201.0
+  description: Phase-P overcurrent
+  type: 1
+  resettable: false
+'0x1201':
+  display: E201.1
+  description: Phase-U overcurrent
+  type: 1
+  resettable: false
+'0x2201':
+  display: E201.2
+  description: Phase-V overcurrent
+  type: 1
+  resettable: false
+'0x4201':
+  display: E201.4
+  description: Phase-N overcurrent
+  type: 1
+  resettable: false
+'0x0208':
+  display: E208.0
+  description: MCU position reference updated frequently
+  type: 1
+  resettable: true
+'0x2208':
+  display: E208.2
+  description: Encoder communication timeout
+  type: 1
+  resettable: true
+'0x3208':
+  display: E208.3
+  description: Current sampling fault
+  type: 1
+  resettable: true
+'0x4208':
+  display: E208.4
+  description: FPGA current loop operation timeout
+  type: 1
+  resettable: true
+'0x0210':
+  display: E210.0
+  description: Output shorted to ground
+  type: 1
+  resettable: false
+'0x0234':
+  display: E234.0
+  description: Runaway protection
+  type: 1
+  resettable: false
+'0x0400':
+  display: E400.0
+  description: Main circuit overvoltage
+  type: 1
+  resettable: true
+'0x0410':
+  display: E410.0
+  description: Main circuit undervoltage
+  type: 1
+  resettable: true
+'0x0420':
+  display: E420.0
+  description: Phase loss
+  type: 2
+  resettable: true
+'0x1420':
+  display: E420.1
+  description: PL signal error
+  type: 2
+  resettable: true
+'0x0500':
+  display: E500.0
+  description: Motor overspeed
+  type: 1
+  resettable: true
+'0x1500':
+  display: E500.1
+  description: Speed feedback overflow
+  type: 1
+  resettable: true
+'0x0602':
+  display: E602.0
+  description: Angle auto-tuning error
+  type: 1
+  resettable: true
+'0x2602':
+  display: E602.2
+  description: Wrong UVW phase sequence detected during angle auto-tuning
+  type: 1
+  resettable: true
+'0x0620':
+  display: E620.0
+  description: Motor overload
+  type: 1
+  resettable: true
+'0x0630':
+  display: E630.0
+  description: Locked rotor
+  type: 1
+  resettable: true
+'0x0640':
+  display: E640.0
+  description: IGBT over-temperature
+  type: 1
+  resettable: true
+'0x0650':
+  display: E650.0
+  description: Heatsink over-temperature
+  type: 1
+  resettable: true
+'0x0661':
+  display: E661.0
+  description: Auto-tuned gain values too low
+'0x0731':
+  display: E731.0
+  description: Encoder battery failure
+  type: 2
+  resettable: true
+'0x0733':
+  display: E733.0
+  description: Encoder multi-turn counting error
+  type: 2
+  resettable: true
+'0x0735':
+  display: E735.0
+  description: Encoder multi-turn counting overflow
+  type: 2
+  resettable: true
+'0x2740':
+  display: E740.2
+  description: Absolute encoder error
+  type: 1
+  resettable: false
+'0x3740':
+  display: E740.3
+  description: Absolute encoder single-turn calculation error
+  type: 1
+  resettable: false
+'0x6740':
+  display: E740.6
+  description: Encoder write error
+  type: 1
+  resettable: false
+'0x0B00':
+  display: EB00.0
+  description: Encoder read/write check error
+  type: 2
+  resettable: true
+'0x0A33':
+  display: EA33.0
+  description: Position deviation too large
+  type: 1
+  resettable: false
+'0x1B00':
+  display: EB00.1
+  description: Position deviation overflow
+  type: 2
+  resettable: true
+'0x1B01':
+  display: EB01.1
+  description: Position reference increment too large for once
+  type: 2
+  resettable: true
+'0x2B01':
+  display: EB01.2
+  description: Position reference increment too large continuously
+  type: 2
+  resettable: true
+'0x3B01':
+  display: EB01.3
+  description: Reference overflow
+  type: 2
+  resettable: true
+'0x4B01':
+  display: EB01.4
+  description: Reference value beyond the single-turn position limits in the absolute mode
+  type: 2
+  resettable: true
+'0x0E09':
+  display: EE09.0
+  description: Software limit setting error
+  type: 2
+  resettable: true
+'0x1E09':
+  display: EE09.1
+  description: Home setting error
+  type: 2
+  resettable: true
+'0x2E09':
+  display: EE09.2
+  description: Gear ratio over the limit
+  type: 2
+  resettable: true
+'0x3E09':
+  display: EE09.3
+  description: No synchronization signal
+  type: 2
+  resettable: true
+'0x5E09':
+  display: EE09.5
+  description: PDO mapping over the limit
+  type: 2
+  resettable: true
+'0x0E08':
+  display: EE08.0
+  description: Synchronization loss
+  type: 2
+  resettable: true
+'0x1E08':
+  display: EE08.1
+  description: Network status switchover error
+  type: 2
+  resettable: true
+'0x2E08':
+  display: EE08.2
+  description: IRQ loss
+  type: 2
+  resettable: true
+'0x0E11':
+  display: EE11.0
+  description: ESI check error
+  type: 2
+  resettable: true
+'0x1E11':
+  display: EE11.1
+  description: Unsuccessful reading of EEPROM
+  type: 2
+  resettable: true
+'0x2E11':
+  display: EE11.2
+  description: Unsuccessful update of EEPROM
+  type: 2
+  resettable: true
+'0x0E12':
+  display: EE12.0
+  description: External devices of EtherCAT being abnormal
+  type: 1
+  resettable: false
+'0x0E13':
+  display: EE13.0
+  description: Synchronization cycle setting error
+  type: 2
+  resettable: true
+'0x0E15':
+  display: EE15.0
+  description: Synchronization cycle error too large
+  type: 2
+  resettable: true
+'0x0121':
+  display: E121.0
+  description: Invalid S-ON command
+  type: 3
+  resettable: true
+'0x0600':
+  display: E600.0
+  description: Inertia auto-tuning failure
+  type: 3
+  resettable: true
+'0x0601':
+  display: E601.0
+  description: Homing warning
+  type: 3
+  resettable: true
+'0x1601':
+  display: E601.1
+  description: Home switch error
+  type: 3
+  resettable: true
+'0x0730':
+  display: E730.0
+  description: Encoder battery warning
+  type: 3
+  resettable: true
+'0x0900':
+  display: E900.0
+  description: Emergency stop
+  type: 3
+  resettable: true
+'0x0902':
+  display: E902.0
+  description: Invalid DI setting
+  type: 1
+  resettable: true
+'0x1902':
+  display: E902.1
+  description: Invalid DO setting
+  type: 1
+  resettable: true
+'0x2902':
+  display: E902.2
+  description: Invalid torque reached setting
+  type: 1
+  resettable: true
+'0x0908':
+  display: E908.0
+  description: Invalid check byte of model identification
+  type: 1
+  resettable: true
+'0x0909':
+  display: E909.0
+  description: Motor overload
+  type: 1
+  resettable: true
+'0x0920':
+  display: E920.0
+  description: Regenerative resistor overload
+  type: 1
+  resettable: true
+'0x0922':
+  display: E922.0
+  description: Resistance of external regenerative resistor too small
+  type: 1
+  resettable: true
+'0x0924':
+  display: E924.0
+  description: Braking transistor over-temperature
+  type: 1
+  resettable: true
+'0x0941':
+  display: E941.0
+  description: Parameter modifications not activated
+  type: 1
+  resettable: true
+'0x0942':
+  display: E942.0
+  description: Parameter saved frequently
+  type: 1
+  resettable: true
+'0x0950':
+  display: E950.0
+  description: Forward overtravel
+  type: 1
+  resettable: true
+'0x0952':
+  display: E952.0
+  description: Reverse overtravel
+  type: 1
+  resettable: true
+'0x4E09':
+  display: EE09.4
+  description: Homing method setting error
+  type: 1
+  resettable: true

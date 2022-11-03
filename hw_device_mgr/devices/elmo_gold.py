@@ -6,6 +6,7 @@ class ElmoGold(EtherCATDevice, CiA402Device):
     """Base class for Elmo Gold EtherCAT Family Devices."""
 
     vendor_id = 0x0000009A
+    xml_description_package = "hw_device_mgr.devices.device_xml"
     # FIXME The original ESI has models that differ only by revision,
     # but the ESI parser doesn't support this yet
     # xml_description_fname = "Elmo_ECAT_00010420_V11.xml"

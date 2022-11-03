@@ -8,9 +8,11 @@ from ....devices.tests.devices import (
     InovanceSV660,
     EVEXCRE,
 )
+from ....tests.interface import DebugInterface
 
 
 class HwMgrTestDevices(EtherCATSimDevice, CiA402SimDevice):
+    interface_class = DebugInterface
     category = "hw_mgr_test_devices"
 
 
@@ -40,6 +42,7 @@ class HwMgrTestEVEXCRE(HwMgrTestDevices, EVEXCRE):
 
 
 class HWDeviceMgrTestCategory(SimHWDeviceMgr):
+    interface_class = DebugInterface
     category = "test_hw_device_mgr"
     device_base_class = HwMgrTestDevices
     device_classes = (

@@ -1,9 +1,11 @@
 from ...device import SimDevice
+from ..interface import DebugInterface
 
 
 class BogusDevice(SimDevice):
     """Bogus-Bus device class."""
 
+    interface_class = DebugInterface
     category = "bogus_bus_device"
 
 

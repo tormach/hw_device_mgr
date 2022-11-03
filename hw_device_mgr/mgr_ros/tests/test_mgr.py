@@ -11,6 +11,7 @@ class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
         "ROSSimHWDeviceMgr",
         "ROSHWDeviceMgr",
         *_TestHWDeviceMgr.expected_mro[1:],
+        "ConfigIO",
     ]
     rclpy_patches = [
         "hw_device_mgr.mgr_ros.mgr.rclpy",
@@ -21,14 +22,12 @@ class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
         # init_sim() and init_devices() signatures changed, so can't
         # use parent test class obj fixture
         self.obj = device_cls()
-        self.obj.init(list())
-        self.obj.init_sim_from_rosparams()
-        self.obj.init_devices()
+        self.obj.init(argv=list())
         yield self.obj
 
     def test_ros_params(self, obj):
         print(f"self.rosparams:\n{pformat(self.rosparams)}")
-        assert obj.update_rate == 20  # Defaults to 10
+        assert obj.mgr_config.get("update_rate", None) == 20  # Defaults to 10
         assert hasattr(obj, "mgr_config")
         assert "init_timeout" in obj.mgr_config
         assert hasattr(obj, "device_config")
