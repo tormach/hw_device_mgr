@@ -20,12 +20,12 @@ class TestCiA301Config(BaseCiA301TestClass):
         yield self.obj
 
     def test_add_device_sdos(self, obj, config_cls, sdo_data):
-        print("model_id:", obj.model_id)
-        print("registered models:", list(config_cls._model_sdos))
-        print("config_cls._model_sdos:", config_cls._model_sdos)
+        print("registered models w/SDOs:", list(config_cls._model_sdos))
+        print("test obj model_id:", obj.model_id)
         assert obj.model_id in config_cls._model_sdos
         obj_sdos = obj._model_sdos[obj.model_id]
-        assert len(obj_sdos) == len(sdo_data)
+        print("test obj SDOs:", obj_sdos)
+        assert list(sorted(obj_sdos)) == list(sorted(sdo_data))
         for ix, expected_sdo in sdo_data.items():
             assert ix in obj_sdos
             obj_sdo = obj_sdos[ix]
@@ -55,7 +55,7 @@ class TestCiA301Config(BaseCiA301TestClass):
             obj.download(sdo_ix, val + 1)
             assert obj.upload(sdo_ix) == val + 1
 
-    def test_write_config_param_values(self, obj, sdo_data):
+    def test_initialize_params(self, obj, sdo_data):
         # Test fixture data:  At least one config param value should
         # be different from default to make this test meaningful.  (IO
         # devices have no config values, so ignore those.)
@@ -68,6 +68,16 @@ class TestCiA301Config(BaseCiA301TestClass):
             # something_different |= (dev_val != conf_val)
         assert something_different or not obj.config["param_values"]
 
-        obj.write_config_param_values()
+        obj.initialize_params()
         for sdo_ix, val in obj.config["param_values"].items():
             assert obj.upload(sdo_ix) == val
+
+    def test_add_device_dcs(self, obj, config_cls, dcs_data):
+        print("model_id:", obj.model_id)
+        print("config_cls._model_dcs:", config_cls._model_dcs)
+        dcs_data = [dict(dc) for dc in dcs_data]
+        print("expected dcs:", dcs_data)
+        print("object dcs:", obj.dcs())
+        assert len(obj.dcs()) == len(dcs_data)
+        for expected_dc in dcs_data:
+            assert dict(expected_dc) in obj.dcs()

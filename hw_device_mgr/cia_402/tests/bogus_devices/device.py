@@ -1,10 +1,12 @@
 from ...device import CiA402SimDevice
 from ....cia_301.device import CiA301SimDevice
+from ....tests.interface import DebugInterface
 
 
 class BogusCiA402Device(CiA301SimDevice):
     """Bogo Co CANopen 402 (except IO) device class."""
 
+    interface_class = DebugInterface
     category = "bogus_cia402_devices"
     vendor_id = 0xB090C0
 

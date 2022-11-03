@@ -1,10 +1,12 @@
 from ...device import CiA301SimDevice
+from ....tests.interface import DebugInterface
 
 
 # Categories
 class BogusCiA301Device(CiA301SimDevice):
     """Bogo Co CANopen 301 device class."""
 
+    interface_class = DebugInterface
     category = "bogus_cia301_device"
     vendor_id = 0xB090C0
 

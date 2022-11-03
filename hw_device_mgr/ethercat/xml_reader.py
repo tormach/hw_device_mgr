@@ -1,16 +1,23 @@
 from .sdo import EtherCATSDO
+from ..config_io import ConfigIO
+from ..logging import Logging
 from lxml import etree
 from pprint import pprint
+from functools import lru_cache
 
 __all__ = ("EtherCATXMLReader",)
 
 
-class EtherCATXMLReader:
+class EtherCATXMLReader(ConfigIO):
     """Parse EtherCAT Slave Information "ESI" XML files."""
 
     sdo_class = EtherCATSDO
     _device_registry = dict()
-    _fpath_registry = dict()
+
+    logger = Logging.getLogger(__name__)
+
+    default_datatypes_package = "hw_device_mgr.ethercat"
+    default_datatypes_resource = "esi_base_types.xml"
 
     @classmethod
     def str_to_int(cls, s):
@@ -19,12 +26,18 @@ class EtherCATXMLReader:
         else:
             return int(s, 10)
 
+    @classmethod
+    def uint(cls, num, numbits=16):
+        dtc = cls.sdo_class.data_type_class
+        return getattr(dtc, f"uint{numbits}")(num)
+
     @property
     def data_type_class(self):
         return self.sdo_class.data_type_class
 
-    def __init__(self, LcId="1033"):
+    def __init__(self, tree, LcId="1033"):
         """Init object with locale ID."""
+        self.tree = tree
         self.LcId = LcId  # Discard anything not in this locale
 
     def safe_set(self, dst, key, val, prefix=None):
@@ -107,7 +120,7 @@ class EtherCATXMLReader:
                         'Key "%s" value "%s" should start with "#x"'
                         % (key, subobj.text)
                     )
-                res[key] = self.str_to_int(subobj.text)
+                res[key] = self.uint(self.str_to_int(subobj.text))
             elif key in {"MinValue", "MaxValue", "DefaultValue"}:
                 # e.g. -32767, 00 (?!?), #x0001
                 t = subobj.text
@@ -129,6 +142,10 @@ class EtherCATXMLReader:
                 res[key] = subobj.text.rstrip()
             elif key in {"BitSize", "BitOffs", "SubIdx", "LBound", "Elements"}:
                 res[key] = int(subobj.text)
+            elif key in {"SubIndex", "BitLen"}:  # RxPdo, TxPdo
+                res[key] = int(subobj.text)
+            elif key in {"DataType"} and len(subobj) == 0:  # RxPdo, TxPdo
+                res[key] = subobj.text
             elif key in {"Backup", "Setting"}:
                 res[key] = int(subobj.text)
             elif key in {"Info", "Flags", "ArrayInfo"}:
@@ -167,15 +184,13 @@ class EtherCATXMLReader:
         # </EtherCATInfo>
         vendors = self.tree.xpath("/EtherCATInfo/Vendor")
         if len(vendors) != 1:
-            raise RuntimeError(
-                f"{len(vendors)} <Vendor> sections in {self.fpath}"
-            )
+            raise RuntimeError(f"{len(vendors)} <Vendor> sections in XML")
         return vendors[0]
 
     @property
     def vendor_id(self):
         id_str = self.vendor_xml.xpath("Id")[0].text  # Should only ever be one
-        return self.data_type_class.uint16(self.str_to_int(id_str))
+        return self.uint(self.str_to_int(id_str))
 
     @property
     def devices_xml(self):
@@ -264,7 +279,7 @@ class EtherCATXMLReader:
                 expanded_subitems.append(new_subitem)
         return expanded_subitems
 
-    def massage_type(self, otype):
+    def massage_type(self, otype, **add_keys):
         """Parse a `DataType` object."""
         if "SubItems" in otype:
             otype["OldSubItems"] = old_subitems = otype.pop("SubItems")
@@ -273,6 +288,10 @@ class EtherCATXMLReader:
         key = otype["TypeName"]
         if key in self.datatypes:  # Sanity
             raise RuntimeError("Duplicate datatype '%s'" % key)
+        if "Name" in otype:
+            raise RuntimeError('Found "Name" attr in type')
+        if add_keys:
+            self.safe_update(otype, add_keys)
         self.datatypes[key] = otype
 
     def read_datatypes(self, device):
@@ -288,9 +307,16 @@ class EtherCATXMLReader:
             "Profile/Dictionary/DataTypes/DataType[SubItem]"
         ):
             self.massage_type(self.read_object(dt))
-        for i in self.datatypes.values():
-            if "Name" in i:
-                raise RuntimeError('Found "Name" attr in type')
+
+    def read_default_datatypes(self):
+        """Read default datatypes for ESI files without them."""
+        rsrc = (self.default_datatypes_package, self.default_datatypes_resource)
+        with self.open_resource(*rsrc) as f:
+            tree = etree.parse(f)
+        dts = tree.xpath("/DataTypes/DataType")
+        assert len(dts), f"Unable to parse {rsrc}"
+        for dt in tree.xpath("/DataTypes/DataType"):
+            self.massage_type(self.read_object(dt), from_defaults=True)
 
     @classmethod
     def is_base_type(cls, name):
@@ -307,21 +333,19 @@ class EtherCATXMLReader:
         otype = self.datatypes[type_name].copy()  # Manipulated below
         otypes = []
         for i in range(len(otype.get("SubItems", range(1)))):
-            otypes.append(self.type_data(o, i))
+            otypes.append(self.type_data(type_name, i))
         return otypes
 
-    def type_data(self, o, type_idx):
+    def type_data(self, type_name, type_idx=0):
         """
         Return type data for an object.
 
         Include `SubItem` objects if present.
         """
-        type_name = o["Type"]
         otype = self.datatypes[type_name].copy()  # Manipulated below
         if "SubItems" in otype:
             subitems = otype.pop("SubItems")
             if type_idx >= len(subitems):
-                pprint(o)
                 pprint(otype)
                 pprint(subitems)
                 raise RuntimeError(
@@ -380,10 +404,12 @@ class EtherCATXMLReader:
 
         Populate type data.
         """
-        sdos = list()
+        sdos = dict()
 
         # Read data types first
         self.read_datatypes(device)
+        if not self.datatypes:
+            self.read_default_datatypes()
 
         # Build object dictionary
         for obj in device.xpath("Profile/Dictionary/Objects/Object"):
@@ -412,7 +438,7 @@ class EtherCATXMLReader:
                     ecat_type = self.data_type_class.by_name(type_name)
                 except KeyError as e:
                     print(self.data_type_class._name_re_registry)
-                    raise KeyError(f"Reading {self.fpath}:  {str(e)}")
+                    raise KeyError(f"Reading XML:  {str(e)}")
                 self.safe_set(osub, "DataType", ecat_type)
 
                 # Flatten out Flags, Info
@@ -451,19 +477,76 @@ class EtherCATXMLReader:
                     osub.pop(a, None)
 
                 # Add to objects dict
-                # subindex = osub.setdefault("SubIdx", 0)
-                # self.print_shit(index, subindex, ecat_type, osub)
-                sdos.append(osub)
+                ix = (
+                    self.uint(osub["Index"]),
+                    self.uint(osub.get("SubIdx", 0), 8),
+                )
+                assert ix not in sdos, f"Duplicate SDO {ix}: {osub}"
+                sdos[ix] = osub
         # print(f"Unused:  {list(self._unused.keys())}")
         return sdos
 
-    @property
-    def tree(self):
-        if hasattr(self, "_tree"):
-            return self._tree
-        with self.fpath.open() as f:
-            self._tree = etree.parse(f)
-        return self._tree
+    def munge_pdo_entry(self, pdo_entry, pdo_type):
+        # Munge an RxPdo/TxPdo Entry to be treated as SDO
+        o = self.read_object(pdo_entry)
+        dtc = self.data_type_class
+        # Munge field names & values
+        o["Index"] = self.uint(o["Index"])
+        if o["Index"] == 0x00:
+            return o  # Some Elmo ESI [RT]xPdo final entry is zero
+        o["SubIdx"] = self.uint(o.get("SubIndex", 0x00), 8)
+        o["Type"] = o.pop("DataType")
+        o["DataType"] = dtc.by_name(o["Type"])
+        if "BitLen" not in o:
+            pprint(o)
+            raise KeyError("No 'BitLen' subelement in PDO")
+        o["BitSize"] = o.pop("BitLen")
+        # Add implicit fields
+        o["Access"] = "rw" if pdo_type == "RxPdo" else "ro"
+        o["PdoMapping"] = "R" if pdo_type == "RxPdo" else "T"
+        o["from_pdo"] = pdo_type
+        return o
+
+    def munge_pdo(self, obj, pdo_type):
+        o = dict(
+            SubIdx=0x00,
+            Type="USINT",
+            DataType=self.data_type_class.uint8,
+            BitSize="8",
+            Access="ro",
+            Name="SubIndex 000",
+        )
+        for subobj in obj:
+            if subobj.tag == "Index":
+                o["Index"] = self.uint(self.str_to_int(subobj.text))
+            elif subobj.tag == "Name":
+                o["IndexName"] = subobj.text.rstrip()
+            elif subobj.tag in {"Entry", "Exclude"}:
+                pass
+            else:
+                raise RuntimeError(f"Unknown {pdo_type} tag {subobj.tag}")
+        return o
+
+    def read_fixed_pdo_entries(self, device, sdo_data):
+        pdos = dict()
+        for pdo_type in ("RxPdo", "TxPdo"):
+            # Parse RxPdo & TxPdo elements
+            for obj in device.xpath(f"{pdo_type}"):
+                data = self.munge_pdo(obj, pdo_type)
+                ix = (data.get("Index"), data.get("SubIndex", 0))
+                assert ix not in pdos, f"Duplicate PDO mapping:  {data}"
+                if ix not in sdo_data:
+                    pdos[ix] = data
+            # Parse RxPdo & TxPdo elements Entry child elements
+            for obj in device.xpath(f"{pdo_type}[@Fixed='1']/Entry"):
+                data = self.munge_pdo_entry(obj, pdo_type)
+                ix = (data.get("Index"), data.get("SubIndex", 0))
+                if ix[0] == 0x00:
+                    continue  # Some Elmo ESI [RT]xPdo final entry is zero
+                assert ix not in pdos, f"Duplicate PDO entry:  {data}"
+                if ix not in sdo_data:
+                    pdos[ix] = data
+        return pdos
 
     sdo_translations = dict(
         # Translate SDO data from read_objects() to SDOs.add_sdo() args
@@ -487,32 +570,91 @@ class EtherCATXMLReader:
             sdo[key_dst] = data.get(key_src, None)
         sdo["ro"] = sdo.pop("access", "ro") == "ro"
         sdo["data_type"] = sdo["data_type"].shared_name
-        dtc = self.data_type_class
-        idx = sdo["index"] = dtc.uint16(sdo.pop("index"))
-        subidx = sdo["subindex"] = dtc.uint8(sdo.pop("subindex") or 0)
+        idx = sdo["index"] = self.uint(sdo.pop("index"))
+        subidx = sdo["subindex"] = self.uint(sdo.pop("subindex") or 0, 8)
+        assert (idx, subidx) not in sdos
         sdos[idx, subidx] = sdo
 
-    def add_device_descriptions(self, fpath):
-        """Parse ESI file and cache device information."""
-        if fpath in self._fpath_registry:
-            return self._fpath_registry[fpath]
+    # DC definitions
+    #
+    # <Dc>
+    # 	<OpMode>
+    # 		<Name>DC</Name>
+    # 		<Desc>DC-Synchron</Desc>
+    #       <AssignActivate>#x300</AssignActivate>
+    #       <CycleTimeSync0 Factor="1">0</CycleTimeSync0>
+    #       <ShiftTimeSync0>0</ShiftTimeSync0>
+    #       <CycleTimeSync1 Factor="1">0</CycleTimeSync1>
+    #     </OpMode>
+    #   </Dc>
 
-        self.fpath = fpath
+    def read_dc_opmodes(self, device):
+        """Parse XML `<Dc><OpMode/></Dc>` tags into simple Python object."""
+        opmodes = list()
+        for obj in device.xpath("Dc/OpMode"):
+            opmode = dict()
+            for subobj in obj:
+                key = subobj.tag
+                if key in {
+                    "AssignActivate",
+                    "CycleTimeSync0",
+                    "ShiftTimeSync0",
+                    "CycleTimeSync1",
+                }:
+                    opmode[key] = self.str_to_int(subobj.text)
+                else:
+                    opmode[key] = subobj.text
+            opmodes.append(opmode)
+        return opmodes
+
+    def device_model_id(self, device_xml):
+        device_type = self.read_device_type(device_xml)
+        product_code = self.str_to_int(device_type.get("ProductCode"))
+        model_id = tuple(
+            self.uint(i, 32) for i in (self.vendor_id, product_code)
+        )
+        return model_id
+
+    @lru_cache
+    def parse_sdos(self):
+        """Parse device SDO info from ESI XML."""
         model_sdos = dict()
         for dxml in self.devices_xml:
-            sdos = dict()
-            device_type = self.read_device_type(dxml)
-            product_code = self.str_to_int(device_type.get("ProductCode"))
-            model_id = (self.vendor_id, product_code)
-            model_id = tuple(self.data_type_class.uint32(i) for i in model_id)
-            self._device_registry[model_id] = sdos
-            model_sdos[model_id] = sdos
+            model_id = self.device_model_id(dxml)
+            reg = self._device_registry.setdefault(model_id, dict())
+            model_sdos[model_id] = reg["sdos"] = dict()
             sdo_data = self.read_objects(dxml)
-            for sd in sdo_data:
-                self.add_sdo(sdos, sd)
-        self._fpath_registry[fpath] = model_sdos
+            for sd in sdo_data.values():
+                self.add_sdo(reg["sdos"], sd)
+            pdo_data = self.read_fixed_pdo_entries(dxml, sdo_data)
+            for pd in pdo_data.values():
+                self.add_sdo(reg["sdos"], pd)
+
         return model_sdos
 
+    @lru_cache
+    def parse_dc_opmodes(self):
+        """Parse device DC OpModes info from ESI XML."""
+        dc_opmodes = dict()
+        for dxml in self.devices_xml:
+            model_id = self.device_model_id(dxml)
+            opmodes = self.read_dc_opmodes(dxml)
+            assert isinstance(opmodes, list)
+            dc_opmodes[model_id] = opmodes
+        return dc_opmodes
+
     @classmethod
-    def sdos(cls, model_id):
-        return cls._device_registry[model_id]
+    @lru_cache
+    def read_from_resource(cls, package, resource, LcId="1033"):
+        cls.logger.info(f"Reading ESI from ({package}, {resource})")
+        with cls.open_resource(package, resource) as f:
+            tree = etree.parse(f)
+        return cls(tree, LcId=LcId)
+
+    @classmethod
+    @lru_cache
+    def read_from_path(cls, fpath, LcId="1033"):
+        print(f"Reading ESI from {fpath}")
+        with cls.open_path(fpath) as f:
+            tree = etree.parse(f)
+        return cls(tree, LcId=LcId)

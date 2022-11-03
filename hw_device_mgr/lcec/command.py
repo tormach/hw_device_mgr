@@ -17,7 +17,9 @@ class LCECCommand(EtherCATCommand):
     def _parse_output(cls, resp, kwargs):
         return resp
 
-    def _ethercat(self, *args, log_lev="debug", dry_run=False):
+    def _ethercat(
+        self, *args, log_lev="debug", dry_run=False, stderr_to_devnull=False
+    ):
         """
         Run IgH EtherCAT Master `ethercat` utility.
 
@@ -30,8 +32,9 @@ class LCECCommand(EtherCATCommand):
             return
 
         getattr(self.logger, log_lev)(" ".join(cmd_args))
+        stderr = subprocess.DEVNULL if stderr_to_devnull else None
         try:
-            resp = subprocess.check_output(cmd_args)
+            resp = subprocess.check_output(cmd_args, stderr=stderr)
         except subprocess.CalledProcessError as e:
             raise EtherCATCommandException(str(e))
 
@@ -40,10 +43,12 @@ class LCECCommand(EtherCATCommand):
 
     _device_location_re = re.compile(r"=== Master ([0-9]), Slave ([0-9]+) ")
 
-    def scan_bus(self, bus=None):
+    def scan_bus(self, bus=None, **kwargs):
         bus = self.default_bus if bus is None else bus
         devices = list()
-        output = self._ethercat("slaves", f"--master={bus}", "--verbose")
+        output = self._ethercat(
+            "slaves", f"--master={bus}", "--verbose", **kwargs
+        )
         for line in output:
             line = line.strip()
             if line.startswith("==="):
@@ -84,7 +89,9 @@ class LCECCommand(EtherCATCommand):
         else:
             return None
 
-    def upload(self, address=None, index=None, subindex=0, datatype=None):
+    def upload(
+        self, address=None, index=None, subindex=0, datatype=None, **kwargs
+    ):
         index = self.data_type_class.uint16(index)
         subindex = self.data_type_class.uint16(subindex)
         output = self._ethercat(
@@ -94,11 +101,14 @@ class LCECCommand(EtherCATCommand):
             f"0x{index:04X}",
             f"0x{subindex:02X}",
             f"--type={datatype.igh_type}",
+            **kwargs,
         )
-        # FIXME Handle non-int types
-        val_hex, val = output[0].split(" ", 1)
-        val = int(val, 10)
-        return val
+        if datatype.shared_name == "str":
+            return output[0]
+        else:
+            val_hex, val = output[0].split(" ", 1)
+            val = int(val, 10)
+            return val
 
     def download(
         self,
@@ -107,18 +117,19 @@ class LCECCommand(EtherCATCommand):
         subindex=0,
         value=None,
         datatype=None,
-        dry_run=False,
+        **kwargs,
     ):
         self._ethercat(
             "download",
             f"--master={address[0]}",
             f"--position={address[1]}",
+            f"--type={datatype.igh_type}",
+            "--",
             f"0x{index:04X}",
             f"0x{subindex:02X}",
             str(value),
-            f"--type={datatype.igh_type}",
             log_lev="info",
-            dry_run=dry_run,
+            **kwargs,
         )
 
 

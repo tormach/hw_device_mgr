@@ -1,6 +1,7 @@
 from ..device import Device, SimDevice
 from .base import HALMixin
 from .data_types import HALDataType
+from functools import cached_property
 
 
 class HALPinDevice(Device, HALMixin):
@@ -14,88 +15,87 @@ class HALPinDevice(Device, HALMixin):
         command_out=(HALMixin.HAL_OUT, ""),
     )
 
-    # Prepend this to HAL pin names
-    dev_pin_prefix = "d"
-
-    @property
+    @cached_property
     def compname(self):
         return self.comp.getprefix()
 
     def pin_name(self, interface, pname):
         return self.pin_prefix + self.pin_interfaces[interface][1] + pname
 
-    def init(self, *, comp, **kwargs):
+    @cached_property
+    def pin_prefix(self):
+        """
+        HAL pin prefix for this device.
+
+        Pin prefix is computed by separating numeric components of the
+        device `address` string with `.` and adding a final `.`, e.g.
+        `(0,5)` -> `0.5.`.
+        """
+        return f"{self.addr_slug}{self.slug_separator}"
+
+    def init(self, *, comp=None, **kwargs):
+        # Set (or ensure) self.comp
+        if comp is not None:
+            self.comp = comp
+        else:
+            assert hasattr(self, "comp")  # HALCompDevice already set
+
+        # Run parent init() to populate interfaces
         super().init(**kwargs)
-        self.comp = comp
 
-        # Get specs for all pins in all interfaces; shared pin names must match,
-        # except for direction, which becomes HAL_IO if different
-        all_specs = dict()
-        self.pin_prefix = (
-            "" if self.index is None else f"{self.dev_pin_prefix}{self.index}_"
-        )
-        for iface, params in self.pin_interfaces.items():
-            for base_pname, new_spec in self.iface_pin_specs(iface).items():
-                if base_pname not in all_specs:
-                    all_specs[base_pname] = new_spec
+        # Create HAL pins for pin interfaces
+        self.pins = {i: dict() for i in self.pin_interfaces}
+        self.no_pin_keys = {i: set() for i in self.pins}  # Attrs w/o pins
+        for intf_name, intf_pins in self.pins.items():
+            self.logger.debug(f"{self} Init HAL pins;  interface {intf_name}:")
+            intf = self.interface(intf_name)
+            for base_pname in intf.keys():
+                dtype = intf.get_data_type(base_pname)
+                if not hasattr(dtype, "hal_type"):
+                    self.logger.debug(
+                        f"Interface '{intf_name}' key '{base_pname}' type"
+                        f" '{dtype.name}' not HAL compatible; not creating pin"
+                    )
+                    self.no_pin_keys[intf_name].add(base_pname)
                     continue
-                spec = all_specs[base_pname]
-                for key, new_val in new_spec.items():
-                    if key == "pdir" and spec["pdir"] != new_val:
-                        spec["pdir"] = self.HAL_IO
-                        continue
-                    if spec[key] != new_val:
-                        raise RuntimeError(
-                            f"Two interfacess' pin '{base_pname}'"
-                            f" spec '{key}' differs,"
-                            f" '{spec[key]}' != '{new_val}'"
-                        )
-                all_specs[base_pname] = spec
-
-        # Create all pins from specs
-        self.pins = dict()
-        for base_pname, specs in all_specs.items():
-            pname, ptype, pdir = specs["pname"], specs["ptype"], specs["pdir"]
-            try:
-                pin = comp.newpin(pname, ptype, pdir)
-            except Exception as e:
-                raise RuntimeError(
-                    f"Exception creating pin {comp.getprefix()}.{pname}:  {e}"
-                )
-            ptypes, pdirs = (self.hal_enum_str(i) for i in (ptype, pdir))
-            self.pins[base_pname] = pin
-            self.logger.debug(f"Created HAL pin {pname} {ptypes} {pdirs}")
-
-    def iface_pin_specs(self, iface):
-        iface_pdir = self.pin_interfaces[iface][0]
-        data_types = self.merge_dict_attrs(f"{iface}_data_types")
-        res = dict()
-        for base_pname, data_type_name in data_types.items():
-            pname = self.pin_name(iface, base_pname)
-            ptype = self.data_type_class.by_shared_name(data_type_name).hal_type
-            res[pname] = dict(pname=pname, ptype=ptype, pdir=iface_pdir)
-        return res
+                pname = self.pin_name(intf_name, base_pname)
+                ptype = dtype.hal_type
+                pdir = self.pin_interfaces[intf_name][0]
+                try:
+                    pin = self.comp.newpin(pname, ptype, pdir)
+                except Exception as e:
+                    raise RuntimeError(
+                        f"Exception creating pin {self.compname}.{pname}:  {e}"
+                    )
+                ptypes, pdirs = (self.hal_enum_str(i) for i in (ptype, pdir))
+                intf_pins[base_pname] = pin
+                self.logger.debug(f"  {pname}:  {ptypes} {pdirs}")
 
     def read(self):
         # Read from HAL pins
-        for pin_iface, params in self.pin_interfaces.items():
-            if params[0] == self.HAL_OUT:
-                continue  # Only read HAL_IN, HAL_IO pins
-            iface_vals = {
-                p: self.pins[self.pin_name(pin_iface, p)].get()
-                for p in self.interface(pin_iface).get()
-            }
-            self.interface(pin_iface).set(**iface_vals)
+        super().read()
+        pins = self.pins["feedback_in"]
+        vals = {p: pins[p].get() for p in pins.keys()}
+        self.interface("feedback_in").update(**vals)
+        if not getattr(self, "read_once", False):
+            self.read_once = True
+            self.logger.info(
+                f"HAL pins read for {self} feedback_in:  {list(pins.keys())}"
+            )
+            self.logger.info(
+                "   Interface keys:  "
+                f"{list(self.interface('feedback_in').keys())}"
+            )
 
     def write(self):
         # Write to output pins
         super().write()
-        for pin_iface, params in self.pin_interfaces.items():
-            if params[0] == self.HAL_IN:
+        for iface, pins in self.pins.items():
+            if self.pin_interfaces[iface][0] == self.HAL_IN:
                 continue  # Only write HAL_OUT, HAL_IO pins
-            for name, val in self.interface(pin_iface).get().items():
-                pname = self.pin_name(pin_iface, name)
-                self.pins[pname].set(val)
+            vals = self.interface(iface).get()
+            for name, pin in pins.items():
+                pin.set(vals[name])
 
 
 class HALPinSimDevice(HALPinDevice, SimDevice):
@@ -115,9 +115,6 @@ class HALCompDevice(HALPinDevice):
 
     def init(self, **kwargs):
         self.comp = self.hal.component(self.hal_comp_name or self.name)
-        self.logger.info(f"Initialized '{self.compname}' HAL component")
-        super().init(comp=self.comp, **kwargs)
-
-    def hal_comp_ready(self):
+        super().init(**kwargs)
         self.comp.ready()
-        self.logger.info("%s: HAL component ready" % self.name)
+        self.logger.info(f"HAL component '{self.compname}' ready")
