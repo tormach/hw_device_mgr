@@ -117,13 +117,13 @@ class Device(abc.ABC):
         """Read `feedback_in` from hardware interface."""
         self._interfaces["feedback_in"].set()
 
-    def get_feedback(self):
+    def get_feedback(self) -> Interface:
         """Process `feedback_in` and return `feedback_out` interface."""
         fb_in = self._interfaces["feedback_in"].get()
         self._interfaces["feedback_out"].set(**fb_in)
         return self._interfaces["feedback_out"]
 
-    def set_command(self, **kwargs):
+    def set_command(self, **kwargs) -> Interface:
         """Process `command_in` and return `command_out` interface."""
         self._interfaces["command_in"].set(**kwargs)
         self._interfaces["command_out"].set()  # Set defaults
