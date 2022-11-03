@@ -16,7 +16,7 @@ class LCECDataType(EtherCATDataType, HALDataType):
         uint32=dict(igh_type="uint32"),
         float=dict(igh_type="float"),
         double=dict(igh_type="double"),
-        # Strings not usable by `ethercat` tool
+        str=dict(igh_type="string"),
     )
     if HALDataType.have_64:
         # Machinekit HAL has 64-bit int types, but not LCNC

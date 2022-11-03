@@ -1,5 +1,5 @@
 from .data_types import CiA301DataType
-from .command import CiA301Command, CiA301SimCommand
+from .command import CiA301Command, CiA301SimCommand, CiA301CommandException
 from .sdo import CiA301SDO
 from ..logging import Logging
 from functools import cached_property
@@ -105,6 +105,11 @@ class CiA301Config:
         ix = (dtc.uint16(ix[0]), dtc.uint8(ix[1]))
         return ix
 
+    @cached_property
+    def sdos(self):
+        assert self.model_id in self._model_sdos
+        return self._model_sdos[self.model_id].values()
+
     def sdo(self, ix):
         if isinstance(ix, self.sdo_class):
             return ix
@@ -123,11 +128,22 @@ class CiA301Config:
         """Get list of distributed clocks for this device."""
         return self._model_dcs[self.model_id]
 
+    def dump_param_values(self):
+        res = dict()
+        for sdo in self.sdos:
+            try:
+                res[sdo] = self.upload(sdo, stderr_to_devnull=True)
+            except CiA301CommandException as e:
+                # Objects may not exist, like variable length PDO mappings
+                self.logger.debug(f"Upload {sdo} failed:  {e}")
+                pass
+        return res
+
     #
     # Param read/write
     #
 
-    def upload(self, sdo):
+    def upload(self, sdo, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         res_raw = self.command().upload(
@@ -135,10 +151,11 @@ class CiA301Config:
             index=sdo.index,
             subindex=sdo.subindex,
             datatype=sdo.data_type,
+            **kwargs,
         )
         return sdo.data_type(res_raw)
 
-    def download(self, sdo, val, dry_run=False, force=False):
+    def download(self, sdo, val, dry_run=False, force=False, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         if not force:
@@ -148,6 +165,7 @@ class CiA301Config:
                 index=sdo.index,
                 subindex=sdo.subindex,
                 datatype=sdo.data_type,
+                **kwargs,
             )
             if sdo.data_type(res_raw) == val:
                 return  # SDO value already correct
@@ -161,6 +179,7 @@ class CiA301Config:
             subindex=sdo.subindex,
             value=val,
             datatype=sdo.data_type,
+            **kwargs,
         )
 
     #

@@ -12,7 +12,6 @@ class HALHWDeviceMgr(HALCompDevice, HWDeviceMgr):
 
     hal_comp_name = "hw_device_mgr"
     device_base_class = HALPinDevice
-    slug_separator = ""
 
     pin_interfaces = dict(
         feedback_in=(HALPinDevice.HAL_IN, ""),
