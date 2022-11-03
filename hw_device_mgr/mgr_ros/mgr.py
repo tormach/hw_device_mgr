@@ -1,11 +1,10 @@
 from ..mgr.mgr import HWDeviceMgr, SimHWDeviceMgr
+from ..config_io import ConfigIO
 import rclpy
-import yaml
-import os
 import traceback
 
 
-class ROSHWDeviceMgr(HWDeviceMgr):
+class ROSHWDeviceMgr(HWDeviceMgr, ConfigIO):
     def get_param(self, name, default=None):
         if self.ros_node.has_parameter(name):
             param = self.ros_node.get_parameter(name)
@@ -44,23 +43,15 @@ class ROSHWDeviceMgr(HWDeviceMgr):
         device_config_path = self.get_param("device_config_path")
         assert device_config_path, "No 'device_config_path' param defined"
         self.logger.info(f"Reading device config from '{device_config_path}'")
-        assert os.path.exists(device_config_path)
-        with open(device_config_path, "r") as f:
-            device_config = yaml.safe_load(f)
-        assert device_config
+        device_config = self.load_yaml_path(device_config_path)
+        assert device_config, f"Empty YAML file '{device_config_path}'"
         super().init_devices(device_config=device_config, **kwargs)
 
     def init_sim_from_rosparams(self, **kwargs):
         sim_device_data_path = self.get_param("sim_device_data_path")
         assert sim_device_data_path, "No 'sim_device_data_path' param defined"
-        assert os.path.exists(
-            sim_device_data_path
-        ), f"Device data path doesn't exist:  '{sim_device_data_path}'"
-        self.logger.info(
-            f"Reading sim device config from {sim_device_data_path}"
-        )
-        with open(sim_device_data_path, "r") as f:
-            sim_device_data = yaml.safe_load(f)
+        sim_device_data = self.load_yaml_path(sim_device_data_path)
+        assert sim_device_data, f"Empty YAML file '{sim_device_data_path}'"
         self.init_sim(sim_device_data=sim_device_data, **kwargs)
 
     def read_update_write(self):

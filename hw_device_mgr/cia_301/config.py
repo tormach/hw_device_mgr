@@ -1,6 +1,7 @@
 from .data_types import CiA301DataType
-from .command import CiA301Command, CiA301SimCommand
+from .command import CiA301Command, CiA301SimCommand, CiA301CommandException
 from .sdo import CiA301SDO
+from functools import cached_property
 
 
 class CiA301Config:
@@ -98,17 +99,33 @@ class CiA301Config:
         ix = (dtc.uint16(ix[0]), dtc.uint8(ix[1]))
         return ix
 
+    @cached_property
+    def sdos(self):
+        assert self.model_id in self._model_sdos
+        return self._model_sdos[self.model_id].values()
+
     def sdo(self, ix):
         if isinstance(ix, self.sdo_class):
             return ix
         ix = self.sdo_ix(ix)
         return self._model_sdos[self.model_id][ix]
 
+    def dump_param_values(self):
+        res = dict()
+        for sdo in self.sdos:
+            try:
+                res[sdo] = self.upload(sdo, stderr_to_devnull=True)
+            except CiA301CommandException as e:
+                # Objects may not exist, like variable length PDO mappings
+                self.logger.debug(f"Upload {sdo} failed:  {e}")
+                pass
+        return res
+
     #
     # Param read/write
     #
 
-    def upload(self, sdo):
+    def upload(self, sdo, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         res_raw = self.command().upload(
@@ -116,10 +133,11 @@ class CiA301Config:
             index=sdo.index,
             subindex=sdo.subindex,
             datatype=sdo.data_type,
+            **kwargs,
         )
         return sdo.data_type(res_raw)
 
-    def download(self, sdo, val, dry_run=False):
+    def download(self, sdo, val, dry_run=False, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         # Check before setting value to avoid unnecessary NVRAM writes
@@ -128,6 +146,7 @@ class CiA301Config:
             index=sdo.index,
             subindex=sdo.subindex,
             datatype=sdo.data_type,
+            **kwargs,
         )
         if sdo.data_type(res_raw) == val:
             return  # SDO value already correct
@@ -140,6 +159,7 @@ class CiA301Config:
             subindex=sdo.subindex,
             value=val,
             datatype=sdo.data_type,
+            **kwargs,
         )
 
     #
@@ -187,24 +207,21 @@ class CiA301Config:
         cls._device_config.clear()
         cls._device_config.extend(config)
 
-    def munge_config(self, config_raw):
+    @classmethod
+    def munge_config(cls, config_raw, position):
+        config_cooked = config_raw.copy()
+        # Convert model ID ints
+        model_id = (config_raw["vendor_id"], config_raw["product_code"])
+        model_id = cls.format_model_id(model_id)
+        config_cooked["vendor_id"], config_cooked["product_code"] = model_id
         # Flatten out param_values key
-        pv = dict()
+        config_cooked["param_values"] = dict()
         for ix, val in config_raw.get("param_values", dict()).items():
-            ix = self.sdo_class.parse_idx_str(ix)
+            ix = cls.sdo_class.parse_idx_str(ix)
             if isinstance(val, list):
-                pos_ix = config_raw["positions"].index(self.position)
+                pos_ix = config_raw["positions"].index(position)
                 val = val[pos_ix]
-            pv[ix] = val
-        dtc = self.data_type_class
-        config_raw["vendor_id"] = dtc.uint32(config_raw["vendor_id"])
-        config_raw["product_code"] = dtc.uint32(config_raw["product_code"])
-        config_cooked = dict(
-            vendor_id=config_raw["vendor_id"],
-            product_code=config_raw["product_code"],
-            param_values=pv,
-            sync_manager=config_raw.get("sync_manager", dict()),
-        )
+            config_cooked["param_values"][ix] = val
         # Return pruned config dict
         return config_cooked
 
@@ -225,7 +242,7 @@ class CiA301Config:
             else:
                 raise KeyError(f"No config for device at {self.address}")
             # Prune & cache config
-            self._config = self.munge_config(conf)
+            self._config = self.munge_config(conf, self.position)
 
         # Return cached config
         return self._config

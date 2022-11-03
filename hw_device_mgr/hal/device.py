@@ -1,6 +1,7 @@
 from ..device import Device, SimDevice
 from .base import HALMixin
 from .data_types import HALDataType
+from functools import cached_property
 
 
 class HALPinDevice(Device, HALMixin):
@@ -14,26 +15,31 @@ class HALPinDevice(Device, HALMixin):
         command_out=(HALMixin.HAL_OUT, ""),
     )
 
-    # Prepend this to HAL pin names
-    dev_pin_prefix = "d"
-
-    @property
+    @cached_property
     def compname(self):
         return self.comp.getprefix()
 
     def pin_name(self, interface, pname):
         return self.pin_prefix + self.pin_interfaces[interface][1] + pname
 
-    def init(self, *, comp, **kwargs):
+    @cached_property
+    def pin_prefix(self):
+        """
+        HAL pin prefix for this device.
+
+        Pin prefix is computed by separating numeric components of the
+        device `address` string with `.` and adding a final `.`, e.g.
+        `(0,5)` -> `0.5.`.
+        """
+        return f"{self.addr_slug}{self.slug_separator}"
+
+    def init(self, /, comp, **kwargs):
         super().init(**kwargs)
         self.comp = comp
 
         # Get specs for all pins in all interfaces; shared pin names must match,
         # except for direction, which becomes HAL_IO if different
         all_specs = dict()
-        self.pin_prefix = (
-            "" if self.index is None else f"{self.dev_pin_prefix}{self.index}_"
-        )
         for iface, params in self.pin_interfaces.items():
             for base_pname, new_spec in self.iface_pin_specs(iface).items():
                 if base_pname not in all_specs:

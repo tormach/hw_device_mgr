@@ -27,10 +27,15 @@ class EtherCATConfig(CiA301Config):
     #
 
     @classmethod
-    def get_device_sdos_from_esi(cls, esi_path):
+    def get_device_sdos_from_esi(cls, package, fname):
         """Read in device configuration from ESI file at `esi_path`."""
         esi_reader = cls.esi_reader_class()
-        return esi_reader.add_device_descriptions(esi_path)
+        if package:
+            return esi_reader.add_device_descriptions_from_resource(
+                package, fname
+            )
+        else:
+            return esi_reader.add_device_descriptions_from_path(fname)
 
 
 class EtherCATSimConfig(EtherCATConfig, CiA301SimConfig):
