@@ -5,3 +5,4 @@
 /dist/
 /hw_device_mgr.egg-info/
 __pycache__
+.idea/
