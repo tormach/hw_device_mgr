@@ -40,7 +40,7 @@ class CiA301Config:
     def __init__(
         self, address=None, model_id=None, skip_optional_config_values = True
     ):
-        self.address = address
+        self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
         self.skip_optional_config_values = skip_optional_config_values
 
@@ -243,12 +243,39 @@ class CiA301Config:
         cls._device_config.extend(config)
 
     @classmethod
+    def canon_address(cls, address):
+        """
+        Canonicalize device config address
+
+        Convert `address` values read from `device_config.yaml` to `tuple` of
+        `(bus, position)` (from `list`).
+        """
+        return None if address is None else tuple(address)
+
+    @classmethod
+    def address_variants(cls, address):
+        # Only one variant in CANopen addresses
+        return [cls.canon_address(address)]
+
+    @classmethod
     def munge_config(cls, config_raw, address, skip_optional = True):
         config_cooked = config_raw.copy()
         # Convert model ID ints
         model_id = (config_raw["vendor_id"], config_raw["product_code"])
         model_id = cls.format_model_id(model_id)
         config_cooked["vendor_id"], config_cooked["product_code"] = model_id
+        # Convert addresses from lists to tuples
+        addrs = [cls.canon_address(a) for a in config_cooked["addresses"]]
+        config_cooked["addresses"] = addrs
+        # Find index of address in config
+        address = cls.canon_address(address)
+        for pos_ix, pos_address in enumerate(addrs):
+            if pos_address == address:
+                break
+            if pos_address in cls.address_variants(address):
+                break
+        else:
+            raise KeyError(f"No address '{address}' in device config '{addrs}'")
         # Flatten out param_values key
         config_cooked["param_values"] = dict()
         for ix, val in config_raw.get("param_values", dict()).items():
@@ -265,7 +292,6 @@ class CiA301Config:
                         val = val["value"]
 
             if isinstance(val, list):
-                pos_ix = config_raw["addresses"].index(address)
                 val = val[pos_ix]
             config_cooked["param_values"][ix] = val
         # Return pruned config dict
@@ -274,6 +300,7 @@ class CiA301Config:
     @classmethod
     def find_config(cls, model_id, address):
         # Find matching config
+        address = cls.canon_address(address)
         for conf in cls._device_config:
             if "vendor_id" not in conf:
                 continue  # In tests only
@@ -288,6 +315,7 @@ class CiA301Config:
 
     @classmethod
     def gen_config(cls, model_id, address, skip_optional = True):
+        address = cls.canon_address(address)
         conf = cls.find_config(model_id, address)
         # Prune & return config
         return cls.munge_config(conf, address, skip_optional)
@@ -376,6 +404,7 @@ class CiA301SimConfig(CiA301Config):
         assert sim_device_data
         sdo_data = dict()
         for address, data in sim_device_data.items():
+            address = cls.canon_address(address)
             sdo_data[address] = cls._model_sdos.get(data["model_id"], dict())
         cls.command_class.init_sim(
             sim_device_data=sim_device_data, sdo_data=sdo_data

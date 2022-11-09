@@ -23,6 +23,11 @@ class CiA301Device(Device):
     feedback_out_data_types = feedback_in_data_types
     feedback_out_defaults = feedback_in_defaults
 
+    @classmethod
+    def canon_address(cls, address):
+        """Canonicalize a device address."""
+        return cls.config_class.canon_address(address)
+
     def __init__(
         self, address=None, skip_optional_config_values=True, **kwargs
     ):
@@ -148,7 +153,7 @@ class CiA301Device(Device):
                 raise NotImplementedError(
                     f"Unknown model {config.model_id} at {config.address}"
                 )
-            dev = device_cls.get_device(config.address, **kwargs)
+            dev = device_cls.get_device(config, **kwargs)
             devices.append(dev)
         return devices
 

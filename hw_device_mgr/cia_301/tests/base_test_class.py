@@ -244,8 +244,22 @@ class BaseCiA301TestClass(BaseTestClass):
 
     @classmethod
     def munge_sim_device_data(cls, sim_device_data):
-        sim_device_data = super().munge_sim_device_data(sim_device_data)
+        # Make non-destructive copy
+        sim_device_data = [d.copy() for d in sim_device_data]
         for dev in sim_device_data:
+            if "test_category" not in dev:
+                m_id = dev["model_id"] = dev["vendor_id"], dev["product_code"]
+                dev["test_name"] = "bogus"  # Temp. until below
+        sim_device_data = super().munge_sim_device_data(sim_device_data)
+        if hasattr(cls.device_class, "device_base_class"):
+            base_device_cls = cls.device_class.device_base_class
+        else:
+            base_device_cls = cls.device_class
+        for dev in sim_device_data:
+            # Set test_name
+            device_cls = base_device_cls.get_model(dev["model_id"])
+            assert device_cls
+            dev["test_name"] = device_cls.name
             # Replace model_id key
             dev["vendor_id"], dev["product_code"] = dev.pop("model_id")
         return sim_device_data
@@ -319,7 +333,11 @@ class BaseCiA301TestClass(BaseTestClass):
             for dev in dev_data:
                 ids.append(f"{dev['test_name']}@{dev['address']}")
                 dev_vals = [dev]
-                device_cls = self.test_category_class(dev["test_category"])
+                if "test_category" in dev:
+                    device_cls = self.test_category_class(dev["test_category"])
+                else:
+                    m_id = (dev["vendor_id"], dev["product_code"])
+                    device_cls = self.device_class.get_model(m_id)
                 assert device_cls is not None
                 if "_sdo_data" in metafunc.fixturenames:
                     dev_vals.append(sdo_data[device_cls.device_model_id()])
