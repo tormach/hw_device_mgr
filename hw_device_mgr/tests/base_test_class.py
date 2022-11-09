@@ -59,19 +59,24 @@ class BaseTestClass(ConfigIO):
         # key (only used in tests).
         new_sim_device_data = list()
         for dev in sim_device_data:
-            # Get device class from test_category key
-            device_cls = cls.test_category_class(dev["test_category"])
-            assert device_cls
+            # Fill in missing device data based on `test_category` key
+            if "test_category" in dev:
+                device_cls = cls.test_category_class(dev["test_category"])
+                assert device_cls
+                # Set model_id key
+                dev["model_id"] = device_cls.device_model_id()
+                # Set name (for test logging purposes only)
+                dev["test_name"] = device_cls.name
+            # Assert no missing device data
+            for key in ("address", "model_id", "test_name"):
+                assert key in dev
+            # Canonicalize address & weed out N/A addresses
             address = cls.munge_test_address(dev["address"])
             if address is None:
                 continue
-            new_sim_device_data.append(dev)
-            # Set model_id key
-            dev["model_id"] = device_cls.device_model_id()
-            # Munged address
             dev["address"] = address
-            # Set name (for test logging purposes only)
-            dev["test_name"] = device_cls.name
+            # Add sim device data to result
+            new_sim_device_data.append(dev)
 
         assert new_sim_device_data  # Sanity:  have test cases
         return new_sim_device_data
