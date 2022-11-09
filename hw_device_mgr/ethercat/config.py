@@ -23,15 +23,31 @@ class EtherCATConfig(CiA301Config):
     esi_reader_class = EtherCATXMLReader
     command_class = EtherCATCommand
 
+    @classmethod
+    def canon_address(cls, address):
+        """
+        Canonicalize device config address
+
+        Convert `address` values read from `device_config.yaml` to `tuple` of
+        `(bus, position, alias)` (from `list`).  Fill in optional `alias` with
+        `0`.
+        """
+        return tuple(address) if len(address) == 3 else (*address, 0)
+
     @cached_property
     def alias(self):
         return self.address[2]
 
     @classmethod
-    def address_aliases(cls, address):
-        res = [address[0:2] + (0,)]
-        if len(address) > 2 and address[2]:
+    def address_variants(cls, address):
+        address = cls.canon_address(address)
+        res = list()
+        if address[2]:  # Alias set, e.g. (0, 4, 1); add (0, 0, 1)
             res.append((address[0], 0, address[2]))
+        if address[1]:  # Position set, e.g. (0, 4, 1); add (0, 4, 0)
+            res.append(address[0:2] + (0,))
+        if len(res) == 0:  # Special case:  add (0, 0, 0)
+            res.append((0, 0, 0))
         return res
 
     @classmethod
@@ -39,21 +55,22 @@ class EtherCATConfig(CiA301Config):
         if address in canon_addresses:
             return address
         for canon_address in canon_addresses:
-            if address in cls.address_aliases(canon_address):
+            if address in cls.address_variants(canon_address):
                 return canon_address
         return None
 
     @classmethod
     def canon_address_in_addresses(cls, canon_address, addresses):
+        addresses = [cls.canon_address(a) for a in addresses]
         if canon_address in addresses:
             return canon_address
-        for addr in cls.address_aliases(canon_address):
+        for addr in cls.address_variants(canon_address):
             if addr in addresses:
                 return addr
         return None
 
     @classmethod
-    def gen_config(cls, model_id, address):
+    def find_config(cls, model_id, address):
         # Find matching config, considering device aliases
         for conf in cls._device_config:
             if "vendor_id" not in conf:
@@ -66,8 +83,7 @@ class EtherCATConfig(CiA301Config):
             break  # Found it
         else:
             raise KeyError(f"No config for device at {address}")
-        # Prune & return config
-        return cls.munge_config(conf, conf_addr)
+        return conf
 
     #
     # Device ESI

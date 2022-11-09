@@ -1,4 +1,5 @@
 import abc
+import re
 from ..cia_301.device import CiA301Device, CiA301SimDevice
 from .config import EtherCATConfig, EtherCATSimConfig
 from .data_types import EtherCATDataType
@@ -37,12 +38,28 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         return self.address[0]
 
     @cached_property
-    def alias(self):
+    def position(self):
         return self.address[1]
 
     @cached_property
-    def position(self):
+    def alias(self):
         return self.address[2]
+
+    @cached_property
+    def addr_slug(self):
+        """
+        Return a slug generated from the device address.
+
+        EtherCAT slugs have a third alias field.  If alias is non-zero, then
+        position field will be zero.  This allows for dynamic device
+        positioning, where the alias is known but not the position.
+        """
+        if self.address[2]:  # (0, 14, 4) -> (0, 0, 4)
+            address = (self.address[0], 0, self.address[2])
+        else:  # (0, 14, 0) -> (0, 14, 0)
+            address = self.address
+        addr_prefix = re.sub(r"[^0-9]+", self.slug_separator, str(address))
+        return addr_prefix.strip(self.slug_separator)
 
     @classmethod
     def read_device_sdos_from_esi(cls, LcId="1033"):
