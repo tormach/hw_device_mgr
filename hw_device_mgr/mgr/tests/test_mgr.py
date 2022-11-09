@@ -34,26 +34,42 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         index_map = dict()
         for i, d in enumerate(self.obj.devices):
             index_map[d.address] = i
-            for addr in config_class.address_aliases(d.address):
+            for addr in config_class.address_variants(d.address):
                 index_map[addr] = i
         return index_map
 
+    @cached_property
+    def drive_index_to_addr_map(self):
+        """Map `mgr.devices` list index to drive address."""
+        # This could be a list, but drive_addr_to_index_map can't
+        return dict(enumerate(d.address for d in self.obj.devices))
+
     @lru_cache
-    def obj_interface_to_test_case_key(self, interface_key):
-        # Translate test object interface key `d0.16.control_mode` to test case
-        # key `d.6.control_mode`
+    def obj_interface_to_test_case_kv(self, interface_key, interface_val):
+        # Translate interface values `Foo {address[6]} bar` to `Foo (0, 1, 0) bar`
+        val = interface_val
+        if isinstance(val, str):
+            val = val.format(address=self.drive_index_to_addr_map)
+            print("obj_interface_to_test_case_kv:", interface_val, val)
+
+        # Extract drive address `(0, 16, 0)` from key  `d0.16.0.control_mode`
         m = self.drive_interface_key_re.match(interface_key)
         if m is None:
-            return interface_key  # Doesn't match fmt. `d.6.control_mode`
-        address = tuple(map(int, m.groups()[:-1]))  # (0, 16)
+            return interface_key, val  # Doesn't match fmt. `d.6.control_mode`
+        address = tuple(map(int, m.groups()[:-1]))  # (0, 16, 0)
+        # Get device test case index
         index = self.drive_addr_to_index_map[address]  # 6
-        key = m.groups()[-1]  # "control_mode"
-        return f"d.{index}.{key}"
+
+        # Translate test object interface key `d0.16.0.control_mode` to test
+        # case key `d.6.control_mode`
+        key = f"d.{index}.{m.groups()[-1]}"  # "d.6.control_mode"
+
+        return key, val
 
     def obj_interface_to_test_case(self, data):
-        return {
-            self.obj_interface_to_test_case_key(k): v for k, v in data.items()
-        }
+        return dict(
+            self.obj_interface_to_test_case_kv(k, v) for k, v in data.items()
+        )
 
     def test_state_values(self, obj):
         values = dict()
@@ -169,7 +185,6 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         if interface in {"feedback_out", "command_in"}:
             # Higher level interfaces to application
             return self.check_interface_values_higher(interface, indent=indent)
-
         else:
             # Lower level interfaces close to hardware interface
             return self.check_interface_values_lower(interface, indent=indent)
@@ -209,6 +224,10 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         # Prepare expected data
         expected = self.test_data[interface]
         mgr_expected, device_expected = self.split_drive_data(expected)
+        for k, v in mgr_expected.items():
+            if isinstance(v, str):
+                mgr_expected[k] = v.format(address=self.drive_index_to_addr_map)
+                print(f"check_interface_values_lower: k={k} v='{v}' -> '{mgr_expected[k]}'")
         # self.print_dict(mgr_expected, f"Expected {interface}", indent=2)
         # for i, d in enumerate(device_expected):
         #     self.print_dict(d, f"drive_{i}", indent=4)
