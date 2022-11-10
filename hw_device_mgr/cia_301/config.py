@@ -37,7 +37,9 @@ class CiA301Config:
     # Mapping of model_id to a dict of (index, subindex) to DC object
     _model_dcs = dict()
 
-    def __init__(self, address=None, model_id=None, skip_optional_config_values = True):
+    def __init__(
+        self, address=None, model_id=None, skip_optional_config_values = True
+    ):
         self.address = address
         self.model_id = self.format_model_id(model_id)
         self.skip_optional_config_values = skip_optional_config_values
@@ -229,13 +231,12 @@ class CiA301Config:
               - `bits`:  Instead of `name`, break out individual bits,
                  names specified by a `list`
 
-        - `param_values`:  `dict` of `<idx>-<subidx>h`-format object
-          dictionary keys to values; values may be a single scalar
-          applied to all `positions`, or a `list` of scalars applied
-          to corresponding entries in `positions`
-          May also be a dict with two keys, "value" and "optional". If "optional"
-          is True, this value will only be applied if the skip_optional parameter 
-          is set to false on gen_config calls.
+        - `param_values`:  `dict` of `<idx>-<subidx>h`-format object dictionary
+          keys to values; values may be a single scalar applied to all
+          `positions`, or a `list` of scalars applied to corresponding entries
+          in `positions`.  May also be a dict with two keys, `value` and
+          `optional`.  If `optional` is set, this value will only be applied if
+          the `skip_optional parameter` is `False` on `gen_config()` calls.
         """
         assert config
         cls._device_config.clear()
@@ -287,14 +288,15 @@ class CiA301Config:
 
     @classmethod
     def gen_config(cls, model_id, address, skip_optional = True):
-        bus, position = address
         conf = cls.find_config(model_id, address)
         # Prune & return config
         return cls.munge_config(conf, address, skip_optional)
 
     @cached_property
     def config(self):
-        return self.gen_config(self.model_id, self.address, self.skip_optional_config_values)
+        return self.gen_config(
+            self.model_id, self.address, self.skip_optional_config_values
+        )
 
     def get_device_params_nv(self):
         """
@@ -354,7 +356,12 @@ class CiA301Config:
         res = list()
         for address, model_id in cls.command().scan_bus(bus=bus, **kwargs):
             model_id = cls.format_model_id(model_id)
-            config = cls(address=address, model_id=model_id, skip_optional_config_values=skip_optional_config_values, **kwargs)
+            config = cls(
+                address=address,
+                model_id=model_id,
+                skip_optional_config_values=skip_optional_config_values,
+                **kwargs
+            )
             res.append(config)
         return res
 

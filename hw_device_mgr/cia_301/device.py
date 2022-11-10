@@ -23,7 +23,9 @@ class CiA301Device(Device):
     feedback_out_data_types = feedback_in_data_types
     feedback_out_defaults = feedback_in_defaults
 
-    def __init__(self, address=None, skip_optional_config_values=True, **kwargs):
+    def __init__(
+        self, address=None, skip_optional_config_values=True, **kwargs
+    ):
         if isinstance(address, self.config_class):
             # Config passed in instead of address; reuse it
             config = address
@@ -127,8 +129,8 @@ class CiA301Device(Device):
         )
         if address in registry:
             return registry[address]
-        # kwargs will contain skip_optional_config_values at this point, but it will be consumed by
-        # __init__ for this class
+        # kwargs will contain skip_optional_config_values at this point, but it
+        # will be consumed by __init__ for this class
         device_obj = cls(address=config, **kwargs)
         registry[address] = device_obj
         return device_obj
@@ -138,8 +140,8 @@ class CiA301Device(Device):
         """Scan bus and return a list of device objects."""
         devices = list()
         config_cls = cls.config_class
-        # Init actual config class instances here. kwargs will contain skip_optional_config_values
-        # which is consumed by CiA301Config.scan_bus
+        # Init actual config class instances here. kwargs will contain
+        # skip_optional_config_values which is consumed by CiA301Config.scan_bus
         for config in config_cls.scan_bus(bus=bus, **kwargs):
             device_cls = cls.get_model(config.model_id)
             if device_cls is None:
