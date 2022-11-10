@@ -1,5 +1,5 @@
 from .data_types import CiA301DataType
-from .command import CiA301Command, CiA301SimCommand
+from .command import CiA301Command, CiA301SimCommand, CiA301CommandException
 from .sdo import CiA301SDO
 from ..logging import Logging
 from functools import cached_property
@@ -37,9 +37,10 @@ class CiA301Config:
     # Mapping of model_id to a dict of (index, subindex) to DC object
     _model_dcs = dict()
 
-    def __init__(self, address=None, model_id=None):
+    def __init__(self, address=None, model_id=None, skip_optional_config_values = True):
         self.address = address
         self.model_id = self.format_model_id(model_id)
+        self.skip_optional_config_values = skip_optional_config_values
 
     @classmethod
     def format_model_id(cls, model_id):
@@ -105,11 +106,27 @@ class CiA301Config:
         ix = (dtc.uint16(ix[0]), dtc.uint8(ix[1]))
         return ix
 
+    @cached_property
+    def sdos(self):
+        assert self.model_id in self._model_sdos
+        return self._model_sdos[self.model_id].values()
+
     def sdo(self, ix):
         if isinstance(ix, self.sdo_class):
             return ix
         ix = self.sdo_ix(ix)
         return self._model_sdos[self.model_id][ix]
+
+    def dump_param_values(self):
+        res = dict()
+        for sdo in self.sdos:
+            try:
+                res[sdo] = self.upload(sdo, stderr_to_devnull=True)
+            except CiA301CommandException as e:
+                # Objects may not exist, like variable length PDO mappings
+                self.logger.debug(f"Upload {sdo} failed:  {e}")
+                pass
+        return res
 
     @classmethod
     def add_device_dcs(cls, dcs_data):
@@ -127,7 +144,7 @@ class CiA301Config:
     # Param read/write
     #
 
-    def upload(self, sdo):
+    def upload(self, sdo, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         res_raw = self.command().upload(
@@ -135,10 +152,11 @@ class CiA301Config:
             index=sdo.index,
             subindex=sdo.subindex,
             datatype=sdo.data_type,
+            **kwargs,
         )
         return sdo.data_type(res_raw)
 
-    def download(self, sdo, val, dry_run=False, force=False):
+    def download(self, sdo, val, dry_run=False, force=False, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         if not force:
@@ -148,6 +166,7 @@ class CiA301Config:
                 index=sdo.index,
                 subindex=sdo.subindex,
                 datatype=sdo.data_type,
+                **kwargs,
             )
             if sdo.data_type(res_raw) == val:
                 return  # SDO value already correct
@@ -161,6 +180,7 @@ class CiA301Config:
             subindex=sdo.subindex,
             value=val,
             datatype=sdo.data_type,
+            **kwargs,
         )
 
     #
@@ -202,13 +222,16 @@ class CiA301Config:
           dictionary keys to values; values may be a single scalar
           applied to all `positions`, or a `list` of scalars applied
           to corresponding entries in `positions`
+          May also be a dict with two keys, "value" and "optional". If "optional"
+          is True, this value will only be applied if the skip_optional parameter 
+          is set to false on gen_config calls.
         """
         assert config
         cls._device_config.clear()
         cls._device_config.extend(config)
 
     @classmethod
-    def munge_config(cls, config_raw, position):
+    def munge_config(cls, config_raw, position, skip_optional = True):
         config_cooked = config_raw.copy()
         # Convert model ID ints
         model_id = (config_raw["vendor_id"], config_raw["product_code"])
@@ -218,6 +241,17 @@ class CiA301Config:
         config_cooked["param_values"] = dict()
         for ix, val in config_raw.get("param_values", dict()).items():
             ix = cls.sdo_class.parse_idx_str(ix)
+            # param_keys value can either be stored directly as a scalar or list
+            # (to be applied universally) or as a dict with the key "optional"
+            # which specifies that this is a low priority value that can be skipped
+            if isinstance(val, dict):
+                if "optional" in val:
+                    if val["optional"] == True and skip_optional:
+                        # Skip this item and don't add it to config_cooked
+                        continue
+                    else:
+                        val = val["value"]
+
             if isinstance(val, list):
                 pos_ix = config_raw["positions"].index(position)
                 val = val[pos_ix]
@@ -225,8 +259,8 @@ class CiA301Config:
         # Return pruned config dict
         return config_cooked
 
-    @classmethod
-    def gen_config(cls, model_id, address):
+    @classmethod 
+    def find_config(cls, model_id, address):
         bus, position = address
         # Find matching config
         for conf in cls._device_config:
@@ -241,12 +275,18 @@ class CiA301Config:
             break
         else:
             raise KeyError(f"No config for device at {address}")
+        return conf
+
+    @classmethod
+    def gen_config(cls, model_id, address, skip_optional = True):
+        bus, position = address
+        conf = cls.find_config(model_id, address)
         # Prune & return config
-        return cls.munge_config(conf, position)
+        return cls.munge_config(conf, position, skip_optional)
 
     @cached_property
     def config(self):
-        return self.gen_config(self.model_id, self.address)
+        return self.gen_config(self.model_id, self.address, self.skip_optional_config_values)
 
     def get_device_params_nv(self):
         """
@@ -301,12 +341,12 @@ class CiA301Config:
     #
 
     @classmethod
-    def scan_bus(cls, bus=0, **kwargs):
+    def scan_bus(cls, bus=0, skip_optional_config_values=True, **kwargs):
         """Return a `list` of configuration objects for each device."""
         res = list()
         for address, model_id in cls.command().scan_bus(bus=bus, **kwargs):
             model_id = cls.format_model_id(model_id)
-            config = cls(address=address, model_id=model_id, **kwargs)
+            config = cls(address=address, model_id=model_id, skip_optional_config_values=skip_optional_config_values, **kwargs)
             res.append(config)
         return res
 

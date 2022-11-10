@@ -9,7 +9,6 @@ class Logging:
     def __init__(self, name):
         lc = self._logging_class
         lo = self._logger = lc.getLogger(name)
-        lo.setLevel(lc.DEBUG)
         lh = self._log_handler = lc.StreamHandler()
         lf = lc.Formatter("%(asctime)s [%(levelname)s]%(name)s: %(message)s")
         lh.setFormatter(lf)

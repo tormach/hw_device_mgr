@@ -2094,6 +2094,26 @@
                   </Flags>
                 </SubItem>
                 <SubItem>
+                  <SubIdx>6</SubIdx>
+                  <Name>Stop mode at S-ON OFF</Name>
+                  <Type>UINT</Type>
+                  <BitSize>16</BitSize>
+                  <BitOffs>96</BitOffs>
+                  <Flags>
+                    <Access>rw</Access>
+                  </Flags>
+                </SubItem>
+                <SubItem>
+                  <SubIdx>7</SubIdx>
+                  <Name>Stop mode at No. 2 fault</Name>
+                  <Type>INT</Type>
+                  <BitSize>16</BitSize>
+                  <BitOffs>112</BitOffs>
+                  <Flags>
+                    <Access>rw</Access>
+                  </Flags>
+                </SubItem>
+                <SubItem>
                   <SubIdx>8</SubIdx>
                   <Name>Stop mode at limit switch signal</Name>
                   <Type>UINT</Type>
@@ -2592,6 +2612,26 @@
                   <Type>UINT</Type>
                   <BitSize>16</BitSize>
                   <BitOffs>112</BitOffs>
+                  <Flags>
+                    <Access>rw</Access>
+                  </Flags>
+                </SubItem>
+                <SubItem>
+                  <SubIdx>8</SubIdx>
+                  <Name>Numerator of electronic gear ratio</Name>
+                  <Type>UDINT</Type>
+                  <BitSize>32</BitSize>
+                  <BitOffs>128</BitOffs>
+                  <Flags>
+                    <Access>rw</Access>
+                  </Flags>
+                </SubItem>
+                <SubItem>
+                  <SubIdx>10</SubIdx>
+                  <Name>Denominator of electronic gear ratio</Name>
+                  <Type>UDINT</Type>
+                  <BitSize>32</BitSize>
+                  <BitOffs>160</BitOffs>
                   <Flags>
                     <Access>rw</Access>
                   </Flags>
@@ -4853,6 +4893,16 @@
                   </Flags>
                 </SubItem>
                 <SubItem>
+                  <SubIdx>3</SubIdx>
+                  <Name>Offline inertia autotuning selection</Name>
+                  <Type>UINT</Type>
+                  <BitSize>16</BitSize>
+                  <BitOffs>48</BitOffs>
+                  <Flags>
+                    <Access>rw</Access>
+                  </Flags>
+                </SubItem>
+                <SubItem>
                   <SubIdx>5</SubIdx>
                   <Name>Encoder ROM reading/writing</Name>
                   <Type>UINT</Type>
@@ -6935,6 +6985,22 @@
                     </Info>
                   </SubItem>
                   <SubItem>
+                    <Name>Stop mode at S-ON OFF</Name>
+                    <Info>
+                      <MinValue>-3</MinValue>
+                      <MaxValue>1</MaxValue>
+                      <DefaultValue>0</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>Stop mode at No. 2 fault</Name>
+                    <Info>
+                      <MinValue>-5</MinValue>
+                      <MaxValue>3</MaxValue>
+                      <DefaultValue>2</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
                     <Name>Stop mode at limit switch signal</Name>
                     <Info>
                       <MinValue>0</MinValue>
@@ -7354,6 +7420,22 @@
                       <MinValue>0</MinValue>
                       <MaxValue>1280</MaxValue>
                       <DefaultValue>0</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>Numerator of electronic gear ratio</Name>
+                    <Info>
+                      <MinValue>0</MinValue>
+                      <MaxValue>4294967295</MaxValue>
+                      <DefaultValue>1</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>Denominator of electronic gear ratio</Name>
+                    <Info>
+                      <MinValue>0</MinValue>
+                      <MaxValue>4294967295</MaxValue>
+                      <DefaultValue>1</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -9072,6 +9154,14 @@
                   </SubItem>
                   <SubItem>
                     <Name>Fault reset</Name>
+                    <Info>
+                      <MinValue>0</MinValue>
+                      <MaxValue>1</MaxValue>
+                      <DefaultValue>0</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>Offline inertia autotuning selection</Name>
                     <Info>
                       <MinValue>0</MinValue>
                       <MaxValue>1</MaxValue>

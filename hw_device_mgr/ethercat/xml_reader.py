@@ -1,5 +1,6 @@
 from .sdo import EtherCATSDO
 from ..config_io import ConfigIO
+from ..logging import Logging
 from lxml import etree
 from pprint import pprint
 from functools import lru_cache
@@ -15,6 +16,8 @@ class EtherCATXMLReader(ConfigIO):
 
     default_datatypes_package = "hw_device_mgr.ethercat"
     default_datatypes_resource = "esi_base_types.xml"
+
+    logger = Logging.getLogger(__name__)
 
     @classmethod
     def str_to_int(cls, s):
@@ -182,7 +185,7 @@ class EtherCATXMLReader(ConfigIO):
         vendors = self.tree.xpath("/EtherCATInfo/Vendor")
         if len(vendors) != 1:
             raise RuntimeError(
-                f"{len(vendors)} <Vendor> sections in {self.esi_key}"
+                f"{len(vendors)} <Vendor> sections in XML"
             )
         return vendors[0]
 
@@ -437,7 +440,7 @@ class EtherCATXMLReader(ConfigIO):
                     ecat_type = self.data_type_class.by_name(type_name)
                 except KeyError as e:
                     print(self.data_type_class._name_re_registry)
-                    raise KeyError(f"Reading {self.esi_key}:  {str(e)}")
+                    raise KeyError(f"Reading XML:  {str(e)}")
                 self.safe_set(osub, "DataType", ecat_type)
 
                 # Flatten out Flags, Info
@@ -645,7 +648,7 @@ class EtherCATXMLReader(ConfigIO):
     @classmethod
     @lru_cache
     def read_from_resource(cls, package, resource, LcId="1033"):
-        print(f"Reading ESI from ({package}, {resource})")
+        cls.logger.info(f"Reading ESI from ({package}, {resource})")
         with cls.open_resource(package, resource) as f:
             tree = etree.parse(f)
         return cls(tree, LcId=LcId)
@@ -653,7 +656,7 @@ class EtherCATXMLReader(ConfigIO):
     @classmethod
     @lru_cache
     def read_from_path(cls, fpath, LcId="1033"):
-        print(f"Reading ESI from {fpath}")
+        cls.logger.info(f"Reading ESI from {fpath}")
         with cls.open_path(fpath) as f:
             tree = etree.parse(f)
         return cls(tree, LcId=LcId)
