@@ -140,6 +140,17 @@ class CiA301Config:
         """Get list of distributed clocks for this device."""
         return self._model_dcs[self.model_id]
 
+    def dump_param_values(self):
+        res = dict()
+        for sdo in self.sdos:
+            try:
+                res[sdo] = self.upload(sdo, stderr_to_devnull=True)
+            except CiA301CommandException as e:
+                # Objects may not exist, like variable length PDO mappings
+                self.logger.debug(f"Upload {sdo} failed:  {e}")
+                pass
+        return res
+
     #
     # Param read/write
     #

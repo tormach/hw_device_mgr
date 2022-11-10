@@ -14,6 +14,8 @@ class EtherCATXMLReader(ConfigIO):
     sdo_class = EtherCATSDO
     _device_registry = dict()
 
+    logger = Logging.getLogger(__name__)
+
     default_datatypes_package = "hw_device_mgr.ethercat"
     default_datatypes_resource = "esi_base_types.xml"
 
@@ -184,9 +186,7 @@ class EtherCATXMLReader(ConfigIO):
         # </EtherCATInfo>
         vendors = self.tree.xpath("/EtherCATInfo/Vendor")
         if len(vendors) != 1:
-            raise RuntimeError(
-                f"{len(vendors)} <Vendor> sections in XML"
-            )
+            raise RuntimeError(f"{len(vendors)} <Vendor> sections in XML")
         return vendors[0]
 
     @property

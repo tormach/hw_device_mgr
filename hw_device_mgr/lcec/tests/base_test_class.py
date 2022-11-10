@@ -50,6 +50,7 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
             kwargs.pop("stderr", None)
             assert not kwargs, f"Non-empty kwargs:  {kwargs}"
             print(f'mocking command: {" ".join(args)}')
+            print(f"  subprocess.check_output kwargs: {repr(kwargs)}")
             # Parse out args, kwargs
             assert args.pop(0) == "ethercat"
             cmd = args.pop(0)

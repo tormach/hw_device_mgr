@@ -2093,6 +2093,7 @@
                     <Access>rw</Access>
                   </Flags>
                 </SubItem>
+		<!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                 <SubItem>
                   <SubIdx>6</SubIdx>
                   <Name>Stop mode at S-ON OFF</Name>
@@ -2103,6 +2104,7 @@
                     <Access>rw</Access>
                   </Flags>
                 </SubItem>
+		<!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                 <SubItem>
                   <SubIdx>7</SubIdx>
                   <Name>Stop mode at No. 2 fault</Name>
@@ -2616,6 +2618,7 @@
                     <Access>rw</Access>
                   </Flags>
                 </SubItem>
+		<!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                 <SubItem>
                   <SubIdx>8</SubIdx>
                   <Name>Numerator of electronic gear ratio</Name>
@@ -2626,6 +2629,7 @@
                     <Access>rw</Access>
                   </Flags>
                 </SubItem>
+		<!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                 <SubItem>
                   <SubIdx>10</SubIdx>
                   <Name>Denominator of electronic gear ratio</Name>
@@ -4892,6 +4896,7 @@
                     <Access>rw</Access>
                   </Flags>
                 </SubItem>
+		<!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                 <SubItem>
                   <SubIdx>3</SubIdx>
                   <Name>Offline inertia autotuning selection</Name>
@@ -6984,6 +6989,7 @@
                       <DefaultValue>0</DefaultValue>
                     </Info>
                   </SubItem>
+		  <!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                   <SubItem>
                     <Name>Stop mode at S-ON OFF</Name>
                     <Info>
@@ -6992,6 +6998,7 @@
                       <DefaultValue>0</DefaultValue>
                     </Info>
                   </SubItem>
+		  <!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                   <SubItem>
                     <Name>Stop mode at No. 2 fault</Name>
                     <Info>
@@ -7372,6 +7379,7 @@
                       <DefaultValue>0</DefaultValue>
                     </Info>
                   </SubItem>
+		  <!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                   <SubItem>
                     <Name>EtherCAT forced DO output logic in non-OP status</Name>
                     <Info>
@@ -7422,6 +7430,7 @@
                       <DefaultValue>0</DefaultValue>
                     </Info>
                   </SubItem>
+		  <!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                   <SubItem>
                     <Name>Numerator of electronic gear ratio</Name>
                     <Info>
@@ -7430,6 +7439,7 @@
                       <DefaultValue>1</DefaultValue>
                     </Info>
                   </SubItem>
+		  <!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                   <SubItem>
                     <Name>Denominator of electronic gear ratio</Name>
                     <Info>
@@ -9160,6 +9170,7 @@
                       <DefaultValue>0</DefaultValue>
                     </Info>
                   </SubItem>
+		  <!-- Added by john@zultron.com from SV660N Advanced User Guide 20201020 -->
                   <SubItem>
                     <Name>Offline inertia autotuning selection</Name>
                     <Info>
