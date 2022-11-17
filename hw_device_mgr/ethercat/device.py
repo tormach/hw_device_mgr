@@ -1,14 +1,17 @@
 import abc
+import re
 from ..cia_301.device import CiA301Device, CiA301SimDevice
 from .config import EtherCATConfig, EtherCATSimConfig
 from .data_types import EtherCATDataType
+from functools import cached_property
 
 
 class EtherCATDevice(CiA301Device, abc.ABC):
     """
     Abstract class representing an EtherCAT CoE device.
 
-    Device instances are addressed by `(master, position)`.
+    Device instances are addressed by `(master, alias, position)`.  For no
+    alias, use 0; with alias, use position 0.
 
     Device model subclasses have matching XML description and other features
     specific to that model.
@@ -30,13 +33,33 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         self.add_device_sdos_from_esi(LcId=LcId)
         self.add_device_dcs_from_esi(LcId=LcId)
 
-    @property
+    @cached_property
     def master(self):
         return self.address[0]
 
-    @property
+    @cached_property
     def position(self):
         return self.address[1]
+
+    @cached_property
+    def alias(self):
+        return self.address[2]
+
+    @cached_property
+    def addr_slug(self):
+        """
+        Return a slug generated from the device address.
+
+        EtherCAT slugs have a third alias field.  If alias is non-zero, then
+        position field will be zero.  This allows for dynamic device
+        positioning, where the alias is known but not the position.
+        """
+        if self.address[2]:  # (0, 14, 4) -> (0, 0, 4)
+            address = (self.address[0], 0, self.address[2])
+        else:  # (0, 14, 0) -> (0, 14, 0)
+            address = self.address
+        addr_prefix = re.sub(r"[^0-9]+", self.slug_separator, str(address))
+        return addr_prefix.strip(self.slug_separator)
 
     @classmethod
     def read_device_sdos_from_esi(cls, LcId="1033"):

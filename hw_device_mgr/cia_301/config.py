@@ -37,8 +37,10 @@ class CiA301Config:
     # Mapping of model_id to a dict of (index, subindex) to DC object
     _model_dcs = dict()
 
-    def __init__(self, address=None, model_id=None, skip_optional_config_values = True):
-        self.address = address
+    def __init__(
+        self, address=None, model_id=None, skip_optional_config_values = True
+    ):
+        self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
         self.skip_optional_config_values = skip_optional_config_values
 
@@ -47,19 +49,19 @@ class CiA301Config:
         assert None not in model_id
         return tuple(cls.data_type_class.uint32(i) for i in model_id)
 
-    @property
+    @cached_property
     def vendor_id(self):
         return self.model_id[0]
 
-    @property
+    @cached_property
     def product_code(self):
         return self.model_id[1]
 
-    @property
+    @cached_property
     def bus(self):
         return self.address[0]
 
-    @property
+    @cached_property
     def position(self):
         return self.address[1]
 
@@ -140,6 +142,17 @@ class CiA301Config:
         """Get list of distributed clocks for this device."""
         return self._model_dcs[self.model_id]
 
+    def dump_param_values(self):
+        res = dict()
+        for sdo in self.sdos:
+            try:
+                res[sdo] = self.upload(sdo, stderr_to_devnull=True)
+            except CiA301CommandException as e:
+                # Objects may not exist, like variable length PDO mappings
+                self.logger.debug(f"Upload {sdo} failed:  {e}")
+                pass
+        return res
+
     #
     # Param read/write
     #
@@ -218,25 +231,51 @@ class CiA301Config:
               - `bits`:  Instead of `name`, break out individual bits,
                  names specified by a `list`
 
-        - `param_values`:  `dict` of `<idx>-<subidx>h`-format object
-          dictionary keys to values; values may be a single scalar
-          applied to all `positions`, or a `list` of scalars applied
-          to corresponding entries in `positions`
-          May also be a dict with two keys, "value" and "optional". If "optional"
-          is True, this value will only be applied if the skip_optional parameter 
-          is set to false on gen_config calls.
+        - `param_values`:  `dict` of `<idx>-<subidx>h`-format object dictionary
+          keys to values; values may be a single scalar applied to all
+          `positions`, or a `list` of scalars applied to corresponding entries
+          in `positions`.  May also be a dict with two keys, `value` and
+          `optional`.  If `optional` is set, this value will only be applied if
+          the `skip_optional parameter` is `False` on `gen_config()` calls.
         """
         assert config
         cls._device_config.clear()
         cls._device_config.extend(config)
 
     @classmethod
-    def munge_config(cls, config_raw, position, skip_optional = True):
+    def canon_address(cls, address):
+        """
+        Canonicalize device config address
+
+        Convert `address` values read from `device_config.yaml` to `tuple` of
+        `(bus, position)` (from `list`).
+        """
+        return None if address is None else tuple(address)
+
+    @classmethod
+    def address_variants(cls, address):
+        # Only one variant in CANopen addresses
+        return [cls.canon_address(address)]
+
+    @classmethod
+    def munge_config(cls, config_raw, address, skip_optional = True):
         config_cooked = config_raw.copy()
         # Convert model ID ints
         model_id = (config_raw["vendor_id"], config_raw["product_code"])
         model_id = cls.format_model_id(model_id)
         config_cooked["vendor_id"], config_cooked["product_code"] = model_id
+        # Convert addresses from lists to tuples
+        addrs = [cls.canon_address(a) for a in config_cooked["addresses"]]
+        config_cooked["addresses"] = addrs
+        # Find index of address in config
+        address = cls.canon_address(address)
+        for pos_ix, pos_address in enumerate(addrs):
+            if pos_address == address:
+                break
+            if pos_address in cls.address_variants(address):
+                break
+        else:
+            raise KeyError(f"No address '{address}' in device config '{addrs}'")
         # Flatten out param_values key
         config_cooked["param_values"] = dict()
         for ix, val in config_raw.get("param_values", dict()).items():
@@ -253,24 +292,21 @@ class CiA301Config:
                         val = val["value"]
 
             if isinstance(val, list):
-                pos_ix = config_raw["positions"].index(position)
                 val = val[pos_ix]
             config_cooked["param_values"][ix] = val
         # Return pruned config dict
         return config_cooked
 
-    @classmethod 
+    @classmethod
     def find_config(cls, model_id, address):
-        bus, position = address
         # Find matching config
+        address = cls.canon_address(address)
         for conf in cls._device_config:
             if "vendor_id" not in conf:
                 continue  # In tests only
             if model_id != (conf["vendor_id"], conf["product_code"]):
                 continue
-            if bus != conf["bus"]:
-                continue
-            if position not in conf["positions"]:
+            if address not in conf["addresses"]:
                 continue
             break
         else:
@@ -279,14 +315,16 @@ class CiA301Config:
 
     @classmethod
     def gen_config(cls, model_id, address, skip_optional = True):
-        bus, position = address
+        address = cls.canon_address(address)
         conf = cls.find_config(model_id, address)
         # Prune & return config
-        return cls.munge_config(conf, position, skip_optional)
+        return cls.munge_config(conf, address, skip_optional)
 
     @cached_property
     def config(self):
-        return self.gen_config(self.model_id, self.address, self.skip_optional_config_values)
+        return self.gen_config(
+            self.model_id, self.address, self.skip_optional_config_values
+        )
 
     def get_device_params_nv(self):
         """
@@ -346,7 +384,12 @@ class CiA301Config:
         res = list()
         for address, model_id in cls.command().scan_bus(bus=bus, **kwargs):
             model_id = cls.format_model_id(model_id)
-            config = cls(address=address, model_id=model_id, skip_optional_config_values=skip_optional_config_values, **kwargs)
+            config = cls(
+                address=address,
+                model_id=model_id,
+                skip_optional_config_values=skip_optional_config_values,
+                **kwargs
+            )
             res.append(config)
         return res
 
@@ -361,6 +404,7 @@ class CiA301SimConfig(CiA301Config):
         assert sim_device_data
         sdo_data = dict()
         for address, data in sim_device_data.items():
+            address = cls.canon_address(address)
             sdo_data[address] = cls._model_sdos.get(data["model_id"], dict())
         cls.command_class.init_sim(
             sim_device_data=sim_device_data, sdo_data=sdo_data

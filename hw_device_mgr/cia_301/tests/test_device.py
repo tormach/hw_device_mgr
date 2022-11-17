@@ -16,7 +16,7 @@ class TestCiA301Device(BaseCiA301TestClass, _TestDevice):
     @pytest.fixture
     def obj(self, device_cls, sim_device_data):
         self.obj = self.device_model_cls(
-            address=sim_device_data["test_address"]
+            address=sim_device_data["address"]
         )
         self.obj.init()
         yield self.obj

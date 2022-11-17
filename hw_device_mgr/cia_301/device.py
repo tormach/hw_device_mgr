@@ -23,14 +23,25 @@ class CiA301Device(Device):
     feedback_out_data_types = feedback_in_data_types
     feedback_out_defaults = feedback_in_defaults
 
-    def __init__(self, address=None, skip_optional_config_values=True, **kwargs):
+    @classmethod
+    def canon_address(cls, address):
+        """Canonicalize a device address."""
+        return cls.config_class.canon_address(address)
+
+    def __init__(
+        self, address=None, skip_optional_config_values=True, **kwargs
+    ):
         if isinstance(address, self.config_class):
-            self.config = address
-            address = address.address
+            # Config passed in instead of address; reuse it
+            config = address
+            address = config.address
         else:
-            self.config = self.config_class(
-                address=address, model_id=self.model_id, skip_optional_config_values=skip_optional_config_values,
+            config = self.config_class(
+                address=address,
+                model_id=self.model_id,
+                skip_optional_config_values=skip_optional_config_values,
             )
+        self.config = config
         super().__init__(address=address, **kwargs)
 
     @classmethod
@@ -123,8 +134,8 @@ class CiA301Device(Device):
         )
         if address in registry:
             return registry[address]
-        # kwargs will contain skip_optional_config_values at this point, but it will be consumed by
-        # __init__ for this class
+        # kwargs will contain skip_optional_config_values at this point, but it
+        # will be consumed by __init__ for this class
         device_obj = cls(address=config, **kwargs)
         registry[address] = device_obj
         return device_obj
@@ -134,15 +145,15 @@ class CiA301Device(Device):
         """Scan bus and return a list of device objects."""
         devices = list()
         config_cls = cls.config_class
-        # Init actual config class instances here. kwargs will contain skip_optional_config_values
-        # which is consumed by CiA301Config.scan_bus
+        # Init actual config class instances here. kwargs will contain
+        # skip_optional_config_values which is consumed by CiA301Config.scan_bus
         for config in config_cls.scan_bus(bus=bus, **kwargs):
             device_cls = cls.get_model(config.model_id)
             if device_cls is None:
                 raise NotImplementedError(
                     f"Unknown model {config.model_id} at {config.address}"
                 )
-            dev = device_cls.get_device(config.address, **kwargs)
+            dev = device_cls.get_device(config, **kwargs)
             devices.append(dev)
         return devices
 
@@ -193,9 +204,7 @@ class CiA301SimDevice(CiA301Device, SimDevice):
 
     @classmethod
     def sim_device_data_address(cls, sim_device_data):
-        model_id = sim_device_data["bus"], sim_device_data["position"]
-        sim_device_data["model_id"] = model_id
-        return model_id
+        return sim_device_data["address"]
 
     @classmethod
     def init_sim(cls, *, sim_device_data, sdo_data, dcs_data):

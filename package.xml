@@ -8,32 +8,37 @@
 
   <license>BSD</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <buildtool_depend>ament_cmake_python</buildtool_depend>
-  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake_python</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 2">rosidl_default_generators</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
 
   <depend>hal_hw_interface</depend>
+  <depend condition="$ROS_VERSION == 1">rospy</depend>
 
   <!-- <build_export_depend>rclpy</build_export_depend> -->
 
-  <exec_depend>rclpy</exec_depend>
-  <exec_depend>rosidl_default_runtime</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">rclpy</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">rosidl_default_runtime</exec_depend>
   <!-- For `ethercat_utils` -->
   <exec_depend>python3-ruamel.yaml</exec_depend>
 
   <exec_depend>python-fysom</exec_depend>
   <exec_depend>python3-lxml</exec_depend>
 
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
+  <test_depend condition="$ROS_VERSION == 2">ament_copyright</test_depend>
+  <test_depend condition="$ROS_VERSION == 2">ament_flake8</test_depend>
+  <test_depend condition="$ROS_VERSION == 2">ament_pep257</test_depend>
+  <test_depend condition="$ROS_VERSION == 1">rostest</test_depend>
+  <test_depend condition="$ROS_VERSION == 1">ros_pytest</test_depend>
   <test_depend>python3-pytest</test_depend>
   <test_depend>python3-pytest-cov</test_depend>
   <test_depend>python3-pytest-mock</test_depend>
 
-  <member_of_group>rosidl_interface_packages</member_of_group>
+  <member_of_group condition="$ROS_VERSION == 2">rosidl_interface_packages</member_of_group>
 
   <export>
-    <build_type>ament_python</build_type>
+    <!-- ROS2 uses setup.py directly (ROS1 uses `CMakeLists.txt`) -->
+    <build_type condition="$ROS_VERSION == 2">ament_python</build_type>
   </export>
 </package>

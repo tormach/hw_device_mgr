@@ -14,7 +14,7 @@ class TestCiA301Config(BaseCiA301TestClass):
     @pytest.fixture
     def obj(self, sim_device_data, config_cls):
         self.obj = config_cls(
-            address=sim_device_data["test_address"],
+            address=sim_device_data["address"],
             model_id=sim_device_data["test_model_id"],
         )
         yield self.obj
@@ -65,7 +65,6 @@ class TestCiA301Config(BaseCiA301TestClass):
             print(f"SDO {sdo_ix}:  device={dev_val}, config={conf_val}")
             if dev_val != conf_val:
                 something_different = True
-            # something_different |= (dev_val != conf_val)
         assert something_different or not obj.config["param_values"]
 
         obj.initialize_params()
@@ -73,23 +72,34 @@ class TestCiA301Config(BaseCiA301TestClass):
             assert obj.upload(sdo_ix) == val
 
     def test_load_optional_params(self, obj):
-        from pprint import pprint
         # Get the un-pruned config to compare against after munging
-        raw_params = obj.find_config(obj.model_id, obj.address)["param_values"]
-        optional_param_names = set([key for (key, val) in raw_params.items() if isinstance(val, dict) and val["optional"] == True])
-        required_param_names = set([key for (key, val) in raw_params.items() if (isinstance(val, dict) and val["optional"] == False) or (not isinstance(val, dict))])
-        
+        config = obj.find_config(obj.model_id, obj.address)
+        raw_params = config.get("param_values", dict())
+        optional_param_names = set(
+            key for (key, val) in raw_params.items()
+            if isinstance(val, dict) and val["optional"] == True
+        )
+        required_param_names = set(
+            key for (key, val) in raw_params.items()
+            if not isinstance(val, dict) or not val["optional"]
+        )
+
         # Get params through the normal munging process
-        normal_params = set(obj.gen_config(obj.model_id, obj.address)["param_values"].keys())
-        full_params = set(obj.gen_config(obj.model_id, obj.address, skip_optional = False)["param_values"].keys())
+        config_normal = obj.gen_config(obj.model_id, obj.address)
+        normal_params = set(config_normal.get("param_values", dict()))
 
+        config_full = obj.gen_config(
+            obj.model_id, obj.address, skip_optional = False
+        )
+        full_params = set(config_full.get("param_values", dict()))
 
-        # Full parameter list should always include all of the non-optional params
+        # Full parameter list should always include all of the non-optional
+        # params
         assert full_params.intersection(normal_params) == normal_params
         assert len(full_params) >= len(normal_params)
 
-        # Removing the set of non-optional params from the full list should always
-        # give us the list of optional params
+        # Removing the set of non-optional params from the full list should
+        # always give us the list of optional params
         assert len(full_params - normal_params) == len(optional_param_names)
 
     def test_add_device_dcs(self, obj, config_cls, dcs_data):

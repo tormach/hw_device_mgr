@@ -16,6 +16,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     data_type_class = CiA402Device.data_type_class
     device_base_class = CiA402Device
     device_classes = None
+    slug_separator = ""
 
     @classmethod
     def device_model_id(cls):

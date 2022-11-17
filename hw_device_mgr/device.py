@@ -38,8 +38,14 @@ class Device(abc.ABC):
         "command_out",
     }
 
+    @classmethod
+    def canon_address(cls, address):
+        """Canonicalize a device address."""
+        # For the base class, just ensure that it's `None` or a tuple.
+        return None if address is None else tuple(address)
+
     def __init__(self, address=None):
-        self.address = address
+        self.address = self.canon_address(address)
 
     def init(self):
         """
@@ -246,6 +252,7 @@ class Device(abc.ABC):
 
     @classmethod
     def get_device(cls, address=None, **kwargs):
+        address = cls.canon_address(address)
         registry = cls._address_registry.setdefault(cls.name, dict())
         if address in registry:
             return registry[address]
@@ -347,7 +354,7 @@ class SimDevice(Device):
 
     @classmethod
     def sim_device_data_address(cls, sim_device_data):
-        return sim_device_data["position"]
+        return cls.canon_address(sim_device_data["address"])
 
     @classmethod
     def init_sim(cls, /, sim_device_data):
@@ -379,7 +386,8 @@ class SimDevice(Device):
         cls_sim_data = cls._sim_device_data[cls.category]
         for data in cls_sim_data.values():
             dev_type = cls.get_model(data["model_id"])
-            dev = dev_type.get_device(address=data["address"], **kwargs)
+            address = data["address"]
+            dev = dev_type.get_device(address=address, **kwargs)
             res.append(dev)
         return res
 

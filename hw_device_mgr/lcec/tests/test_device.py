@@ -13,15 +13,16 @@ class TestLCECDevice(BaseLCECTestClass, _TestEtherCATDevice, _TestHALDevice):
     expected_mro = [
         "LCECSimDevice",
         "LCECDevice",
+        *_TestEtherCATDevice.expected_mro[0:5],  # RelocatableESIDevice...ABC
         *_TestHALDevice.expected_mro[:2],  # HALPinSimDevice...HALPinDevice
-        *_TestEtherCATDevice.expected_mro,  # RelocatableESIDevice...ABC
+        *_TestEtherCATDevice.expected_mro[5:],  # RelocatableESIDevice...ABC
         _TestHALDevice.expected_mro[-1],  # HALMixin
     ]
 
     @pytest.fixture
     def obj(self, sim_device_data, mock_halcomp):
         self.obj = self.device_model_cls(
-            address=sim_device_data["test_address"]
+            address=sim_device_data["address"]
         )
         self.obj.init(comp=mock_halcomp)
         yield self.obj

@@ -106,7 +106,7 @@ class TestDevice(BaseTestClass):
         for obj, data in zip(devs, all_device_data.values()):
             print(f"Dev:  {obj}")
             assert obj.name == data["test_name"]
-            assert obj.address == data["test_address"]
+            assert obj.address == data["address"]
             assert obj.model_id == data["model_id"]
 
     #
@@ -116,7 +116,7 @@ class TestDevice(BaseTestClass):
     @pytest.fixture
     def obj(self, device_cls, sim_device_data):
         self.sim_device_data = sim_device_data
-        self.obj = device_cls(address=sim_device_data["test_address"])
+        self.obj = device_cls(address=sim_device_data["address"])
         self.obj.init()
         yield self.obj
 
@@ -359,8 +359,9 @@ class TestDevice(BaseTestClass):
         if self.read_update_write_package is None:
             return  # No test cases defined for this class
         rsrc = (self.read_update_write_package, self.read_update_write_yaml)
+        rsrc_str = self.resource_path(*rsrc)
         test_cases = self.load_yaml_resource(*rsrc)
-        assert test_cases, f"Empty YAML from package resource {rsrc}"
-        print(f"Read test cases from package resource {rsrc}")
+        assert test_cases, f"Empty YAML from package resource {rsrc_str}"
+        print(f"Read test cases from package resource {rsrc_str}")
         for test_case in test_cases:
             self.read_update_write_loop(test_case)

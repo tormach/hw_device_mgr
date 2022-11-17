@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+from hw_device_mgr.latency.halsampler_decode import main
+
+main()

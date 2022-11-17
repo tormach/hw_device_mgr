@@ -1,0 +1,182 @@
+component multilatency "Timing statistics for read+write functions";
+license "Tormach internal license";
+
+// For correlating samples
+pin out s32 counter "incrementing counter";
+
+// For cycle_start HAL pin timestamps
+pin out s32 time_s "cycle start time, s";
+pin out s32 time_ns "cycle start time, ns";
+
+// For CYCLE_ELAPSED_TIME(*)
+variable uint64_t cycle_start_clock;
+
+// For JITTER(cycle_start)
+pin out s32 cycle_start_jitter "cycle start jitter:  current - previous period, ns";
+pin out s32 cycle_start_jitter_max "max start time jitter, ns";
+pin out s32 cycle_start_jitter_min "min start time jitter, ns";
+variable uint64_t cycle_start_time_prev = 0;
+variable uint64_t cycle_start_period_prev = 0;
+
+// For EXEC_TIME(cycle)
+pin out s32 cycle_exec_time "cycle start to end execution time, ns";
+pin out s32 cycle_exec_time_max "max cycle-exec-time, ns";
+pin out s32 cycle_exec_time_min "min cycle-exec-time, ns";
+variable hal_s32_t cycle_start_time;
+variable hal_s32_t cycle_end_time;
+
+// For CYCLE_ELAPSED_TIME(read_*) and EXEC_TIME(read)
+pin out s32 read_start_time "time between cycle start and read start, ns";
+pin out s32 read_start_time_max "max read-start-time, ns";
+pin out s32 read_start_time_min "min read-start-time, ns";
+pin out s32 read_end_time "time between cycle start and read end, ns";
+pin out s32 read_end_time_max "max read-end-time, ns";
+pin out s32 read_end_time_min "min read-end-time, ns";
+pin out s32 read_exec_time "read start to end execution time, ns";
+pin out s32 read_exec_time_max "max read-exec-time, ns";
+pin out s32 read_exec_time_min "min read-exec-time, ns";
+
+// For JITTER(read)
+pin out s32 read_jitter "read end jitter:  cycle to cycle read end period difference, ns";
+pin out s32 read_jitter_max "max read_jitter, ns";
+pin out s32 read_jitter_min "min read_jitter, ns";
+variable uint64_t read_time_prev = 0;
+variable uint64_t read_period_prev = 0;
+
+// For CYCLE_ELAPSED_TIME(write_*) and EXEC_TIME(write)
+pin out s32 write_start_time "time between cycle start and write start, ns";
+pin out s32 write_start_time_max "max write-start-time, ns";
+pin out s32 write_start_time_min "min write-start-time, ns";
+pin out s32 write_end_time "time between cycle start and write end, ns";
+pin out s32 write_end_time_max "max write-end-time, ns";
+pin out s32 write_end_time_min "min write-end-time, ns";
+pin out s32 write_exec_time "write start to end execution time, ns";
+pin out s32 write_exec_time_max "max write-exec-time, ns";
+pin out s32 write_exec_time_min "min write-exec-time, ns";
+
+// For JITTER(write)
+pin out s32 write_jitter "write end jitter:  cycle to cycle write end period difference, ns";
+pin out s32 write_jitter_max "max write_jitter, ns";
+pin out s32 write_jitter_min "min write_jitter, ns";
+variable uint64_t write_time_prev = 0;
+variable uint64_t write_period_prev = 0;
+
+pin in bit clear=1 "clear";
+
+function cycle_start;
+function read_start;
+function read_end;
+function write_start;
+function write_end;
+function cycle_end;
+
+;;
+
+#define ML_MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define ML_MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+// JITTER variables for "foo" event:
+// pin out s32 foo_jitter
+// pin out s32 foo_jitter_max
+// pin out s32 foo_jitter_min
+// variable uint64_t foo_time_prev
+// variable uint64_t foo_period_prev
+#define JITTER(event) do {                                              \
+    if ( clear )                                                        \
+      event##_jitter_max = event##_jitter_min = 0;                      \
+    if ( event##_time_prev ) {                                          \
+      hal_s32_t event##_period = now - event##_time_prev;               \
+      if ( event##_period_prev ) {                                      \
+        event##_jitter = event##_period - event##_period_prev;          \
+        event##_jitter_max =                                            \
+          ML_MAX(event##_jitter, event##_jitter_max);                   \
+        event##_jitter_min =                                            \
+          ML_MIN(event##_jitter, event##_jitter_min);                   \
+      }                                                                 \
+      event##_period_prev = event##_period;                             \
+    }                                                                   \
+    event##_time_prev = now;                                            \
+  } while (0)
+
+// CYCLE_ELAPSED_TIME variables for "foo_start" event:
+// pin out s32 foo_start_time
+// pin out s32 foo_start_time_max
+// pin out s32 foo_start_time_min
+#define CYCLE_ELAPSED_TIME(event) do {                          \
+    if ( clear )                                                \
+      event##_time_max = event##_time_min = 0;                  \
+    event##_time = now - cycle_start_clock;                     \
+    event##_time_max = ML_MAX(event##_time, event##_time_max);  \
+    event##_time_min = event##_time_min ?                       \
+      ML_MIN(event##_time, event##_time_min) :                  \
+      event##_time;                                             \
+  } while (0)
+
+// EXEC_TIME_* variables for "foo" event:
+// pin out s32 foo_start_time // Shared with CYCLE_ELAPSED_TIME(foo_start)
+// pin out s32 foo_end_time // Shared with CYCLE_ELAPSED_TIME(foo_end)
+// pin out s32 foo_exec_time
+// pin out s32 foo_exec_time_max
+// pin out s32 foo_exec_time_min
+#define EXEC_TIME_START(event) do {                     \
+    event##_start_time = now - cycle_start_clock;       \
+  } while (0)
+
+#define EXEC_TIME_END(event) do {                                       \
+    if ( clear )                                                        \
+      event##_exec_time_max = event##_exec_time_min = 0;                \
+    event##_end_time = now - cycle_start_clock;                         \
+    event##_exec_time = event##_end_time - event##_start_time;          \
+    event##_exec_time_max =                                             \
+      ML_MAX(event##_exec_time, event##_exec_time_max);                 \
+    event##_exec_time_min = event##_exec_time_min ?                     \
+      ML_MIN(event##_exec_time, event##_exec_time_min) :                \
+      event##_exec_time;                                                \
+  } while (0)
+
+
+FUNCTION(cycle_start) {
+  counter++;
+  uint64_t now = cycle_start_clock = rtapi_get_time();
+  time_s = (int32_t)(now / 1000000000);
+  time_ns = (int32_t)(now % 1000000000);
+  JITTER(cycle_start);
+  EXEC_TIME_START(cycle);
+  return(0);
+}
+
+FUNCTION(read_start) {
+  uint64_t now = rtapi_get_time();
+  CYCLE_ELAPSED_TIME(read_start);
+  EXEC_TIME_START(read);
+  return(0);
+}
+
+FUNCTION(read_end) {
+  uint64_t now = rtapi_get_time();
+  JITTER(read);
+  CYCLE_ELAPSED_TIME(read_end);
+  EXEC_TIME_END(read);
+  return(0);
+}
+
+FUNCTION(write_start) {
+  uint64_t now = rtapi_get_time();
+  CYCLE_ELAPSED_TIME(write_start);
+  EXEC_TIME_START(write);
+  return(0);
+}
+
+FUNCTION(write_end) {
+  uint64_t now = rtapi_get_time();
+  JITTER(write);
+  CYCLE_ELAPSED_TIME(write_end);
+  EXEC_TIME_END(write);
+  return(0);
+}
+
+FUNCTION(cycle_end) {
+  uint64_t now = rtapi_get_time();
+  EXEC_TIME_END(cycle);
+  return(0);
+}
