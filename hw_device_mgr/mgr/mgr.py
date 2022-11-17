@@ -438,13 +438,17 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         for dev in self.devices:
             dev.read()
 
+    def get_device_feedback(self, dev):
+        """Process a device's external feedback."""
+        return dev.get_feedback()
+
     def get_feedback(self):
         """Process manager and device external feedback."""
         mgr_fb_out = super().get_feedback()
 
         # Get device feedback
         for dev in self.devices:
-            dev_fb_out = dev.get_feedback()
+            dev_fb_out = self.get_device_feedback(dev)
             prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
             updates = {
                 # Copy device fb_out to mgr fb_out, adding prefix
