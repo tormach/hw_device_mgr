@@ -42,6 +42,7 @@ class CiA402Device(CiA301Device):
     DEFAULT_CONTROL_MODE = MODE_CSP
 
     home_timeout = 15.0  # seconds
+    move_timeout = 15.0  # seconds
 
     @classmethod
     def control_mode_str(cls, mode):
@@ -74,7 +75,7 @@ class CiA402Device(CiA301Device):
         REMOTE=9,
         TARGET_REACHED=10,
         INTERNAL_LIMIT_ACTIVE=11,
-        OPERATION_MODE_SPECIFIC_1=12,  # HM=HOMING_ATTAINED
+        OPERATION_MODE_SPECIFIC_1=12,  # HM=HOMING_ATTAINED, PP=SETPOINT_ACKNOWLEDGE
         OPERATION_MODE_SPECIFIC_2=13,  # HM=HOMING_ERROR; others=FOLLOWING_ERROR
         MANUFACTURER_SPECIFIC_2=14,
         MANUFACTURER_SPECIFIC_3=15,
@@ -99,6 +100,8 @@ class CiA402Device(CiA301Device):
         transition="int8",
         home_success="bit",
         home_error="bit",
+        move_success="bit",
+        move_error="bit",
     )
     feedback_out_defaults = dict(
         **feedback_in_defaults,
@@ -106,6 +109,8 @@ class CiA402Device(CiA301Device):
         transition=-1,
         home_success=False,
         home_error=False,
+        move_success=False,
+        move_error=False,
     )
 
     @classmethod
@@ -199,6 +204,32 @@ class CiA402Device(CiA301Device):
         self.feedback_out.update(
             home_success=home_success, home_error=home_error
         )
+
+        # Calculate move status
+        move_success = move_error = False
+        if self.command_in.get("move_request"):
+            if time() - self._move_request_start > self.move_timeout:
+                goal_reached = False
+                goal_reasons.append(
+                    f"move timeout after {self.move_timeout}s"
+                )
+                self.feedback_out.update(fault=True)
+                move_error = True
+            if self.test_sw_bit(sw, "TARGET_REACHED"):
+                # done bit set
+                move_success = True
+            elif cm != self.MODE_PP:
+                goal_reached = False
+                goal_reasons.append(
+                    f"move requested, but still in {cm_str} mode"
+                )
+            else:
+                goal_reached = False
+                goal_reasons.append("move not complete")
+        self.feedback_out.update(
+            move_success=move_success, move_error=move_error
+        )
+
         if self.test_sw_bit(sw, "FAULT"):
             self.feedback_out.update(fault=True)
 
@@ -229,11 +260,13 @@ class CiA402Device(CiA301Device):
         state="SWITCH ON DISABLED",
         control_mode=DEFAULT_CONTROL_MODE,
         home_request=False,
+        move_request=False
     )
     command_in_data_types = dict(
         state="str",
         control_mode="int8",
         home_request="bit",
+        move_request="bit",
     )
 
     # ------- Command out -------
@@ -352,11 +385,28 @@ class CiA402Device(CiA301Device):
         elif self.command_in.changed("home_request"):  # home_request cleared
             self.logger.info(f"{self}:  Homing operation complete")
 
+        # Check for move request
+        move_request = False
+        if self.command_in.get("move_request"):
+            if self.command_in.changed("move_request"):
+                # New request
+                self._move_request_start = time()
+                self.logger.info(
+                    f"{self}:  Move operation requested"
+                )
+            if self.feedback_out.get("control_mode_fb") == self.MODE_PP:
+                # Only set control word bit in MODE_PP
+                move_request = True
+        elif self.command_in.changed("move_request"):  # move_request cleared
+                self.logger.info(
+                    f"{self}:  Move operation complete"
+                )
+
         # Add flags and return
         return self._add_control_word_flags(
             control_word,
             # OPERATION_MODE_SPECIFIC_1 in MODE_HM = HOMING_START
-            OPERATION_MODE_SPECIFIC_1=home_request,
+            OPERATION_MODE_SPECIFIC_1=(home_request or move_request),
         )
 
     # Map drive states to control word that maintains the state.
