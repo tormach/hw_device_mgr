@@ -69,9 +69,8 @@ class ErrorDevice(Device, ConfigIO):
         else:
             fb_out.update(error_code=error_code, **error_info)
         if fb_out.changed("error_code"):
-            msg = "error code {}:  {}".format(
-                error_code, fb_out.get("description")
-            )
+            desc = fb_out.get("description")
+            msg = f"{self}:  error code {error_code}:  {desc}"
             self.logger.error(msg)
         return fb_out
 
