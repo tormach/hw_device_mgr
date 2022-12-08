@@ -203,10 +203,6 @@ class CiA301SimDevice(CiA301Device, SimDevice):
         return model
 
     @classmethod
-    def sim_device_data_address(cls, sim_device_data):
-        return sim_device_data["address"]
-
-    @classmethod
     def init_sim(cls, *, sim_device_data, sdo_data, dcs_data):
         super().init_sim(sim_device_data=sim_device_data)
         sim_device_data = cls._sim_device_data[cls.category]
