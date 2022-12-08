@@ -25,6 +25,8 @@
     fault:  False
     goal_reached:  False
     goal_reason:  Offline
+    move_success:  False
+    move_error:  False
   command_in:
     # CiA 301
     online:  True
@@ -33,6 +35,7 @@
     state:  SWITCH ON DISABLED
     control_mode:  8  # MODE_CSP
     home_request:  False
+    move_request:  False
   command_out:
     # CiA 402
     control_word:  0x0000

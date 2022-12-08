@@ -31,6 +31,8 @@
     d.x.fault:  False
     d.x.goal_reached:  False
     d.x.goal_reason:  Offline
+    d.x.move_success: False
+    d.x.move_error: False
   command_in:
     # Mgr
     state_cmd:  0  # init
@@ -39,6 +41,7 @@
     # - CiA 402
     d.x.control_mode:  8  # MODE_CSP
     d.x.home_request: False
+    d.x.move_request: False
   command_out:
     # Mgr
     state:  0  # init
