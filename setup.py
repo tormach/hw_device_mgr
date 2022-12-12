@@ -80,7 +80,7 @@ setup(
     package_data={
         "": [  # Within any package, install:
             # ESI files
-            "device_xml/*.xml",
+            "*.xml",
             # Error descriptions
             "device_err/*.yaml",
             # Test configs
