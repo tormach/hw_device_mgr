@@ -8,10 +8,6 @@ from fysom import FysomGlobalMixin, FysomGlobal, Canceled
 from functools import lru_cache, cached_property
 
 
-class HWDeviceTimeout(RuntimeError):
-    pass
-
-
 class HWDeviceMgr(FysomGlobalMixin, Device):
     data_type_class = CiA402Device.data_type_class
     device_base_class = CiA402Device
@@ -164,8 +160,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     # Init command
     #
     def on_before_init_command(self, e):
-        timeout = self.mgr_config.get("init_timeout", 30)
-        return self.fsm_check_command(e, timeout=timeout)
+        return self.fsm_check_command(e)
 
     def on_enter_init_1(self, e):
         self.logger.info("Waiting for devices to come online before init")
@@ -276,19 +271,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def state_str(self):
         return self.cmd_int_to_name_map[self.command_out.get("state")]
 
-    def timer_start(self, timeout=None):
-        if timeout is None:
-            timeout = self.mgr_config.get("goal_state_timeout", 30.0)
-        self._timeout = time.time() + timeout
-
-    def timer_check_overrun(self, msg):
-        if not hasattr(self, "_timeout") or time.time() <= self._timeout:
-            return
-
-        msg = f"{self.state_str} timeout:  {msg}"
-        self.command_out.update(state=self.STATE_FAULT, state_log=msg)
-        del self._timeout
-        raise HWDeviceTimeout(msg)
+    @property
+    def goal_reached_timeout(self):
+        """Set goal_reached timeout from mgr_config."""
+        if self.state.startswith("init"):
+            return self.mgr_config.get("init_timeout", 30.0)
+        else:
+            return self.mgr_config.get("goal_state_timeout", 10.0)
 
     @classmethod
     def fsm_command_from_event(cls, e):
@@ -297,7 +286,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def fsm_check_devices_online(self, e, state):
         return self.query_devices(oper=False)
 
-    def fsm_check_command(self, e, timeout=None):
+    def fsm_check_command(self, e):
         state_cmd_str = self.fsm_command_from_event(e)
         state_cmd = self.cmd_name_to_int_map[state_cmd_str]
         if (
@@ -322,20 +311,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             self.command_out.update(
                 state=state_cmd, state_log=e.msg, command_complete=False
             )
-            self.timer_start(
-                timeout=timeout
-                or self.mgr_config.get("goal_state_timeout", 5.0)
-            )
             return True
 
     def fsm_check_drive_goal_state(self, e):
+        # If all drives reached goal state, return success
         drives_not_reached_goal = self.query_devices(goal_reached=False)
         if not drives_not_reached_goal:
             return True
-        # Raise exception if timer expired (pick arbitrary drive for reason)
-        drv = drives_not_reached_goal[0]
-        reason = drv.feedback_out.get("goal_reason")
-        self.timer_check_overrun(f"Drive {drv}:  {reason}")
         # Otherwise, cancel event
         return False
 
@@ -407,8 +389,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         except KeyboardInterrupt as e:
             self.logger.info(f"KeyboardInterrupt: {e}")
             self.shutdown = True
-        except HWDeviceTimeout as e:
-            self.logger.error(str(e))
 
     fsm_next_state_map = dict(
         # Map current command to dict of {current_state:next_event}

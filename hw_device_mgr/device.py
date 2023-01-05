@@ -4,6 +4,7 @@ from .interface import Interface
 from .data_types import DataType
 from functools import cached_property
 import re
+import time
 
 
 class Device(abc.ABC):
@@ -38,6 +39,8 @@ class Device(abc.ABC):
         "command_out",
     }
 
+    goal_reached_timeout = 10 # seconds
+
     @classmethod
     def canon_address(cls, address):
         """Canonicalize a device address."""
@@ -46,6 +49,7 @@ class Device(abc.ABC):
 
     def __init__(self, address=None):
         self.address = self.canon_address(address)
+        self._timeout = None
 
     def init(self):
         """
@@ -127,7 +131,28 @@ class Device(abc.ABC):
         """Process `feedback_in` and return `feedback_out` interface."""
         fb_in = self._interfaces["feedback_in"].get()
         self._interfaces["feedback_out"].set(**fb_in)
+        self.check_and_set_timeout()
         return self._interfaces["feedback_out"]
+
+    def check_and_set_timeout(self):
+        """Set fault if feedback_out goal_reached is False for too long."""
+        fb_out = self._interfaces["feedback_out"]
+        if fb_out.get("goal_reached"):
+            # Goal reached; cancel any timer
+            self._timeout = None
+            return
+
+        # Goal not reached
+        now = time.time()
+        if fb_out.changed("goal_reached"):
+            # goal_reached just changed to False; set timer
+            self._timeout = now
+        elif self._timeout - now > self.goal_reached_timeout:
+            # Goal not reached for longer than timeout; set fault
+            msg = f"Timeout ({self.goal_reached_timeout}) while "
+            msg += fb_out.get('goal_reason')
+            fb_out.update(fault=True, goal_reason=msg)
+            self.logger.error(msg)
 
     def set_command(self, **kwargs) -> Interface:
         """Process `command_in` and return `command_out` interface."""

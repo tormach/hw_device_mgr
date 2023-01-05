@@ -28,6 +28,11 @@ class CiA301Device(Device):
         """Canonicalize a device address."""
         return cls.config_class.canon_address(address)
 
+    @property
+    def goal_reached_timeout(self):
+        """Increase goal_reached timeout before reaching oper state."""
+        return 10 if self.feedback_in.get("oper") else 30
+
     def __init__(
         self, address=None, skip_optional_config_values=True, **kwargs
     ):
