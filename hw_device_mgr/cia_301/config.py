@@ -119,17 +119,6 @@ class CiA301Config:
         ix = self.sdo_ix(ix)
         return self._model_sdos[self.model_id][ix]
 
-    def dump_param_values(self):
-        res = dict()
-        for sdo in self.sdos:
-            try:
-                res[sdo] = self.upload(sdo, stderr_to_devnull=True)
-            except CiA301CommandException as e:
-                # Objects may not exist, like variable length PDO mappings
-                self.logger.debug(f"Upload {sdo} failed:  {e}")
-                pass
-        return res
-
     @classmethod
     def add_device_dcs(cls, dcs_data):
         """Add device model distributed clock descriptions."""
