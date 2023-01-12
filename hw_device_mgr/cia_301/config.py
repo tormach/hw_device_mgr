@@ -161,6 +161,7 @@ class CiA301Config:
     def download(self, sdo, val, dry_run=False, force=False, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
+        msg = "(forced)"
         if not force:
             # Check before setting value to avoid unnecessary NVRAM writes
             res_raw = self.command().upload(
@@ -172,10 +173,11 @@ class CiA301Config:
             )
             if sdo.data_type(res_raw) == val:
                 return  # SDO value already correct
+            msg = f"(was {sdo.data_type(res_raw)})"
         if dry_run:
-            self.logger.info(f"Dry run:  download {val} to {sdo}")
+            self.logger.info(f"Dry run:  download {val} to {sdo} {msg}")
             return
-        self.logger.info(f"{self} param download {sdo} = {val}")
+        self.logger.info(f"{self} param download {sdo} = {val} {msg}")
         self.command().download(
             address=self.address,
             index=sdo.index,
@@ -334,26 +336,41 @@ class CiA301Config:
         pass
 
     def initialize_params(self, dry_run=False):
-        if self.init_params_nv:
-            # To save NVRAM wear, don't write if all params are correct
-            all_correct = True
+        if not self.init_params_nv:
+            # Drive params in volatile mode; no need to worry about
+            # EEPROM wear, so download all params without uploading first
+            self.logger.info(f"{self} updating (volatile) parameter values")
             for sdo, value in self.config["param_values"].items():
-                if self.upload(sdo) != value:
-                    all_correct = False
-                    break
-            if all_correct:
-                self.logger.info(f"{self} param values already correct")
-                return
-            # Save current NV mode setting & set NV mode
-            self._old_device_params_nv = self.get_device_params_nv()
-            self.logger.info(f"{self} setting device params in NV mode)")
-            self.set_device_params_nv(dry_run=dry_run)
-        else:
-            self.logger.info(f"{self} setting device params in volatile mode)")
+                self.download(sdo, value, dry_run=dry_run, force=True)
+            self.logger.info(f"{self} parameter update complete")
+            return
 
-        # Something needs changing
+        # Drive params in non-volatile mode; to save NVRAM wear, don't
+        # write if all params are correct
+        self.logger.info(f"{self} checking NV parameter values")
+        to_update = list()
         for sdo, value in self.config["param_values"].items():
+            curr = self.upload(sdo)
+            exp = type(curr)(value)
+            if curr != exp:
+                self.logger.debug(
+                    f"{self} sdo {sdo} expected {exp}; current {curr}"
+                )
+                to_update.append((sdo, exp))
+        if not to_update:
+            self.logger.info(f"{self} param values correct; no updates needed")
+            return
+
+        # Save current NV mode setting & set NV mode
+        self._old_device_params_nv = self.get_device_params_nv()
+        self.logger.info(f"{self} setting device params in NV mode")
+        self.set_device_params_nv(dry_run=dry_run)
+
+        # Write params that need changing
+        self.logger.info(f"{self} updating {len(to_update)} params")
+        for sdo, value in to_update:
             self.download(sdo, value, dry_run=dry_run, force=True)
+        self.logger.info(f"{self} parameter update complete")
 
         if self.init_params_nv and not self._old_device_params_nv:
             self.logger.info(
