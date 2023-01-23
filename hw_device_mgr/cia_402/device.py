@@ -17,7 +17,8 @@ class CiA402Device(CiA301Device):
     Command parameters:
     - `state`:  The CiA 402 goal state
     - `control_mode`:  Drive control mode, e.g. `MODE_CSP`
-    - `home_request`:  Command homing operation
+    - `home_request`:  Command homing operation (HM mode)
+    - `move_request`:  Command move operation (PP mode)
 
     Feedback parameters:
     - `home_success`:  Drive completed homing successfully
@@ -121,6 +122,55 @@ class CiA402Device(CiA301Device):
     def test_cw_bit(cls, word, name):
         return bool(word & (1 << cls.cw_extra_bits[name]))
 
+    def get_feedback_hm(self, sw):
+        if not self.command_in.get("home_request"):
+            self.feedback_out.update(home_success=False, home_error=False)
+            return True, None
+        if self.feedback_out.get("state") != "OPERATION ENABLED":
+            self.feedback_out.update(home_success=False, home_error=True, fault=True)
+            return False, "Home request while drive not enabled"
+
+        success, error, reason = False, False, None
+        if self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_2"):
+            # HOMING_ERROR bit set
+            error = True
+            reason = "homing error"
+            self.feedback_out.update(fault=True)
+        elif self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1"):
+            # HOMING_ATTAINED bit set
+            success = True
+        elif time() - self._home_request_start > self.home_timeout:
+            error = True
+            reason = f"homing timeout after {self.home_timeout}s"
+            self.feedback_out.update(fault=True)
+        else:
+            reason = "homing not complete"
+
+        self.feedback_out.update(home_success=success, home_error=error)
+        return success, reason
+
+    def get_feedback_pp(self, sw):
+        if not self.command_in.get("move_request"):
+            self.feedback_out.update(move_success=False, move_error=False)
+            return True, None
+        if self.feedback_out.get("state") != "OPERATION ENABLED":
+            self.feedback_out.update(move_success=False, move_error=True, fault=True)
+            return False, "Move request while drive not enabled"
+
+        success, error, reason = False, False, None
+        if self.test_sw_bit(sw, "TARGET_REACHED"):
+            # done bit set
+            success = True
+        elif time() - self._move_request_start > self.move_timeout:
+            error = True
+            reason = f"move timeout after {self.move_timeout}s"
+            self.feedback_out.update(fault=True)
+        else:
+            reason = "move not complete"
+
+        self.feedback_out.update(move_success=success, move_error=error)
+        return success, reason
+
     def get_feedback(self):
         fb_out = super().get_feedback()
 
@@ -175,60 +225,19 @@ class CiA402Device(CiA301Device):
         else:
             self.feedback_out.update(transition=-1)
 
-        # Calculate homing status
-        home_success = home_error = False
-        if self.command_in.get("home_request"):
-            if self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_2"):
-                # HOMING_ERROR bit set
-                home_error = True
-                goal_reached = False
-                goal_reasons.append("homing error")
-            elif time() - self._home_request_start > self.home_timeout:
-                goal_reached = False
-                goal_reasons.append(
-                    f"homing timeout after {self.home_timeout}s"
-                )
-                self.feedback_out.update(fault=True)
-                home_error = True
-            if self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1"):
-                # HOMING_ATTAINED bit set
-                home_success = True
-            elif cm != self.MODE_HM:
-                goal_reached = False
-                goal_reasons.append(
-                    f"homing requested, but still in {cm_str} mode"
-                )
-            else:
-                goal_reached = False
-                goal_reasons.append("homing not complete")
-        self.feedback_out.update(
-            home_success=home_success, home_error=home_error
-        )
-
-        # Calculate move status
-        move_success = move_error = False
-        if self.command_in.get("move_request"):
-            if time() - self._move_request_start > self.move_timeout:
-                goal_reached = False
-                goal_reasons.append(
-                    f"move timeout after {self.move_timeout}s"
-                )
-                self.feedback_out.update(fault=True)
-                move_error = True
-            if self.test_sw_bit(sw, "TARGET_REACHED"):
-                # done bit set
-                move_success = True
-            elif cm != self.MODE_PP:
-                goal_reached = False
-                goal_reasons.append(
-                    f"move requested, but still in {cm_str} mode"
-                )
-            else:
-                goal_reached = False
-                goal_reasons.append("move not complete")
-        self.feedback_out.update(
-            move_success=move_success, move_error=move_error
-        )
+        # Mode-specific functions
+        if cm == self.MODE_HM:
+            # Calculate homing status
+            hm_success, hm_reason = self.get_feedback_hm(sw)
+            goal_reached &= hm_success
+            if hm_reason:
+                goal_reasons.append(hm_reason)
+        elif cm == self.MODE_PP:
+            # Calculate move status
+            pp_success, pp_reason = self.get_feedback_pp(sw)
+            goal_reached &= pp_success
+            if pp_reason:
+                goal_reasons.append(pp_reason)
 
         if self.test_sw_bit(sw, "FAULT"):
             self.feedback_out.update(fault=True)
@@ -359,22 +368,12 @@ class CiA402Device(CiA301Device):
         if not self.feedback_in.get("oper"):
             cmd_out.update(**self.command_out_defaults)
             return cmd_out
-        cmd_out.update(
-            # Command sent to device
-            control_word=self._get_next_control_word(),
-            control_mode=self._get_next_control_mode(),
-        )
+        next_cm = self._get_next_control_mode()
+        next_cw = self._get_next_control_word(next_cm)
+        cmd_out.update(control_word=next_cw, control_mode=next_cm)
         return cmd_out
 
-    def _get_next_control_word(self):
-        # Get base control word
-        if self._get_next_transition() < 0:
-            # Holding current state
-            control_word = self._get_hold_state_control_word()
-        else:
-            # Transitioning to next state
-            control_word = self._get_transition_control_word()
-
+    def _check_hm_request(self):
         # Check for home request
         home_request = False
         if self.command_in.get("home_request"):
@@ -387,7 +386,9 @@ class CiA402Device(CiA301Device):
                 home_request = True
         elif self.command_in.changed("home_request"):  # home_request cleared
             self.logger.info(f"{self}:  Homing operation complete")
+        return home_request
 
+    def _check_pp_request(self):
         # Check for move request
         move_request = False
         if self.command_in.get("move_request"):
@@ -404,12 +405,27 @@ class CiA402Device(CiA301Device):
                 self.logger.info(
                     f"{self}:  Move operation complete"
                 )
+        return move_request
+
+    def _get_next_control_word(self, next_cm):
+        # Get base control word
+        if self._get_next_transition() < 0:
+            # Holding current state
+            control_word = self._get_hold_state_control_word()
+        else:
+            # Transitioning to next state
+            control_word = self._get_transition_control_word()
 
         # Add flags and return
+        if next_cm == self.MODE_HM:
+            operation_mode_specific_1 = self._check_hm_request()
+        elif next_cm == self.MODE_PP:
+            operation_mode_specific_1 = self._check_pp_request()
+        else:
+            operation_mode_specific_1 = False
         return self._add_control_word_flags(
             control_word,
-            # OPERATION_MODE_SPECIFIC_1 in MODE_HM = HOMING_START
-            OPERATION_MODE_SPECIFIC_1=(home_request or move_request),
+            OPERATION_MODE_SPECIFIC_1=operation_mode_specific_1,
         )
 
     # Map drive states to control word that maintains the state.
@@ -472,8 +488,8 @@ class CiA402Device(CiA301Device):
         # ENABLE_VOLTAGE=1,           # (CiA402)
         # QUICK_STOP=2,               # (CiA402)
         # ENABLE_OPERATION (S-ON)=3,  # (CiA402)
-        OPERATION_MODE_SPECIFIC_1=4,  # HM=HOMING_START
-        OPERATION_MODE_SPECIFIC_2=5,
+        OPERATION_MODE_SPECIFIC_1=4,  # HM=HOMING_START; PP=NEW_SETPOINT
+        OPERATION_MODE_SPECIFIC_2=5,  # PP=CHANGE_SET_IMMEDIATE
         OPERATION_MODE_SPECIFIC_3=6,
         # FAULT_RESET=7,              # (CiA402)
         HALT=8,
@@ -549,9 +565,36 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice):
 
     # ------- Sim feedback -------
 
+    def set_sim_feedback_hm(self, cw):
+        # In MODE_HM, cw OPERATION_MODE_SPECIFIC_1 is HOMING_START cmd, sw
+        # OPERATION_MODE_SPECIFIC_1 is HOMING_ATTAINED fb
+        if self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1"):
+            return dict(OPERATION_MODE_SPECIFIC_1=True)
+        else:
+            return dict()
+
+    def set_sim_feedback_pp(self, cw, sw):
+        # In MODE_PP, cw OPERATION_MODE_SPECIFIC_1 is NEW_SETPOINT cmd, sw
+        # OPERATION_MODE_SPECIFIC_1 is SETPOINT_ACKNOWLEDGE fb
+        if self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1"):
+            # If cw NEW_SETPOINT is set, then set sw SETPOINT_ACKNOWLEDGE
+            return dict(OPERATION_MODE_SPECIFIC_1=True)
+        elif self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1"):
+            # Pretend target reached on falling edge of NEW_SETPOINT
+            return dict(TARGET_REACHED=True)
+        elif self.test_sw_bit(sw, "TARGET_REACHED"):
+            # No cw NEW_SETPOINT command; if sw TARGET_REACHED set last update,
+            # continue to hold set
+            return dict(TARGET_REACHED=True)
+        else:
+            return dict()
+
     def set_sim_feedback(self):
+        sw_prev = self.sim_feedback.get("status_word")
         sfb = super().set_sim_feedback()
-        control_word = self.command_out.get("control_word")
+        control_word, cw_prev = self.command_out.changed(
+            "control_word", return_vals=True
+        )
 
         if not self.feedback_in.get("oper"):
             sfb.update(**self.sim_feedback_defaults)
@@ -575,39 +618,38 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice):
                     state = next_state
                     break
 
-        # Status word (incl. flags)
-        status_word = 0x0000 if state == "START" else self.state_bits[state][1]
-        homing_attained = (  # In MODE_HM and HOMING_START set
-            self.feedback_in.get("control_mode_fb") == self.MODE_HM
-            and self.test_cw_bit(control_word, "OPERATION_MODE_SPECIFIC_1")
-        )
-        sw_flags = dict(
-            OPERATION_MODE_SPECIFIC_1=homing_attained,
-            VOLTAGE_ENABLED=sfb.get("online"),
-        )
-        status_word = self._add_status_word_flags(status_word, **sw_flags)
-
         # Control mode
         control_mode = (
             0 if state == "START" else self.command_out.get("control_mode")
         )
 
+        # Status word (incl. flags)
+        status_word = 0x0000 if state == "START" else self.state_bits[state][1]
+        sw_flags = dict(VOLTAGE_ENABLED=sfb.get("online"))
+        if self.feedback_out.get("fault"):
+            pass  # Don't update mode-specific flags
+        elif control_mode == self.MODE_HM:
+            sw_flags.update(self.set_sim_feedback_hm(control_word))
+        elif control_mode == self.MODE_PP:
+            sw_flags.update(self.set_sim_feedback_pp(control_word, sw_prev))
+        status_word = self._add_status_word_flags(status_word, **sw_flags)
+
         sfb.update(
-            status_word=self.data_types.uint16(status_word),
+            status_word=status_word,
             control_mode_fb=control_mode,
         )
 
         if self.feedback_in.get("oper"):
             # Log changes
-            if self.sim_feedback.changed("control_mode_fb"):
-                cm = self.sim_feedback.get("control_mode_fb")
+            if sfb.changed("control_mode_fb"):
+                cm = sfb.get("control_mode_fb")
                 self.logger.info(f"{self} sim control_mode_fb:  0x{cm:04X}")
-            if self.sim_feedback.changed("status_word"):
-                sw = self.sim_feedback.get("status_word")
+            if sfb.changed("status_word"):
                 flags = ",".join(k for k, v in sw_flags.items() if v)
                 flags = f" flags:  {flags}" if flags else ""
                 self.logger.info(
-                    f"{self} sim status_word:  0x{sw:04X} {state} {flags}"
+                    f"{self} sim status_word:"
+                    f"  0x{status_word:04X} {state} {flags}"
                 )
 
         return sfb
@@ -659,4 +701,4 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice):
             else:
                 status_word &= ~operand & 0xFFFF
 
-        return status_word
+        return cls.data_types.uint16(status_word)

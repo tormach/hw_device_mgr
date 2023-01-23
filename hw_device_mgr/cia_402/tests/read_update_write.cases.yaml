@@ -511,3 +511,146 @@
   feedback_out:
     transition:  -1
 - desc:  "Home:  Hold SWITCH ON DISABLED x2"
+
+#
+# Command PP-mode move
+#
+- desc:  "PP move:  Command OPERATION ENABLED and MODE_PP"
+  command_in:
+    # Controller commands enable
+    state:  OPERATION ENABLED
+    control_mode:  1  # MODE_PP
+  command_out:
+    control_word:  0x0006
+    control_mode:  1  # MODE_PP
+  sim_feedback:
+    status_word:  0x0031
+    control_mode_fb:  1  # MODE_PP
+- desc:  "PP move:  402 state machine transition 2"
+  feedback_in:
+    status_word:  0x0031
+    control_mode_fb:  1  # MODE_PP
+  feedback_out:
+    status_word:  0x0031
+    control_mode_fb:  1  # MODE_PP
+    state:  READY TO SWITCH ON
+    transition:  2
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
+  command_out:
+    control_word:  0x0007
+  sim_feedback:
+    status_word:  0x0033
+- desc:  "PP move:  402 state machine transition 3"
+  feedback_in:
+    status_word:  0x0033
+  feedback_out:
+    status_word:  0x0033
+    state:  SWITCHED ON
+    transition:  3
+    goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
+  command_out:
+    control_word:  0x000F
+  sim_feedback:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+- desc:  "PP move:  402 state machine transition 4; command move_request"
+  feedback_in:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    state:  OPERATION ENABLED
+    transition:  4
+    goal_reached:  True
+    goal_reason:  Reached
+  command_in:
+    # Controller commands move setpoint
+    move_request:  True
+  command_out:
+    control_word:  0x001F  # Bit 4 NEW_SETPOINT set
+  sim_feedback:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+- desc:  "PP move:  Hold state; wait"
+  feedback_in:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+  feedback_out:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    transition:  -1
+    goal_reached:  False
+    goal_reason:  move not complete
+- desc:  "PP move:  Unset move_request"
+  command_in:
+    # Controller clears move setpoint
+    move_request:  False
+  command_out:
+    control_word:  0x000F  # Bit 4 NEW_SETPOINT cleared
+  sim_feedback:
+    status_word:  0x0437  # Bit 12 SETPOINT_ACK cleared; bit 10 TARGET_REACHED set
+- desc:  "PP move:  Wait for move complete"
+  feedback_in:
+    status_word:  0x0437  # Bit 12 SETPOINT_ACK cleared; bit 10 TARGET_REACHED set
+  feedback_out:
+    status_word:  0x0437  # Bit 12 SETPOINT_ACK cleared; bit 10 TARGET_REACHED set
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "PP move:  Hold state"
+
+#
+# Command PP-mode move, interrupted by fault
+#
+- desc:  "PP move FAULT:  Command move_request"
+  command_in:
+    # Command move setpoint
+    move_request:  True
+  command_out:
+    control_word:  0x001F  # Bit 4 NEW_SETPOINT set
+  sim_feedback:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+- desc:  "PP move FAULT:  Hold state; wait"
+  feedback_in:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+  feedback_out:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    transition:  -1
+    goal_reached:  False
+    goal_reason:  move not complete
+- desc:  "PP move FAULT:  Command fault"
+  command_in:
+    state:  FAULT
+  command_out:
+    control_word:  0x0012  # Bits 0,2,3 SWITCH_ON QUICK_STOP ENABLE_OPERATION cleared
+  sim_feedback:
+    status_word:  0x1017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED + SETPOINT_ACK
+- desc:  "PP move FAULT:  QUICK STOP ACTIVE"
+  feedback_in:
+    status_word:  0x1017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED + SETPOINT_ACK
+  feedback_out:
+    status_word:  0x1017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED + SETPOINT_ACK
+    state:  QUICK STOP ACTIVE
+    transition:  11
+    fault: True
+    goal_reason:  state QUICK STOP ACTIVE (0x00001017) != FAULT; Move request while drive not enabled
+    move_error:  True
+  command_out:
+    control_word:  0x0010  # Bit 1 ENABLE_VOLTAGE cleared
+  sim_feedback:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
+- desc:  "PP move FAULT:  SWITCH ON DISABLED; cancel NEW_SETPOINT cmd"
+  command_in:
+    # Cancel PP move setpoint
+    move_request:  False
+  command_out:
+    control_word:  0x0000  # Bit 4 OPERATION_MODE_SPECIFIC_1/NEW_SETPOINT cleared
+  feedback_in:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
+  feedback_out:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
+    state:  SWITCH ON DISABLED
+    transition:  12
+    goal_reason:  Move request while drive not enabled
+- desc:  "PP move FAULT:  Done"
+  feedback_out:
+    transition:  -1
+    fault:  False
+    goal_reached:  True
+    goal_reason:  Reached
+    move_error:  False
