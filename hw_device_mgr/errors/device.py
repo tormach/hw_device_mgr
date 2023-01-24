@@ -1,6 +1,7 @@
 from ..device import Device, SimDevice
 from ..data_types import DataType
 from ..config_io import ConfigIO
+from functools import lru_cache
 
 
 class ErrorDevice(Device, ConfigIO):
@@ -34,6 +35,7 @@ class ErrorDevice(Device, ConfigIO):
     _error_descriptions = dict()
 
     @classmethod
+    @lru_cache
     def error_descriptions(cls):
         """
         Return dictionary of error code data.
@@ -41,15 +43,15 @@ class ErrorDevice(Device, ConfigIO):
         Data is read from YAML resource from package
         `device_error_package`, name `device_error_yaml`.
         """
-        if cls.name not in cls._error_descriptions:
-            errs = cls._error_descriptions[cls.name] = dict()
-            if cls.device_error_yaml:
-                err_yaml = cls.load_yaml_resource(
-                    cls.device_error_package, cls.device_error_yaml
-                )
-                for err_code_str, err_data in err_yaml.items():
-                    errs[int(err_code_str, 0)] = err_data
-        return cls._error_descriptions[cls.name]
+        errs = dict()
+        assert cls.device_error_yaml, f"{cls} has no device_error_yaml"
+        if cls.device_error_yaml:
+            err_yaml = cls.load_yaml_resource(
+                cls.device_error_package, cls.device_error_yaml
+            )
+            for err_code_str, err_data in err_yaml.items():
+                errs[int(err_code_str, 0)] = err_data
+        return errs
 
     def get_feedback(self):
         fb_out = super().get_feedback()
@@ -66,8 +68,8 @@ class ErrorDevice(Device, ConfigIO):
             )
         fb_out.update(error_code=error_code, **error_info)
         if fb_out.changed("error_code"):
-            desc = fb_out.get("description")
-            msg = f"{self}:  error code {error_code}:  {desc}"
+            desc = error_info["description"]
+            msg = f"{str(self)}:  error code {error_code}:  {desc}"
             self.logger.error(msg)
         return fb_out
 
