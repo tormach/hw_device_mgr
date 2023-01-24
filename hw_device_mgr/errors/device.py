@@ -60,14 +60,11 @@ class ErrorDevice(Device, ConfigIO):
 
         error_info = self.error_descriptions().get(error_code, None)
         if error_info is None:
-            fb_out.update(
+            error_info = dict(
                 description=f"Unknown error code {error_code}",
-                advice="Please consult with hardware vendor",
-                error_code=error_code,
+                advice="Contact technical support",
             )
-            return fb_out
-        else:
-            fb_out.update(error_code=error_code, **error_info)
+        fb_out.update(error_code=error_code, **error_info)
         if fb_out.changed("error_code"):
             desc = fb_out.get("description")
             msg = f"{self}:  error code {error_code}:  {desc}"
