@@ -17,16 +17,16 @@ class TestDevice(BaseTestClass):
     # Class tests
     #
 
-    def test_mro(self, device_cls):
-        mro = [cls.__name__ for cls in device_cls.__mro__[1:-1]]
+    def test_mro(self):
+        mro = [cls.__name__ for cls in self.device_class.__mro__[1:-1]]
         print("actual MRO:  ", mro)
         print("expected MRO:", self.expected_mro)
         assert mro == self.expected_mro
 
-    def test_category_registry(self, device_cls):
+    def test_category_registry(self, category_cls):
         # Check category_cls(), and if base class is a category,
         # it is in registry
-        base = device_cls
+        base = category_cls
         # Test category registries
         print(f"base cls {base}")
         print(f"category {base.category}")
@@ -101,8 +101,8 @@ class TestDevice(BaseTestClass):
             assert id_registered
             assert name_registered
 
-    def test_scan_devices(self, device_cls, all_device_data):
-        devs = device_cls.scan_devices()
+    def test_scan_devices(self, category_cls, all_device_data):
+        devs = category_cls.scan_devices()
         for obj, data in zip(devs, all_device_data.values()):
             print(f"Dev:  {obj}")
             assert obj.name == data["test_name"]
@@ -115,8 +115,10 @@ class TestDevice(BaseTestClass):
 
     @pytest.fixture
     def obj(self, device_cls, sim_device_data):
+        cls = self.test_category_class(sim_device_data["test_category"])
+        assert cls.name
         self.sim_device_data = sim_device_data
-        self.obj = device_cls(address=sim_device_data["address"])
+        self.obj = cls(address=sim_device_data["address"])
         self.obj.init()
         yield self.obj
 
