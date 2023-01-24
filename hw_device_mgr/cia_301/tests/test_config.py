@@ -1,10 +1,11 @@
 from .base_test_class import BaseCiA301TestClass
 import pytest
+from pprint import pformat
 
 
 class TestCiA301Config(BaseCiA301TestClass):
-    def test_scan_bus(self, bus, config_cls):
-        configs = config_cls.scan_bus(bus=bus)
+    def test_scan_bus(self, config_cls):
+        configs = config_cls.scan_bus(bus=0)
         for i, c in enumerate(configs):
             assert isinstance(c, config_cls)
             dd = self.command_class.sim_device_data[c.address]
@@ -24,7 +25,8 @@ class TestCiA301Config(BaseCiA301TestClass):
         print("test obj model_id:", obj.model_id)
         assert obj.model_id in config_cls._model_sdos
         obj_sdos = obj._model_sdos[obj.model_id]
-        print("test obj SDOs:", obj_sdos)
+        assert obj_sdos
+        print("test obj SDOs:\n", pformat(obj_sdos))
         assert list(sorted(obj_sdos)) == list(sorted(sdo_data))
         for ix, expected_sdo in sdo_data.items():
             assert ix in obj_sdos
@@ -55,7 +57,7 @@ class TestCiA301Config(BaseCiA301TestClass):
             obj.download(sdo_ix, val + 1)
             assert obj.upload(sdo_ix) == val + 1
 
-    def test_initialize_params(self, obj, sdo_data):
+    def test_initialize_params(self, obj):
         # Test fixture data:  At least one config param value should
         # be different from default to make this test meaningful.  (IO
         # devices have no config values, so ignore those.)
@@ -76,11 +78,13 @@ class TestCiA301Config(BaseCiA301TestClass):
         config = obj.find_config(obj.model_id, obj.address)
         raw_params = config.get("param_values", dict())
         optional_param_names = set(
-            key for (key, val) in raw_params.items()
+            key
+            for (key, val) in raw_params.items()
             if isinstance(val, dict) and val["optional"] == True
         )
         required_param_names = set(
-            key for (key, val) in raw_params.items()
+            key
+            for (key, val) in raw_params.items()
             if not isinstance(val, dict) or not val["optional"]
         )
 
@@ -89,7 +93,7 @@ class TestCiA301Config(BaseCiA301TestClass):
         normal_params = set(config_normal.get("param_values", dict()))
 
         config_full = obj.gen_config(
-            obj.model_id, obj.address, skip_optional = False
+            obj.model_id, obj.address, skip_optional=False
         )
         full_params = set(config_full.get("param_values", dict()))
 

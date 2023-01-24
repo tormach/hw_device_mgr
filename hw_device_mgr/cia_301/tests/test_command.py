@@ -9,8 +9,8 @@ class TestCiA301Command(BaseCiA301TestClass):
     def obj(self, command_cls):
         return command_cls()
 
-    def test_scan_bus(self, obj, bus, all_device_data):
-        bus_data = obj.scan_bus(bus=bus)
+    def test_scan_bus(self, obj, all_device_data):
+        bus_data = obj.scan_bus(bus=0)
         assert bus_data
         for actual in bus_data:
             expected = all_device_data[actual[0]]
@@ -39,9 +39,9 @@ class TestCiA301Command(BaseCiA301TestClass):
         dt = self.data_type_class.by_shared_name(data_type)
         return dt(random.randrange(start, stop))
 
-    def test_upload_download(self, obj, bus, all_device_data, all_sdo_data):
+    def test_upload_download(self, obj, all_device_data, all_sdo_data):
         vals = dict()
-        for address, model_id in obj.scan_bus(bus=bus):
+        for address, model_id in obj.scan_bus(bus=0):
             for dev in all_device_data.values():
                 if address == dev["address"]:
                     break
