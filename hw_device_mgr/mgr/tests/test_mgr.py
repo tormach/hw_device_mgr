@@ -15,8 +15,8 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
     ]
 
     @pytest.fixture
-    def obj(self, device_cls, mgr_config, device_config, all_device_data):
-        self.obj = device_cls()
+    def obj(self, mgr_config, device_config, all_device_data):
+        self.obj = self.device_class()
         self.obj.init(
             mgr_config=mgr_config,
             device_config=device_config,
@@ -87,7 +87,7 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
             values[key] = val
         assert len(values) == 4
 
-    def test_init(self, obj, all_device_data):
+    def test_init(self, obj):
         super().test_init(obj)
         print(obj.device_base_class.scan_devices())
         assert len(obj.devices) > 0
@@ -227,7 +227,10 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         for k, v in mgr_expected.items():
             if isinstance(v, str):
                 mgr_expected[k] = v.format(address=self.drive_index_to_addr_map)
-                print(f"check_interface_values_lower: k={k} v='{v}' -> '{mgr_expected[k]}'")
+                print(
+                    "check_interface_values_lower:"
+                    f" k={k} v='{v}' -> '{mgr_expected[k]}'"
+                )
         # self.print_dict(mgr_expected, f"Expected {interface}", indent=2)
         # for i, d in enumerate(device_expected):
         #     self.print_dict(d, f"drive_{i}", indent=4)
