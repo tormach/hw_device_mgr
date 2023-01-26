@@ -41,8 +41,8 @@ packages = (
     ]
 )
 
-class CustomInstall(install):
 
+class CustomInstall(install):
     def run(self):
         """Run halcompile on `multilatency.comp`."""
         if os.environ.get("ROS_VERSION", None) != "1":
@@ -53,11 +53,12 @@ class CustomInstall(install):
             )
         super().run()
 
+
 setup_kwargs = dict()
 if os.environ.get("ROS_VERSION", None) != "1":
     # catkin doesn't support zip_safe or entry_points
     setup_kwargs["zip_safe"] = True
-    entry_points={
+    entry_points = {
         "console_scripts": [
             "hw_device_mgr = hw_device_mgr.mgr_ros_hal.__main__:main",
             "ecat_pcap_decode = hw_device_mgr.latency.ecat_pcap_decode:main",
@@ -93,6 +94,6 @@ setup(
     description="Machinekit HAL interface to robot hardware and I/O",
     license="BSD",
     tests_require=["pytest"],
-    cmdclass={'install': CustomInstall},
-    **setup_kwargs
+    cmdclass={"install": CustomInstall},
+    **setup_kwargs,
 )

@@ -50,9 +50,10 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         """
         Return a slug generated from the device address.
 
-        EtherCAT slugs have a third alias field.  If alias is non-zero, then
-        position field will be zero.  This allows for dynamic device
-        positioning, where the alias is known but not the position.
+        EtherCAT slugs have a third alias field.  If alias is non-zero,
+        then position field will be zero.  This allows for dynamic
+        device positioning, where the alias is known but not the
+        position.
         """
         if self.address[2]:  # (0, 14, 4) -> (0, 0, 4)
             address = (self.address[0], 0, self.address[2])

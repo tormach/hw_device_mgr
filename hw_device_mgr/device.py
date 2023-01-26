@@ -39,7 +39,7 @@ class Device(abc.ABC):
         "command_out",
     }
 
-    goal_reached_timeout = 10 # seconds
+    goal_reached_timeout = 10  # seconds
 
     @classmethod
     def canon_address(cls, address):
@@ -150,7 +150,7 @@ class Device(abc.ABC):
         elif self._timeout - now > self.goal_reached_timeout:
             # Goal not reached for longer than timeout; set fault
             msg = f"Timeout ({self.goal_reached_timeout}) while "
-            msg += fb_out.get('goal_reason')
+            msg += fb_out.get("goal_reason")
             fb_out.update(fault=True, goal_reason=msg)
             self.logger.error(msg)
 

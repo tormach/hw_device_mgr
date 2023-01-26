@@ -38,7 +38,7 @@ class CiA301Config:
     _model_dcs = dict()
 
     def __init__(
-        self, address=None, model_id=None, skip_optional_config_values = True
+        self, address=None, model_id=None, skip_optional_config_values=True
     ):
         self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
@@ -236,10 +236,10 @@ class CiA301Config:
     @classmethod
     def canon_address(cls, address):
         """
-        Canonicalize device config address
+        Canonicalize device config address.
 
-        Convert `address` values read from `device_config.yaml` to `tuple` of
-        `(bus, position)` (from `list`).
+        Convert `address` values read from `device_config.yaml` to
+        `tuple` of `(bus, position)` (from `list`).
         """
         return None if address is None else tuple(address)
 
@@ -249,7 +249,7 @@ class CiA301Config:
         return [cls.canon_address(address)]
 
     @classmethod
-    def munge_config(cls, config_raw, address, skip_optional = True):
+    def munge_config(cls, config_raw, address, skip_optional=True):
         config_cooked = config_raw.copy()
         # Convert model ID ints
         model_id = (config_raw["vendor_id"], config_raw["product_code"])
@@ -273,10 +273,11 @@ class CiA301Config:
             ix = cls.sdo_class.parse_idx_str(ix)
             # param_keys value can either be stored directly as a scalar or list
             # (to be applied universally) or as a dict with the key "optional"
-            # which specifies that this is a low priority value that can be skipped
+            # which specifies that this is a low priority value that can be
+            # skipped
             if isinstance(val, dict):
                 if "optional" in val:
-                    if val["optional"] == True and skip_optional:
+                    if val["optional"] is True and skip_optional:
                         # Skip this item and don't add it to config_cooked
                         continue
                     else:
@@ -305,7 +306,7 @@ class CiA301Config:
         return conf
 
     @classmethod
-    def gen_config(cls, model_id, address, skip_optional = True):
+    def gen_config(cls, model_id, address, skip_optional=True):
         address = cls.canon_address(address)
         conf = cls.find_config(model_id, address)
         # Prune & return config
@@ -394,7 +395,7 @@ class CiA301Config:
                 address=address,
                 model_id=model_id,
                 skip_optional_config_values=skip_optional_config_values,
-                **kwargs
+                **kwargs,
             )
             res.append(config)
         return res

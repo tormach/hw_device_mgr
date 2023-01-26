@@ -16,9 +16,7 @@ class TestHALDevice(BaseHALTestClass, _TestCiA402Device):
 
     @pytest.fixture
     def obj(self, sim_device_data, mock_halcomp, device_cls):
-        self.obj = self.device_model_cls(
-            address=sim_device_data["address"]
-        )
+        self.obj = self.device_model_cls(address=sim_device_data["address"])
         self.obj.init(comp=mock_halcomp)
         yield self.obj
 

@@ -46,7 +46,8 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
 
     @lru_cache
     def obj_interface_to_test_case_kv(self, interface_key, interface_val):
-        # Translate interface values `Foo {address[6]} bar` to `Foo (0, 1, 0) bar`
+        # Translate interface values `Foo {address[6]} bar` to
+        # `Foo (0, 1, 0) bar`
         val = interface_val
         if isinstance(val, str):
             val = val.format(address=self.drive_index_to_addr_map)

@@ -1,4 +1,3 @@
-import pytest
 from ...tests.test_device import TestDevice as _TestDevice
 from .base_test_class import ErrorBaseTestClass
 

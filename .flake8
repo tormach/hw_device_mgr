@@ -1,2 +1,5 @@
 [flake8]
-max-line-length = 80
+# E501: Line too long (80 > 79 characters)
+# E203: space after :, not PEP8 compliant
+# W503: no operator after line break, not PEP8 compliant
+ignore = E501, E203, W503

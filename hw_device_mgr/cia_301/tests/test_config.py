@@ -80,12 +80,7 @@ class TestCiA301Config(BaseCiA301TestClass):
         optional_param_names = set(
             key
             for (key, val) in raw_params.items()
-            if isinstance(val, dict) and val["optional"] == True
-        )
-        required_param_names = set(
-            key
-            for (key, val) in raw_params.items()
-            if not isinstance(val, dict) or not val["optional"]
+            if isinstance(val, dict) and val["optional"] is True
         )
 
         # Get params through the normal munging process

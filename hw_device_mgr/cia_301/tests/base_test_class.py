@@ -242,7 +242,6 @@ class BaseCiA301TestClass(BaseTestClass):
         sim_device_data = [d.copy() for d in sim_device_data]
         for dev in sim_device_data:
             if "test_category" not in dev:
-                m_id = dev["model_id"] = dev["vendor_id"], dev["product_code"]
                 dev["test_name"] = "bogus"  # Temp. until below
         sim_device_data = super().munge_sim_device_data(sim_device_data)
         if hasattr(cls.device_class, "device_base_class"):
@@ -316,10 +315,6 @@ class BaseCiA301TestClass(BaseTestClass):
         assert new_dcs_data
         assert None not in new_dcs_data
         return new_dcs_data
-
-    def sim_device_data_model_id(cls, dev_data):
-        uint32 = cls.data_type_class.uint32
-        return (uint32(dev(key)) for key in ("vendor_id", "product_code"))
 
     def munge_pytest_generate_tests(self, dev_data, pytest_data, metafunc):
         # Dynamic parametrization from sim_device_data_yaml:

@@ -154,7 +154,7 @@ class EcatDecoder:
         for eth_data, ecat_data in self.data:
             src_controller, timestamp = eth_data
             eth_data_str = f'{timestamp:.6f},"{src_controller}"'
-            ecat_data_str = ','.join(str(i) for i in ecat_data)
+            ecat_data_str = ",".join(str(i) for i in ecat_data)
             print(f"{eth_data_str},{ecat_data_str}")
 
     def print_csv(self):
@@ -213,7 +213,9 @@ class EcatDecoder:
                     # Construct format character
                     num_bytes = int(int(entry.get("bitLen")) / 8)
                     format_char = self.format_char_map[num_bytes]
-                    signed = entry.get("halType").lower() in self.signed_hal_types
+                    signed = (
+                        entry.get("halType").lower() in self.signed_hal_types
+                    )
                     if not signed:
                         format_char = format_char.upper()
                     struct_format += format_char
@@ -227,10 +229,12 @@ class EcatDecoder:
     @classmethod
     def cli(cls):
         parser = argparse.ArgumentParser(
-            description='Capture and extract EtherCAT process data.'
+            description="Capture and extract EtherCAT process data."
         )
 
-        parser.add_argument("--conf", type=str, help="ethercat.conf.xml file path")
+        parser.add_argument(
+            "--conf", type=str, help="ethercat.conf.xml file path"
+        )
         parser.add_argument(
             "--ethercat-pcap",
             action="store_true",
@@ -261,8 +265,10 @@ class EcatDecoder:
             obj.file_capture(args.pcap_file, obj.read_packets)
         obj.print_csv()
 
+
 def main():
     sys.exit(EcatDecoder.cli())
+
 
 if __name__ == "__main__":
     main()

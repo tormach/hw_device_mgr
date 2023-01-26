@@ -76,7 +76,7 @@ class CiA402Device(CiA301Device):
         REMOTE=9,
         TARGET_REACHED=10,
         INTERNAL_LIMIT_ACTIVE=11,
-        OPERATION_MODE_SPECIFIC_1=12,  # HM=HOMING_ATTAINED, PP=SETPOINT_ACKNOWLEDGE
+        OPERATION_MODE_SPECIFIC_1=12,  # HM=HOMING_ATTAINED, PP=SETPOINT_ACK
         OPERATION_MODE_SPECIFIC_2=13,  # HM=HOMING_ERROR; others=FOLLOWING_ERROR
         MANUFACTURER_SPECIFIC_2=14,
         MANUFACTURER_SPECIFIC_3=15,
@@ -127,7 +127,9 @@ class CiA402Device(CiA301Device):
             self.feedback_out.update(home_success=False, home_error=False)
             return True, None
         if self.feedback_out.get("state") != "OPERATION ENABLED":
-            self.feedback_out.update(home_success=False, home_error=True, fault=True)
+            self.feedback_out.update(
+                home_success=False, home_error=True, fault=True
+            )
             return False, "Home request while drive not enabled"
 
         success, error, reason = False, False, None
@@ -154,7 +156,9 @@ class CiA402Device(CiA301Device):
             self.feedback_out.update(move_success=False, move_error=False)
             return True, None
         if self.feedback_out.get("state") != "OPERATION ENABLED":
-            self.feedback_out.update(move_success=False, move_error=True, fault=True)
+            self.feedback_out.update(
+                move_success=False, move_error=True, fault=True
+            )
             return False, "Move request while drive not enabled"
 
         success, error, reason = False, False, None
@@ -272,7 +276,7 @@ class CiA402Device(CiA301Device):
         state="SWITCH ON DISABLED",
         control_mode=DEFAULT_CONTROL_MODE,
         home_request=False,
-        move_request=False
+        move_request=False,
     )
     command_in_data_types = dict(
         state="str",
@@ -395,16 +399,12 @@ class CiA402Device(CiA301Device):
             if self.command_in.changed("move_request"):
                 # New request
                 self._move_request_start = time()
-                self.logger.info(
-                    f"{self}:  Move operation requested"
-                )
+                self.logger.info(f"{self}:  Move operation requested")
             if self.feedback_out.get("control_mode_fb") == self.MODE_PP:
                 # Only set control word bit in MODE_PP
                 move_request = True
         elif self.command_in.changed("move_request"):  # move_request cleared
-                self.logger.info(
-                    f"{self}:  Move operation complete"
-                )
+            self.logger.info(f"{self}:  Move operation complete")
         return move_request
 
     def _get_next_control_word(self, next_cm):

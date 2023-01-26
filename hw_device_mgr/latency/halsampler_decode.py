@@ -83,7 +83,7 @@ class HalSamplerDecoder:
 
     def enable_sampler(self, channel=0, disable=False):
         val = "0" if disable else "1"
-        cmd = ["halcmd", "sets", f"lat-debug-enable", val]
+        cmd = ["halcmd", "sets", "lat-debug-enable", val]
         subprocess.run(cmd, capture_output=True, check=True)
 
     def disable_sampler(self, channel=0):
@@ -152,7 +152,7 @@ class HalSamplerDecoder:
     @classmethod
     def cli(cls):
         parser = argparse.ArgumentParser(
-            description='Run halsampler and convert to CSV.'
+            description="Run halsampler and convert to CSV."
         )
 
         parser.add_argument(
@@ -208,8 +208,10 @@ class HalSamplerDecoder:
                 obj.read_halsampler_output(f)
         obj.print_csv()
 
+
 def main():
     sys.exit(HalSamplerDecoder.cli())
+
 
 if __name__ == "__main__":
     main()

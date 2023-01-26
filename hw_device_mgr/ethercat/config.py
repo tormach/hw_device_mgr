@@ -26,11 +26,11 @@ class EtherCATConfig(CiA301Config):
     @classmethod
     def canon_address(cls, address):
         """
-        Canonicalize device config address
+        Canonicalize device config address.
 
-        Convert `address` values read from `device_config.yaml` to `tuple` of
-        `(bus, position, alias)` (from `list`).  Fill in optional `alias` with
-        `0`.
+        Convert `address` values read from `device_config.yaml` to
+        `tuple` of `(bus, position, alias)` (from `list`).  Fill in
+        optional `alias` with `0`.
         """
         return tuple(address) if len(address) == 3 else (*address, 0)
 
@@ -77,7 +77,9 @@ class EtherCATConfig(CiA301Config):
                 continue  # In tests only
             if model_id != (conf["vendor_id"], conf["product_code"]):
                 continue
-            conf_addr = cls.canon_address_in_addresses(address, conf["addresses"])
+            conf_addr = cls.canon_address_in_addresses(
+                address, conf["addresses"]
+            )
             if conf_addr is None:
                 continue
             break  # Found it
