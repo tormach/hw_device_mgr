@@ -71,5 +71,5 @@ class BaseHALTestClass(BaseCiA402TestClass):
         MockHALComponent.clear()
 
     @pytest.fixture
-    def extra_fixtures(self, mock_hal):
+    def extra_fixtures(self, mock_hal, mock_halcomp):
         pass
