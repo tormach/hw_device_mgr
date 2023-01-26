@@ -40,7 +40,7 @@ class CiA301SDO:
         self.max_value = max_value
 
     def __str__(self):
-        return f"{self.index:04X}-{self.subindex:02X}h"
+        return f"{self.index:04X}-{self.subindex:02X}h {self.name}"
 
     def __repr__(self):
         cname = self.__class__.__name__
