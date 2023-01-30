@@ -40,6 +40,9 @@ class Interface:
     def get(self, key=None):
         return self.values if key is None else self.values[key]
 
+    def get_old(self, key=None):
+        return self.values_old if key is None else self.values_old[key]
+
     def get_data_type(self, key):
         return self.data_types[key]
 

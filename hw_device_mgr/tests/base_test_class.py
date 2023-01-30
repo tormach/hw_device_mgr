@@ -108,6 +108,20 @@ class BaseTestClass(ConfigIO):
         yield _sim_device_data["device_cls"]
 
     @pytest.fixture
+    def mock_time(self, mocker):
+        """Fixture to mock `time.time()`, returning test object `now` attr."""
+
+        def side_effect():
+            if not hasattr(self, "now"):
+                raise RuntimeError("mock_time needs test object 'now' attr")
+            print(f"mock time.time():  Returning {self.now}")
+            return self.now
+
+        mock_obj = mocker.MagicMock(name="time.time", side_effect=side_effect)
+        mocker.patch("time.time", side_effect=side_effect)
+        yield mock_obj
+
+    @pytest.fixture
     def extra_fixtures(self):
         # Use this to add extra fixtures to the `device_cls` fixture
         # in subclasses

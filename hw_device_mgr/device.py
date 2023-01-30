@@ -137,22 +137,22 @@ class Device(abc.ABC):
     def check_and_set_timeout(self):
         """Set fault if feedback_out goal_reached is False for too long."""
         fb_out = self._interfaces["feedback_out"]
-        if fb_out.get("goal_reached"):
-            # Goal reached; cancel any timer
+        if fb_out.get_old("goal_reached") or fb_out.get_old("fault"):
+            # Goal reached or fault in previous cycle; cancel any timer
             self._timeout = None
             return
 
-        # Goal not reached
+        # Goal not reached in previous cycle
         now = time.time()
-        if fb_out.changed("goal_reached"):
+        if self._timeout is None:
             # goal_reached just changed to False; set timer
-            self._timeout = now
-        elif self._timeout - now > self.goal_reached_timeout:
+            self._timeout = now + self.goal_reached_timeout
+        elif now > self._timeout:
             # Goal not reached for longer than timeout; set fault
-            msg = f"Timeout ({self.goal_reached_timeout}) while "
-            msg += fb_out.get("goal_reason")
-            fb_out.update(fault=True, goal_reason=msg)
-            self.logger.error(msg)
+            reason = fb_out.get_old("goal_reason")
+            msg = f"Timeout ({self.goal_reached_timeout}s):  {reason}"
+            fb_out.update(fault=True, goal_reached=False, goal_reason=msg)
+            self.logger.error(f"{self}:  {msg}")
 
     def set_command(self, **kwargs) -> Interface:
         """Process `command_in` and return `command_out` interface."""
