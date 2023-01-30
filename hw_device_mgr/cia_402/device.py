@@ -184,9 +184,10 @@ class CiA402Device(CiA301Device):
             self.feedback_out.update(**self.feedback_out_defaults)
             return self.feedback_out
 
-        # Goal reached vars
+        # Goal reached, fault var defaults
         goal_reached = True
         goal_reasons = list()
+        fault = False
 
         # Status word, control mode from fb in
         sw = self.feedback_in.get("status_word")
@@ -216,12 +217,17 @@ class CiA402Device(CiA301Device):
             state_cmd = self.command_in.get("state")
             sw = self.feedback_in.get("status_word")
             goal_reasons.append(f"state {state} (0x{sw:08X}) != {state_cmd}")
+            if (state_cmd == "OPERATION ENABLED"
+                and not self.test_sw_bit(sw, "VOLTAGE_ENABLED")):
+                goal_reasons.append("No voltage at motor")
+                fault = True
 
         # Calculate 'transition' feedback
         new_st, old_st = self.feedback_out.changed("state", return_vals=True)
         if (old_st, new_st) == ("START", "NOT READY TO SWITCH ON"):
             self.feedback_out.update(transition=0)
         elif new_st == "FAULT REACTION ACTIVE":
+            fault=True
             self.feedback_out.update(transition=13)
         elif self._get_next_state(curr_state=old_st) == new_st:
             next_trans = self._get_next_transition(curr_state=old_st)
@@ -244,6 +250,9 @@ class CiA402Device(CiA301Device):
                 goal_reasons.append(pp_reason)
 
         if self.test_sw_bit(sw, "FAULT"):
+            goal_reasons.append("Drive fault")
+            fault = True
+        if fault:
             self.feedback_out.update(fault=True)
 
         if not goal_reached:
@@ -615,6 +624,10 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice):
                     test_states is None
                     or self.feedback_out.get("state") in test_states
                 ):
+                    # Special case:  No motor power before enabling drive
+                    if (next_state == "OPERATION ENABLED"
+                        and not self.test_sw_bit(sw_prev, "VOLTAGE_ENABLED")):
+                        break  # Drive silently stays in SWITCHED ON state
                     state = next_state
                     break
 

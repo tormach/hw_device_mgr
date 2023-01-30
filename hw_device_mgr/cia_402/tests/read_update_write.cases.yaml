@@ -156,7 +156,7 @@
     transition:  13
     fault:  True
     goal_reached:  False
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Drive fault
   command_out:
     control_word:  0x0000
   sim_feedback:
@@ -168,7 +168,7 @@
     status_word:  0x0018
     state:  FAULT
     transition:  14
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Drive fault
   command_out:
     # Goal is still OPERATION ENABLED, so automatically clear fault
     control_word:  0x0080  # Clear fault
@@ -214,7 +214,7 @@
     state:  FAULT REACTION ACTIVE
     transition:  13
     fault:  True
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Drive fault
   command_out:
     control_word:  0x0000
   sim_feedback:
@@ -226,7 +226,7 @@
     status_word:  0x0018
     state:  FAULT
     transition:  14
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Drive fault
   command_in:
   # Controller sees FAULT state and commands hold at that state
     state:  FAULT
@@ -387,46 +387,78 @@
 - desc:  "Disable disabled:  Hold SWITCH ON DISABLED x2"
 
 #
-# Controller moves to OPERATION ENABLED, then commands homing operation
-# SWITCH ON DISABLED -> OPERATION ENABLED
-# command_mode -> MODE_HM
-# control_word set OPERATION_MODE_SPECIFIC_1 (HOMING_START) bit
-# status_word HOMING_COMPLETED bit set
-# OPERATION ENABLED -> SWITCH ON DISABLED
-- desc:  "Home:  Command OPERATION ENABLED;  402 state machine transition hold"
+# Controller commands OPERATION ENABLED while no voltage at motor;
+# FAULT reported
+#
+- desc:  "No voltage:  Command SWITCHED ON;  402 state machine transition hold"
   command_in:
-    # Controller commands enable
-    state:  OPERATION ENABLED
+    # Controller commands switched on
+    state:  SWITCHED ON
   command_out:
     control_word:  0x0006
   sim_feedback:
-    status_word:  0x0031
-- desc:  "Home:  402 state machine transition 2"
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+- desc:  "No voltage:  402 state machine transition 2"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED; not a fault for cmd SWITCHED ON
+    status_word:  0x0021  # READY TO SWITCH ON - VOLTAGE_ENABLED
   feedback_in:
-    status_word:  0x0031
+    status_word:  0x0021
   feedback_out:
-    status_word:  0x0031
+    status_word:  0x0021
     state:  READY TO SWITCH ON
     transition:  2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
+    goal_reason:  state READY TO SWITCH ON (0x00000021) != SWITCHED ON
   command_out:
     control_word:  0x0007
   sim_feedback:
-    status_word:  0x0033
-- desc:  "Home:  402 state machine transition 3"
+    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
+- desc:  "No voltage:  402 state machine transition 3"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED; not a fault for cmd SWITCHED ON
+    status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
   feedback_in:
-    status_word:  0x0033
+    status_word:  0x0023
   feedback_out:
-    status_word:  0x0033
+    status_word:  0x0023
     state:  SWITCHED ON
     transition:  3
-    goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "No voltage:  SWITCHED ON goal reached; command OPERATION ENABLED"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED; not a fault for cmd SWITCHED ON
+    status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
+  command_in:
+    # Controller commands OPERATION ENABLED
+    state:  OPERATION ENABLED
+  feedback_out:
+    transition:  -1
   command_out:
     control_word:  0x000F
+- desc:  "No voltage:  402 state machine transition 4 fails"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED; a fault for cmd OPERATION ENABLED
+    status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
+  feedback_out:
+    fault:  True
+    goal_reached:  False
+    goal_reason:  state SWITCHED ON (0x00000023) != OPERATION ENABLED; No voltage at motor
+- desc:  "No voltage:  Hold state"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED; a fault for cmd OPERATION ENABLED
+    status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
+- desc:  "No voltage:  Supply voltage; fault is cleared"
+  feedback_in:
+    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
+    fault:  False
+    goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
-- desc:  "Home:  402 state machine transition 4; command home_request & MODE_HM"
+- desc:  "No voltage:  402 state machine transition 4"
   feedback_in:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
   feedback_out:
@@ -435,6 +467,17 @@
     transition:  4
     goal_reached:  True
     goal_reason:  Reached
+- desc:  "No voltage:  Hold state OPERATION ENABLED"
+  feedback_out:
+    transition:  -1
+
+#
+# Controller commands homing operation
+# command_mode -> MODE_HM
+# control_word set OPERATION_MODE_SPECIFIC_1 (HOMING_START) bit
+# status_word HOMING_COMPLETED bit set
+# OPERATION ENABLED -> SWITCH ON DISABLED
+- desc:  "Home:  command home_request & MODE_HM"
   command_in:
     # Controller commands homing start
     home_request:  True
