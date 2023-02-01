@@ -455,24 +455,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # Fault isn't allowed to override init; don't spam logs about
             # ignoring 'fault' state cmd
             pass
-        elif self.query_devices(oper=False):
-            # Treat devices not operational as a fault
-            fds = self.query_devices(oper=False)
-            fd_addrs = ", ".join(str(d.address) for d in fds)
-            cmd_out.update(
-                state=self.STATE_FAULT,
-                state_log=f"Devices at ({fd_addrs}) not online and operational",
-            )
-        elif self.query_devices(state="FAULT") and self.query_devices(
-            state="changed"
-        ):
-            # Devices went into FAULT state since last update
-            fds = self.query_devices(state="FAULT")
-            fd_addrs = ", ".join(str(d.address) for d in fds)
-            cmd_out.update(
-                state=self.STATE_FAULT,
-                state_log=f"Devices at ({fd_addrs}) in FAULT state",
-            )
         elif self.query_devices(fault=True) and self.query_devices(
             fault="changed"
         ):

@@ -240,7 +240,7 @@
     d.x.goal_reached:  False
     d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
   command_out:
-    state_log:  Devices at ({address[1]}) in FAULT state
+    state_log:  Devices at ({address[1]}) set fault
     # Manager commands TRANSITION_12 to SWITCH ON DISABLED
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -381,7 +381,7 @@
     state_cmd:  4  # fault
   command_out:
     state:  4  # fault
-    state_log:  Devices at ({address[2]}) in FAULT state
+    state_log:  Devices at ({address[2]}) set fault
     command_complete:  True
     drive_state:  FAULT
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
