@@ -54,18 +54,13 @@ class BaseMgrTestClass(BaseDevicesTestClass):
         assert mgr_config, f"Empty YAML package resource {rsrc}"
         return mgr_config
 
-    @classmethod
-    def init_sim(cls, **kwargs):
-        """Create sim device objects with configured SDOs."""
-        super().init_sim(**cls.init_sim_sdo_kwargs(**kwargs))
-
     @pytest.fixture
-    def device_cls(self, _sim_device_data, extra_fixtures):
+    def device_cls(self, sim_device_data, device_extra_fixtures):
         # Don't init device_model_classes device_config; HWDeviceMgr does that
-        yield _sim_device_data["device_cls"]
+        yield sim_device_data["device_cls"]
 
     @pytest.fixture
-    def category_cls(self, extra_fixtures):
+    def category_cls(self, category_extra_fixtures):
         """Fixture for Device class category."""
         self.init_sim()
         yield self.device_base_class
