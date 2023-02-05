@@ -11,6 +11,7 @@ class RelocatableESIDevice(EtherCATSimDevice):
         sdo_data = dict()
         for dev in cls.get_model():
             conf = dev.config_class
+            assert dev.alt_xml_description
             dev_sdo_data = conf.get_device_sdos_from_esi(
                 None, dev.alt_xml_description, LcId=LcId
             )

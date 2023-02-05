@@ -86,7 +86,9 @@ class BaseEtherCATTestClass(BaseCiA402TestClass):
         yield
 
     @pytest.fixture
-    def extra_fixtures(self, device_xml):
-        # Use this to add extra fixtures to the `device_cls` fixture
-        # in subclasses
-        pass
+    def ethercat_extra_fixtures(self, device_xml):
+        yield
+
+    @pytest.fixture
+    def category_extra_fixtures(self, ethercat_extra_fixtures):
+        yield
