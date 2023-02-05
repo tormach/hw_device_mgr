@@ -20,5 +20,7 @@ class BaseHALMgrTestClass(BaseMgrTestClass, BaseLCECTestClass):
     device_model_classes = HALHWDeviceMgrTest.device_classes
 
     @pytest.fixture
-    def extra_fixtures(self, mock_hal, mock_ethercat_command):
+    def category_extra_fixtures(
+        self, mock_hal, ethercat_extra_fixtures
+    ):
         pass
