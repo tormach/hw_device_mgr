@@ -30,8 +30,12 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
     device_model_classes = ROSHWDeviceMgrTest.device_classes
 
     @pytest.fixture
-    def extra_fixtures(
-        self, manager_ros_params, sim_device_data_path, device_config_path
+    def category_extra_fixtures(self, ros_extra_fixtures):
+        pass
+
+    @pytest.fixture
+    def ros_extra_fixtures(
+        self, sim_device_data_path, device_config_path, manager_ros_params
     ):
         pass
 
@@ -53,14 +57,30 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         # param to it
         tmpfile = tmp_path / "sim_devices.yaml"
         print(f"Sim device data written to {tmpfile}")
+        self.rosparams["sim_device_data_path"] = tmpfile
+        yield tmpfile
+
+    @pytest.fixture
+    def device_config(self, sim_device_data_path):
+        """
+        Device configuration data fixture.
+
+        Load device configuration with `load_device_config()` and munge with
+        `munge_device_config()`.
+
+        Device configuration in the same format as non-test
+        configuration, described in `Config` classes.
+        """
+        conf_raw = self.load_device_config()
+        dev_conf = self.munge_device_config(conf_raw)
+        self.device_config = dev_conf
         sim_device_data = self.init_sim_device_data()
         # Clean up for YAML dumper
         for d in sim_device_data:
             d["product_code"] = int(d["product_code"])
             d["vendor_id"] = int(d["vendor_id"])
-        self.dump_yaml_path(tmpfile, sim_device_data)
-        self.rosparams["sim_device_data_path"] = tmpfile
-        yield tmpfile
+        self.dump_yaml_path(sim_device_data_path, sim_device_data)
+        yield dev_conf
 
     @pytest.fixture
     def device_config_path(self, tmp_path, device_config, mock_rclpy):
