@@ -3,4 +3,4 @@ from .base_test_class import BaseLCECTestClass
 
 
 class TestLCECSDO(BaseLCECTestClass, _TestEtherCATSDO):
-    pass
+    halcomp_name = "lcec_sdo"

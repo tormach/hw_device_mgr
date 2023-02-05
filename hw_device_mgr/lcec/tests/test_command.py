@@ -5,4 +5,4 @@ from ...ethercat.tests.test_command import (
 
 
 class TestLCECCommand(BaseLCECTestClass, _TestEtherCATCommand):
-    pass
+    halcomp_name = "lcec_command"

@@ -125,5 +125,11 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
         patch.stopall()
 
     @pytest.fixture
-    def extra_fixtures(self, mock_ethercat_command, mock_hal, device_xml):
+    def ethercat_extra_fixtures(self, device_xml, mock_ethercat_command):
+        yield
+
+    @pytest.fixture
+    def category_extra_fixtures(
+        self, ethercat_extra_fixtures, hal_extra_fixtures
+    ):
         pass

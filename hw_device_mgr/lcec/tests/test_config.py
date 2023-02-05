@@ -7,6 +7,7 @@ from lxml import etree
 
 class TestLCECConfig(BaseLCECTestClass, _TestEtherCATConfig):
 
+    halcomp_name = "lcec_config"
     ethercat_conf_xml_package = "hw_device_mgr.lcec.tests"
     ethercat_conf_xml_resource = "ethercat.conf.xml"
 
