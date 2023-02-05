@@ -35,11 +35,13 @@ class BaseHALTestClass(BaseCiA402TestClass):
         direction are accessible via `mock_halcomp.get_pin_type(pin_name)`
         and `mock_halcomp.get_pin_dir(pin_name)`, respectively.
         """
-        comp_name = getattr(self, "halcomp_name", "foocomp")
+        assert not hasattr(self, "halcomp_mockobj")  # No repeat runs
         self.pin_vals = dict()
-        yield from MockHALComponent.fixture(
-            "mock_halcomp", self, comp_name, self.pin_vals
-        )
+        for mockobj in MockHALComponent.fixture(
+            "mock_halcomp", self, self.halcomp_name, self.pin_vals
+        ):
+            self.halcomp_mockobj = mockobj
+            yield mockobj
 
     @pytest.fixture()
     def mock_hal(self, mocker):
@@ -54,7 +56,8 @@ class BaseHALTestClass(BaseCiA402TestClass):
 
         def mock_component(comp_name):
             comp = MockHALComponent.get_mock(comp_name, self.pin_vals)
-            self.mock_halcomp = comp
+            assert not hasattr(self, "halcomp_mockobj")  # No repeat runs
+            self.halcomp_mockobj = comp
             self.get_pin = comp.obj.get_pin_val
             self.set_pin = comp.obj.set_pin_val
             return comp
@@ -71,5 +74,9 @@ class BaseHALTestClass(BaseCiA402TestClass):
         MockHALComponent.clear()
 
     @pytest.fixture
-    def extra_fixtures(self, mock_hal, mock_halcomp):
+    def hal_extra_fixtures(self, mock_hal, mock_halcomp):
+        pass
+
+    @pytest.fixture
+    def category_extra_fixtures(self, hal_extra_fixtures):
         pass

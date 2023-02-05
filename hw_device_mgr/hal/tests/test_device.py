@@ -28,7 +28,7 @@ class TestHALDevice(BaseHALTestClass, _TestCiA402Device):
     def test_init(self, obj):
         super().test_init(obj)
 
-        assert obj.comp is self.mock_halcomp
+        assert obj.comp is self.halcomp_mockobj
         print(f"pins:\n{pformat(obj.pins)}")
         for intf_name, data in obj.pin_interfaces.items():
             names = set()

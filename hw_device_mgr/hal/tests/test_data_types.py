@@ -3,6 +3,7 @@ from ...tests.test_data_types import TestDataType as _TestDataType
 
 
 class TestHALDataType(BaseHALTestClass, _TestDataType):
+    halcomp_name = "hal_datatypes"
     sname_to_typestr = dict(
         bit="HAL_BIT",
         int8="HAL_S32",

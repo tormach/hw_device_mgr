@@ -51,7 +51,7 @@ class MockHALComponent(MockFixture):
     patches = "hal.component"
 
     def __init__(self, name, pin_vals):
-        """Emulate `hal.compenent()`."""
+        """Emulate `hal.component()`."""
         self.name = name
         self.is_ready = False
         self.pins = {}
@@ -113,3 +113,5 @@ class MockHALComponent(MockFixture):
         """
         obj.request_inst.get_pin = obj.get_pin_val
         obj.request_inst.set_pin = obj.set_pin_val
+        assert not hasattr(obj, "halcomp_mockobj")
+        obj.halcomp_mockobj = mock_obj
