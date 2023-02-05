@@ -302,9 +302,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             state_cmd_str
         ):
             # Already running
-            self.logger.warning(
-                f"Ignoring {state_cmd_str} command from state {e.src}"
-            )
+            e.msg = f"Ignoring {state_cmd_str} command from state {e.src}"
+            self.logger.warning(e.msg)
             return False
         else:
             self.logger.info(f"Received {state_cmd_str} command:  {e.msg}")
@@ -441,34 +440,37 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
         return mgr_fb_out
 
-    def set_command(self, **kwargs):
+    def set_command(self, **cmd_in_kwargs):
         """Set command for top-level manager and for drives."""
         # Initialize command out interface with previous values; this could
         # clobber parent class updates for regular device classes, but this
         # isn't a regular device and it inherits directly from `Device`
         old_cmd_out = self.command_out.get().copy()
-        cmd_out = super().set_command(**kwargs)
+        cmd_out = super().set_command(**cmd_in_kwargs)
         cmd_out.update(**old_cmd_out)
+        cmd_in = self.command_in
 
-        # Special cases where 'fault' overrides current command:
-        if self.state.startswith("init"):
-            # Fault isn't allowed to override init; don't spam logs about
-            # ignoring 'fault' state cmd
-            pass
-        elif self.query_devices(fault=True) and self.query_devices(
-            fault="changed"
-        ):
-            # Devices set `fault` since last update
+        if self.command_in.rising_edge("state_set"):
+            # state_set went high; log it
+            if self.command_in.get("state_cmd") != cmd_out.get("state"):
+                new_cmd = self.command_in.get("state_cmd")
+                new_cmd_str = self.cmd_int_to_name_map[new_cmd]
+                self.logger.info(f"Received command update {new_cmd_str}")
+            else:
+                self.logger.info(f"Received unchanged command update")
+
+        # Special cases where 'fault' or incoming command update overrides
+        # current command:
+        if self.query_devices(fault=True, changed=True):
+            # Devices newly set `fault` since last update
             fds = self.query_devices(fault=True)
             fd_addrs = ", ".join(str(d.address) for d in fds)
             cmd_out.update(
                 state=self.STATE_FAULT,
                 state_log=f"Devices at ({fd_addrs}) set fault",
             )
-        elif kwargs.get("state_cmd", None) is None:
-            pass  # Use previous state_cmd value
-        elif kwargs["state_cmd"] not in self.cmd_int_to_name_map:
-            state_cmd = kwargs["state_cmd"]
+        elif cmd_in.get("state_cmd") not in self.cmd_int_to_name_map:
+            state_cmd = cmd_in.get("state_cmd")
             self.logger.error(f"Invalid state command, '{state_cmd}'")
             cmd_out.update(
                 state=self.STATE_FAULT,
@@ -477,7 +479,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         elif self.command_in.rising_edge("state_set"):
             # state_set went high; latch state_cmd from kwargs
             cmd_out.update(
-                state=kwargs["state_cmd"],
+                state=cmd_in.get("state_cmd"),
             )
             if cmd_out.changed("state"):
                 # Assume external command
@@ -492,8 +494,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             event = f"{self.state_str}_command"
             try:
                 self.trigger(event, msg=cmd_out.get("state_log"))
-            except Canceled:
-                self.logger.warning(f"Unable to honor {event} command")
+            except Canceled as e:
+                self.logger.warning(f"Unable to honor {event} command: {e}")
         elif self.automatic_next_event() is not None:
             # Attempt automatic transition to next state
             try:
@@ -564,18 +566,17 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                     state=self.command_out.get("drive_state"),
                 )
 
-    def query_devices(self, **kwargs):
+    def query_devices(self, changed=False, **kwargs):
         res = list()
         for dev in self.devices:
             for key, val in kwargs.items():
                 if callable(val):
                     if not val(dev.feedback_out.get(key)):
                         break
-                elif val == "changed":
-                    if not dev.feedback_out.changed(key):
-                        break
                 else:
                     if dev.feedback_out.get(key) != val:
+                        break
+                    if changed and not dev.feedback_out.changed(key):
                         break
             else:
                 res.append(dev)
