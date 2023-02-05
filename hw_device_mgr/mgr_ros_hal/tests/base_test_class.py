@@ -13,12 +13,7 @@ class BaseROSHALMgrTestClass(BaseROSMgrTestClass, BaseHALMgrTestClass):
     device_model_classes = ROSHWDeviceMgrTest.device_classes
 
     @pytest.fixture
-    def extra_fixtures(
-        self,
-        manager_ros_params,
-        sim_device_data_path,
-        device_config_path,
-        mock_hal,
-        mock_ethercat_command,
+    def category_extra_fixtures(
+        self, mock_hal, ethercat_extra_fixtures, ros_extra_fixtures
     ):
         pass
