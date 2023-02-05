@@ -107,7 +107,6 @@ class MockFixture:
         """
         mock_obj = cls.get_mock(*args)
         mock_obj.obj.request_inst = test_obj
-        setattr(test_obj, name, mock_obj)
         if cls.patches is not None:
             patches = cls.patches
         else:

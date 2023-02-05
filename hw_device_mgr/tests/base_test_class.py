@@ -29,27 +29,28 @@ class BaseTestClass(ConfigIO):
     # Length of device address tuple
     address_tuple_length = 2
 
-    @classmethod
-    def test_category_class(cls, test_category):
-        for dmc in cls.device_model_classes:
-            assert dmc.name
-            if dmc.test_category == test_category:
-                return dmc
-        raise ValueError(
-            f"{cls}:  No device in test category class '{test_category}'"
-        )
+    #
+    # Class methods for initializing sim data
+    #
 
     @classmethod
-    def munge_test_address(cls, raw_address):
-        """Massage test data address."""
-        # Ignore addresses with aliases if not supported by class
-        t_len = cls.address_tuple_length
-        if len(raw_address) > t_len and raw_address[t_len]:
-            return None
-        # Pad and trim if needed
-        pad = [0] * (cls.address_tuple_length - len(raw_address))
-        padded_trimmed = (raw_address + pad)[0 : cls.address_tuple_length]
-        return tuple(padded_trimmed)
+    def init_sim(cls, **kwargs):
+        kwargs["sim_device_data"] = cls.init_sim_device_data()
+        cls.device_class.clear_devices()
+        cls.device_class.init_sim(**kwargs)
+
+    @classmethod
+    def init_sim_device_data(cls):
+        # Load and munge sim device data
+        dev_data = cls.load_sim_device_data()
+        return cls.munge_sim_device_data(dev_data)
+
+    @classmethod
+    def load_sim_device_data(cls):
+        rsrc = cls.sim_device_data_package, cls.sim_device_data_yaml
+        dev_data = cls.load_yaml_resource(*rsrc)
+        assert dev_data, f"Empty device data in package resource {rsrc}"
+        return dev_data
 
     @classmethod
     def munge_sim_device_data(cls, sim_device_data):
@@ -84,28 +85,64 @@ class BaseTestClass(ConfigIO):
         return new_sim_device_data
 
     @classmethod
-    def init_sim(cls, **kwargs):
-        kwargs["sim_device_data"] = cls.init_sim_device_data()
-        cls.device_class.clear_devices()
-        cls.device_class.init_sim(**kwargs)
+    def test_category_class(cls, test_category):
+        for dmc in cls.device_model_classes:
+            assert dmc.name
+            if dmc.test_category == test_category:
+                return dmc
+        raise ValueError(
+            f"{cls}:  No device in test category class '{test_category}'"
+        )
 
     @classmethod
-    def load_sim_device_data(cls):
-        rsrc = cls.sim_device_data_package, cls.sim_device_data_yaml
-        dev_data = cls.load_yaml_resource(*rsrc)
-        assert dev_data, f"Empty device data in package resource {rsrc}"
-        return dev_data
+    def munge_test_address(cls, raw_address):
+        """Massage test data address."""
+        # Ignore addresses with aliases if not supported by class
+        t_len = cls.address_tuple_length
+        if len(raw_address) > t_len and raw_address[t_len]:
+            return None
+        # Pad and trim if needed
+        pad = [0] * (cls.address_tuple_length - len(raw_address))
+        padded_trimmed = (raw_address + pad)[0 : cls.address_tuple_length]
+        return tuple(padded_trimmed)
 
-    @classmethod
-    def init_sim_device_data(cls):
-        # Set up sim devices:  munge data & pass to sim device class
-        dev_data = cls.load_sim_device_data()
-        return cls.munge_sim_device_data(dev_data)
+    #
+    # Test fixtures
+    #
 
     @pytest.fixture
     def device_cls(self, _sim_device_data, category_cls):
         """Fixture for configured Device class."""
         yield _sim_device_data["device_cls"]
+
+    @pytest.fixture
+    def device_extra_fixtures(self):
+        # Use this to add extra fixtures to the `device_cls` fixture
+        # in subclasses
+        pass
+
+    @pytest.fixture
+    def category_cls(self, category_extra_fixtures):
+        """Fixture for Device class category with sim devices initialized."""
+        self.init_sim()
+        yield self.device_class
+
+    @pytest.fixture
+    def category_extra_fixtures(self):
+        # Use this to add extra fixtures to the `category_cls` fixture
+        # in subclasses
+        pass
+
+    @pytest.fixture
+    def all_device_data(self, category_cls):
+        # All device data in a dict
+        data = category_cls._sim_device_data[self.device_class.category]
+        assert data
+        yield data
+
+    @pytest.fixture
+    def sim_device_data(self, _sim_device_data):
+        yield _sim_device_data
 
     @pytest.fixture
     def mock_time(self, mocker):
@@ -121,30 +158,9 @@ class BaseTestClass(ConfigIO):
         mocker.patch("time.time", side_effect=side_effect)
         yield mock_obj
 
-    @pytest.fixture
-    def extra_fixtures(self):
-        # Use this to add extra fixtures to the `device_cls` fixture
-        # in subclasses
-        pass
-
-    @pytest.fixture
-    def category_cls(self, extra_fixtures):
-        """Fixture for Device class category."""
-        self.init_sim()
-        yield self.device_class
-
-    @pytest.fixture
-    def all_device_data(self, category_cls):
-        # All device data in a dict
-        data = category_cls._sim_device_data[self.device_class.category]
-        assert data
-        yield data
-
-    @pytest.fixture
-    def sim_device_data(self, _sim_device_data):
-        yield _sim_device_data
-
     def mock_sim_device_data(self):
+        # When _sim_device_data not in fixtures, improvise list of devices, one
+        # of each type
         dev_data = list()
         addr = 0
         for dev_cls in self.device_model_classes:

@@ -110,16 +110,27 @@ class TestDevice(BaseTestClass):
             assert obj.address == data["address"]
             assert obj.model_id == data["model_id"]
 
+    def test_dot(self, category_cls, tmp_path):
+        # Test class diagram
+        gv_file = tmp_path / f"{category_cls.category}.gv"
+        assert not gv_file.exists()
+        with gv_file.open("w") as f:
+            f.write(category_cls.dot())
+        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
+        # All class diagrams
+        gv_file = tmp_path / ".." / "all.gv"
+        with gv_file.open("w") as f:
+            f.write(Device.dot())
+        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
+
     #
     # Instance tests
     #
 
     @pytest.fixture
     def obj(self, device_cls, sim_device_data):
-        cls = self.test_category_class(sim_device_data["test_category"])
-        assert cls.name
-        self.sim_device_data = sim_device_data
-        self.obj = cls(address=sim_device_data["address"])
+        assert device_cls.name
+        self.obj = device_cls(address=sim_device_data["address"])
         self.obj.init()
         yield self.obj
 
@@ -129,19 +140,6 @@ class TestDevice(BaseTestClass):
     def test_set_sim_feedback(self, obj):
         res = obj.set_sim_feedback()
         assert res.__class__.__name__ == "DebugInterface"
-
-    def test_dot(self, tmp_path):
-        # Test class diagram
-        gv_file = tmp_path / f"{self.device_class.category}.gv"
-        assert not gv_file.exists()
-        with gv_file.open("w") as f:
-            f.write(self.device_class.dot())
-        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
-        # All class diagrams
-        gv_file = tmp_path / ".." / "all.gv"
-        with gv_file.open("w") as f:
-            f.write(Device.dot())
-        subprocess.check_call(["dot", "-Tpng", "-O", gv_file])
 
     def test_check_and_set_timeout(self, obj, mock_time):
         fb_out = obj.feedback_out
