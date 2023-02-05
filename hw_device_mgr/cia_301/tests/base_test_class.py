@@ -96,8 +96,8 @@ class BaseCiA301TestClass(BaseTestClass):
         return new_device_config
 
     @pytest.fixture
-    def device_cls(self, _sim_device_data, category_cls, device_config):
-        dc = _sim_device_data["device_cls"]
+    def device_cls(self, sim_device_data, category_cls, device_config):
+        dc = sim_device_data["device_cls"]
         self.device_class.set_device_config(device_config)
         yield dc
 
@@ -195,7 +195,6 @@ class BaseCiA301TestClass(BaseTestClass):
         The `sim_device_data` is also available in the test instance's
         `sim_device_data` attribute.
         """
-        self.sim_device_data = _sim_device_data
         model_id = (
             _sim_device_data["vendor_id"],
             _sim_device_data["product_code"],
