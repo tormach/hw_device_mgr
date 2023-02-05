@@ -113,7 +113,7 @@ class HALCompDevice(HALPinDevice):
     hal_comp_name = None
 
     def init(self, **kwargs):
-        self.comp = self.hal.component(self.hal_comp_name or self.name)
+        self.hal_component(self.hal_comp_name or self.name)
         super().init(**kwargs)
-        self.comp.ready()
+        self.hal_ready()
         self.logger.info(f"HAL component '{self.compname}' ready")

@@ -46,6 +46,9 @@ class HALMixin:
         """
         return pname.replace("-", "_")
 
-    @property
-    def hal(self):
-        return hal
+    def hal_component(self, name):
+        self.comp = hal.component(name)
+        self.compname = name
+
+    def hal_ready(self):
+        self.comp.ready()
