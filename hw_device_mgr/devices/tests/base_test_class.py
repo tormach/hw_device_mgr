@@ -1,4 +1,4 @@
-from ...lcec.tests.base_test_class import BaseLCECTestClass
+from ...ethercat.tests.base_test_class import BaseEtherCATTestClass
 from .devices import (
     DevicesForTest,
     ElmoGold420ForTest,
@@ -9,7 +9,7 @@ from .devices import (
 )
 
 
-class BaseDevicesTestClass(BaseLCECTestClass):
+class BaseDevicesTestClass(BaseEtherCATTestClass):
 
     device_class = DevicesForTest
     # device_class = DevicesForTest

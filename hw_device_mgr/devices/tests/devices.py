@@ -1,4 +1,4 @@
-from ...lcec.device import LCECSimDevice
+from ...ethercat.device import EtherCATSimDevice
 from ...cia_402.device import CiA402SimDevice
 from ..elmo_gold import ElmoGold420, ElmoGold520
 from ..inovance_is620n import InovanceIS620N
@@ -7,7 +7,7 @@ from ..eve_xcr_e import EVEXCRE
 from ...tests.interface import DebugInterface
 
 
-class DevicesForTest(LCECSimDevice):
+class DevicesForTest(EtherCATSimDevice):
     interface_class = DebugInterface
     category = "devices_for_test"
 

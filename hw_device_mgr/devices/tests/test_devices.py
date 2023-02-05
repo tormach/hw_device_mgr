@@ -1,8 +1,8 @@
 from .base_test_class import BaseDevicesTestClass
-from ...lcec.tests.test_device import TestLCECDevice as _TestLCECDevice
+from ...ethercat.tests.test_device import TestEtherCATDevice as _TestEtherCATDevice
 
 
-class TestDevices(BaseDevicesTestClass, _TestLCECDevice):
+class TestDevices(BaseDevicesTestClass, _TestEtherCATDevice):
     expected_mro = [
-        c for c in _TestLCECDevice.expected_mro if c != "RelocatableESIDevice"
+        c for c in _TestEtherCATDevice.expected_mro if c != "RelocatableESIDevice"
     ]
