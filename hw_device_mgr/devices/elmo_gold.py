@@ -11,6 +11,8 @@ class ElmoGold(EtherCATDevice, CiA402Device):
     # but the ESI parser doesn't support this yet
     # xml_description_fname = "Elmo_ECAT_00010420_V11.xml"
     xml_description_fname = "Elmo_ECAT_00010420_V11.rev_10420_only.xml"
+    device_error_package = "hw_device_mgr.devices.device_err"
+    device_error_yaml = "unpopulated.yaml"
 
     def set_params_volatile(self, nv=False):
         # Params have to be explicitly saved

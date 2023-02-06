@@ -9,3 +9,5 @@ class EVEXCRE(EtherCATDevice, CiA402Device):
     product_code = 46338049
     xml_description_package = "hw_device_mgr.devices.device_xml"
     xml_description_fname = "eve-xcr-e_esi.xml"
+    device_error_package = "hw_device_mgr.devices.device_err"
+    device_error_yaml = "unpopulated.yaml"
