@@ -426,6 +426,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         mgr_fb_out = super().get_feedback()
 
         # Get device feedback
+        fault = mgr_fb_out.get("fault")
+        fault_desc = list()
         for dev in self.devices:
             dev_fb_out = self.get_device_feedback(dev)
             prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
@@ -437,7 +439,21 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 if k not in self.device_translated_interfaces["feedback_out"]
             }
             mgr_fb_out.update(**updates)
+            if dev_fb_out.get("fault"):
+                fault = True
+                dev_fault_desc = dev_fb_out.get("fault_desc")
+                fault_desc.append(f"{str(dev.address)}: {dev_fault_desc}")
 
+        if self.interface("command_out").get("state") == self.STATE_FAULT:
+            # Already in DS402 FAULT state, so throw away faults collected from drives
+            # & recycle previous fault log
+            fault = True
+            state_fault_log = self.interface("command_out").get("state_log")
+            fault_desc = [state_fault_log]
+        elif fault_desc:
+            # Not in DS402 FAULT state; use drive errors
+            fault_desc=["Devices set fault:  " + "; ".join(fault_desc)]
+        mgr_fb_out.update(fault=fault, fault_desc="; ".join(fault_desc))
         return mgr_fb_out
 
     def set_command(self, **cmd_in_kwargs):
@@ -464,10 +480,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         if self.query_devices(fault=True, changed=True):
             # Devices newly set `fault` since last update
             fds = self.query_devices(fault=True)
-            fd_addrs = ", ".join(str(d.address) for d in fds)
+            msg = "; ".join(
+                f"{str(d.address)}: {d.feedback_out.get('fault_desc')}"
+                for d in fds
+            )
             cmd_out.update(
                 state=self.STATE_FAULT,
-                state_log=f"Devices at ({fd_addrs}) set fault",
+                state_log=f"Devices set fault:  {msg}",
             )
         elif cmd_in.get("state_cmd") not in self.cmd_int_to_name_map:
             state_cmd = cmd_in.get("state_cmd")

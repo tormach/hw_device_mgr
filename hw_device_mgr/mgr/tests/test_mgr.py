@@ -51,7 +51,6 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         val = interface_val
         if isinstance(val, str):
             val = val.format(address=self.drive_index_to_addr_map)
-            print("obj_interface_to_test_case_kv:", interface_val, val)
 
         # Extract drive address `(0, 16, 0)` from key  `d0.16.0.control_mode`
         m = self.drive_interface_key_re.match(interface_key)
@@ -102,22 +101,6 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         pass
 
     def read_update_write_conv_test_data(self):
-        for i, d in enumerate(self.obj.devices):
-            if "error_code" in d.feedback_out.get():
-                # Account for some devices that inherit from ErrorDevice
-                self.test_data["feedback_in"].setdefault(
-                    f"d.{i}.error_code", 0x00000000
-                )
-                self.test_data["feedback_out"].setdefault(
-                    f"d.{i}.error_code", 0x00000000
-                )
-                self.test_data["feedback_out"].setdefault(
-                    f"d.{i}.description", "No error"
-                )
-                self.test_data["feedback_out"].setdefault(
-                    f"d.{i}.advice", "No error"
-                )
-
         uint16 = self.device_class.data_type_class.uint16
         for data in (self.test_data, self.ovr_data):
             for intf, intf_data in data.items():
