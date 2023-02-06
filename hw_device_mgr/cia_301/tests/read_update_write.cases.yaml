@@ -12,6 +12,7 @@
     goal_reached:  False
     goal_reason:  Offline
     fault:  False
+    fault_desc: ""
   command_in:
     online:  True
     oper:  True
