@@ -20,14 +20,14 @@ class Device(abc.ABC):
 
     feedback_in_data_types = dict()
     feedback_out_data_types = dict(
-        goal_reached="bit", goal_reason="str", fault="bit"
+        goal_reached="bit", goal_reason="str", fault="bit", fault_desc="str",
     )
     command_in_data_types = dict()
     command_out_data_types = dict()
 
     feedback_in_defaults = dict()
     feedback_out_defaults = dict(
-        goal_reached=True, goal_reason="Reached", fault=False
+        goal_reached=True, goal_reason="Reached", fault=False, fault_desc="",
     )
     command_in_defaults = dict()
     command_out_defaults = dict()
@@ -151,7 +151,9 @@ class Device(abc.ABC):
             # Goal not reached for longer than timeout; set fault
             reason = fb_out.get_old("goal_reason")
             msg = f"Timeout ({self.goal_reached_timeout}s):  {reason}"
-            fb_out.update(fault=True, goal_reached=False, goal_reason=msg)
+            fb_out.update(
+                fault=True, fault_desc=msg, goal_reached=False, goal_reason=msg
+            )
             self.logger.error(f"{self}:  {msg}")
 
     def set_command(self, **kwargs) -> Interface:
