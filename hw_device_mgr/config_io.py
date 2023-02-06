@@ -7,17 +7,22 @@ class ConfigIO:
     @classmethod
     def open_path(cls, path, *args, **kwargs):
         """Return open file object for `path`."""
+        assert path
         path_obj = Path(path)
         return path_obj.open(*args, **kwargs)
 
     @classmethod
     def open_resource(cls, package, resource):
         """Return open file object for importlib package resource."""
+        assert package
+        assert resource
         return open_binary(package, resource)
 
     @classmethod
     def resource_path(cls, package, resource):
         """Return resource path as a `str` (may not actually exist)."""
+        assert package
+        assert resource
         with path(package, resource) as p:
             return str(p)
 
