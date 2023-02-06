@@ -9,6 +9,8 @@ class BogusCiA402Device(CiA301SimDevice):
     interface_class = DebugInterface
     category = "bogus_cia402_devices"
     vendor_id = 0xB090C0
+    device_error_package = "hw_device_mgr.devices.device_err"
+    device_error_yaml = "unpopulated.yaml"
 
 
 class BogusCiA402V1Servo(BogusCiA402Device, CiA402SimDevice):

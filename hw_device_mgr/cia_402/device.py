@@ -3,10 +3,11 @@ from ..cia_301.device import (
     CiA301DataType,
     CiA301SimDevice,
 )
+from ..errors.device import ErrorDevice, ErrorSimDevice
 from time import time
 
 
-class CiA402Device(CiA301Device):
+class CiA402Device(CiA301Device, ErrorDevice):
     """
     Manage a CiA 402 motor drive's state machine.
 
@@ -127,24 +128,25 @@ class CiA402Device(CiA301Device):
             self.feedback_out.update(home_success=False, home_error=False)
             return True, None
         if self.feedback_out.get("state") != "OPERATION ENABLED":
+            fault_desc = "Home request while drive not enabled"
             self.feedback_out.update(
-                home_success=False, home_error=True, fault=True
+                home_success=False, home_error=True, fault=True, fault_desc=fault_desc
             )
-            return False, "Home request while drive not enabled"
+            return False, fault_desc
 
         success, error, reason = False, False, None
         if self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_2"):
             # HOMING_ERROR bit set
             error = True
             reason = "homing error"
-            self.feedback_out.update(fault=True)
+            self.feedback_out.update(fault=True, fault_desc=reason)
         elif self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1"):
             # HOMING_ATTAINED bit set
             success = True
         elif time() - self._home_request_start > self.home_timeout:
             error = True
             reason = f"homing timeout after {self.home_timeout}s"
-            self.feedback_out.update(fault=True)
+            self.feedback_out.update(fault=True, fault_desc=reason)
         else:
             reason = "homing not complete"
 
@@ -156,10 +158,11 @@ class CiA402Device(CiA301Device):
             self.feedback_out.update(move_success=False, move_error=False)
             return True, None
         if self.feedback_out.get("state") != "OPERATION ENABLED":
+            reason = "Move request while drive not enabled"
             self.feedback_out.update(
-                move_success=False, move_error=True, fault=True
+                move_success=False, move_error=True, fault=True, fault_desc=reason
             )
-            return False, "Move request while drive not enabled"
+            return False, reason
 
         success, error, reason = False, False, None
         if self.test_sw_bit(sw, "TARGET_REACHED"):
@@ -168,7 +171,7 @@ class CiA402Device(CiA301Device):
         elif time() - self._move_request_start > self.move_timeout:
             error = True
             reason = f"move timeout after {self.move_timeout}s"
-            self.feedback_out.update(fault=True)
+            self.feedback_out.update(fault=True, fault_desc=reason)
         else:
             reason = "move not complete"
 
@@ -208,7 +211,8 @@ class CiA402Device(CiA301Device):
                 self.feedback_out.update(state=state)
                 break
         else:
-            raise ValueError(
+            fault = True
+            fault_desc = (
                 f"Unknown status word 0x{sw:X}; "
                 f"state {self.feedback_out.get('state')} unchanged"
             )
@@ -219,16 +223,17 @@ class CiA402Device(CiA301Device):
             goal_reasons.append(f"state {state} (0x{sw:08X}) != {state_cmd}")
             if (state_cmd == "OPERATION ENABLED"
                 and not self.test_sw_bit(sw, "VOLTAGE_ENABLED")):
-                goal_reasons.append("No voltage at motor")
                 fault = True
+                fault_desc = "No voltage at motor"
+                goal_reasons.append(fault_desc)
 
         # Calculate 'transition' feedback
         new_st, old_st = self.feedback_out.changed("state", return_vals=True)
         if (old_st, new_st) == ("START", "NOT READY TO SWITCH ON"):
             self.feedback_out.update(transition=0)
         elif new_st == "FAULT REACTION ACTIVE":
-            fault=True
-            self.feedback_out.update(transition=13)
+            # Fault will be interpreted below when SW FAULT bit tested
+            fb_out.update(transition=13)
         elif self._get_next_state(curr_state=old_st) == new_st:
             next_trans = self._get_next_transition(curr_state=old_st)
             self.feedback_out.update(transition=next_trans)
@@ -250,10 +255,14 @@ class CiA402Device(CiA301Device):
                 goal_reasons.append(pp_reason)
 
         if self.test_sw_bit(sw, "FAULT"):
-            goal_reasons.append("Drive fault")
             fault = True
+            if self.feedback_out.get("error_code"):
+                fault_desc = self.feedback_out.get("description")
+            else:
+                fault_desc = "Drive fault (no error code)"
+            goal_reasons.append(fault_desc)
         if fault:
-            self.feedback_out.update(fault=True)
+            self.feedback_out.update(fault=True, fault_desc=fault_desc)
 
         if not goal_reached:
             goal_reason = "; ".join(goal_reasons)
@@ -561,7 +570,7 @@ class CiA402Device(CiA301Device):
         return self.command_in.get("control_mode")
 
 
-class CiA402SimDevice(CiA402Device, CiA301SimDevice):
+class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
     """
     Manage a simulated CiA 402 motor drive's state machine.
 

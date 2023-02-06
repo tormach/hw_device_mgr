@@ -11,6 +11,8 @@
     # CiA 402:  Default values before NMT operational
     status_word:  0x0000
     control_mode_fb:  0  # Undefined
+    # errors
+    error_code:  0x00000000
   feedback_out:
     # CiA 301
     online:  False
@@ -27,6 +29,11 @@
     goal_reason:  Offline
     move_success:  False
     move_error:  False
+    # errors
+    error_code:  0x00000000
+    description: No error
+    advice: No error
+    fault_desc: ""
   command_in:
     # CiA 301
     online:  True
@@ -47,6 +54,8 @@
     # CiA 402
     status_word:  0x0010  # VOLTAGE_ENABLED
     control_mode_fb:  0  # Undefined
+    # errors
+    error_code:  0x00000000
 - desc:  "Init:  301 NMT state machine pre-op"
   feedback_in:
     # CiA 301
@@ -148,27 +157,35 @@
   sim_feedback_set:
     # Simulate the fault
     status_word:  0x001F  # FAULT REACTION ACTIVE
+    error_code:  0xDEADBEEF  # Bogus error code
   feedback_in:
     status_word:  0x001F
+    error_code:  0xDEADBEEF  # Bogus error code
   feedback_out:
     status_word:  0x001F
     state:  FAULT REACTION ACTIVE
     transition:  13
     fault:  True
+    fault_desc:  Unknown error code 0xDEADBEEF
     goal_reached:  False
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Drive fault
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
+    error_code:  0xDEADBEEF  # Bogus error code
+    description:  Unknown error code 0xDEADBEEF
+    advice:  Contact technical support
   command_out:
     control_word:  0x0000
   sim_feedback:
     status_word:  0x0018
 - desc:  "Sim fault:  Recover;  402 state machine transition 14"
+  sim_feedback_set:
+    error_code:  0xDEADBEEF  # Bogus error code
   feedback_in:
     status_word:  0x0018
   feedback_out:
     status_word:  0x0018
     state:  FAULT
     transition:  14
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Drive fault
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
   command_out:
     # Goal is still OPERATION ENABLED, so automatically clear fault
     control_word:  0x0080  # Clear fault
@@ -177,12 +194,17 @@
 - desc:  "Sim fault:  402 state machine transition 15"
   feedback_in:
     status_word:  0x0050
+    error_code:  0x00000000  # Cleared by control_word 0x0080
   feedback_out:
     status_word:  0x0050
     state:  SWITCH ON DISABLED
     transition:  15
     fault:  False
+    fault_desc:  ""
     goal_reason:  state SWITCH ON DISABLED (0x00000050) != OPERATION ENABLED
+    error_code:  0x00000000  # Cleared by control_word 0x0080
+    description:  No error
+    advice:  No error
   command_out:
     control_word:  0x0006
   sim_feedback:
@@ -207,41 +229,55 @@
 - desc:  "Hold fault:  Fault;  402 state machine transition 13"
   sim_feedback_set:
     status_word:  0x001F  # FAULT REACTION ACTIVE
+    error_code:  0xDEADBEEF  # Bogus error code
   feedback_in:
     status_word:  0x001F
+    error_code:  0xDEADBEEF  # Bogus error code
   feedback_out:
     status_word:  0x001F
     state:  FAULT REACTION ACTIVE
     transition:  13
     fault:  True
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Drive fault
+    fault_desc:  Unknown error code 0xDEADBEEF
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
+    error_code:  0xDEADBEEF
+    description:  Unknown error code 0xDEADBEEF
+    advice:  Contact technical support
   command_out:
     control_word:  0x0000
   sim_feedback:
     status_word:  0x0018
 - desc:  "Hold fault:  Goal->FAULT;  402 state machine transition 14"
+  sim_feedback_set:
+    error_code:  0xDEADBEEF  # Bogus error code
   feedback_in:
     status_word:  0x0018
   feedback_out:
     status_word:  0x0018
     state:  FAULT
     transition:  14
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Drive fault
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
   command_in:
   # Controller sees FAULT state and commands hold at that state
     state:  FAULT
 - desc:  "Hold fault:  Hold state x1"
+  sim_feedback_set:
+    error_code:  0xDEADBEEF  # Bogus error code
   feedback_out:
     transition:  -1
     goal_reached:  True
     goal_reason:  Reached
 - desc:  "Hold fault:  Hold state x2"
+  sim_feedback_set:
+    error_code:  0xDEADBEEF  # Bogus error code
 
 #
 # Command disable drive from FAULT
 # FAULT -> SWITCH ON DISABLED
 #
 - desc:  "Disable:  Command disable;  402 state machine transition hold"
+  sim_feedback_set:
+    error_code:  0xDEADBEEF  # Bogus error code
   command_in:
     # Controller commands disable
     state:  SWITCH ON DISABLED
@@ -252,11 +288,16 @@
 - desc:  "Disable:  402 state machine transition 15"
   feedback_in:
     status_word:  0x0050
+    error_code:  0x00000000  # Cleared by control_word 0x0080
   feedback_out:
     status_word:  0x0050
     state:  SWITCH ON DISABLED
     fault:  False
+    fault_desc:  ""
     transition:  15
+    error_code:  0x00000000  # Cleared by control_word 0x0080
+    description:  No error
+    advice:  No error
   command_out:
     control_word:  0x0000
 - desc:  "Disable:  Hold state x1"
@@ -443,6 +484,7 @@
     status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
   feedback_out:
     fault:  True
+    fault_desc:  No voltage at motor
     goal_reached:  False
     goal_reason:  state SWITCHED ON (0x00000023) != OPERATION ENABLED; No voltage at motor
 - desc:  "No voltage:  Hold state"
@@ -455,6 +497,7 @@
   feedback_out:
     status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     fault:  False
+    fault_desc:  ""
     goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
@@ -671,6 +714,7 @@
     state:  QUICK STOP ACTIVE
     transition:  11
     fault: True
+    fault_desc:  Move request while drive not enabled
     goal_reason:  state QUICK STOP ACTIVE (0x00001017) != FAULT; Move request while drive not enabled
     move_error:  True
   command_out:
@@ -694,6 +738,7 @@
   feedback_out:
     transition:  -1
     fault:  False
+    fault_desc:  ""
     goal_reached:  True
     goal_reason:  Reached
     move_error:  False
