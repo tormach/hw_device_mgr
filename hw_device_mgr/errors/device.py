@@ -76,3 +76,11 @@ class ErrorDevice(Device, ConfigIO):
 
 class ErrorSimDevice(ErrorDevice, SimDevice):
     """Abstract class representing a device simulated error code handling."""
+
+    sim_feedback_data_types = ErrorDevice.feedback_in_data_types
+    sim_feedback_defaults = ErrorDevice.feedback_in_defaults
+
+    def set_sim_feedback(self, **kwargs):
+        sfb = super().set_sim_feedback(**kwargs)
+        sfb.update(error_code=0)
+        return sfb
