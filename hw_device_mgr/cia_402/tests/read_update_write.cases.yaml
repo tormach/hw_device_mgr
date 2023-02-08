@@ -11,6 +11,8 @@
     # CiA 402:  Default values before NMT operational
     status_word:  0x0000
     control_mode_fb:  0  # Undefined
+    # STO
+    sto:  False
     # errors
     error_code:  0x00000000
   feedback_out:
@@ -29,6 +31,8 @@
     goal_reason:  Offline
     move_success:  False
     move_error:  False
+    # STO
+    sto:  False
     # errors
     error_code:  0x00000000
     description: No error
@@ -51,17 +55,17 @@
     # CiA 301
     online:  True
     oper:  False
-    # CiA 402
-    status_word:  0x0010  # VOLTAGE_ENABLED
+    # CiA 402:  Default values before NMT operational
+    status_word:  0x0000  # START
     control_mode_fb:  0  # Undefined
+    # STO
+    sto:  False
     # errors
     error_code:  0x00000000
 - desc:  "Init:  301 NMT state machine pre-op"
   feedback_in:
     # CiA 301
     online:  True
-    # CiA 402
-    status_word:  0x0010  # VOLTAGE_ENABLED
   feedback_out:
     # CiA 301
     online:  True
@@ -69,10 +73,14 @@
   sim_feedback:
     # CiA 301
     oper:  True
+    # CiA 402:
+    status_word:  0x0010  # VOLTAGE_ENABLED
 - desc:  "Init:  301 NMT state machine operational; 402 state machine transition 0"
   feedback_in:
     # CiA 301
     oper:  True
+    # CiA 402:
+    status_word:  0x0010  # VOLTAGE_ENABLED
   feedback_out:
     # CiA 301
     oper:  True

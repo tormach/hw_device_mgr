@@ -43,6 +43,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
     MODE_CST = 10
     DEFAULT_CONTROL_MODE = MODE_CSP
 
+    have_sto = False
+
     home_timeout = 15.0  # seconds
     move_timeout = 15.0  # seconds
 
@@ -87,12 +89,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
     feedback_in_data_types = dict(
         status_word="uint16",
         control_mode_fb="int8",
+        sto="bit",
     )
 
     # Incoming feedback from drives:  param_name : inital_value
     feedback_in_defaults = dict(
         status_word=0,
         control_mode_fb=0,
+        sto=False,
     )
 
     # Outgoing feedback to controller:  param_name : inital_value
@@ -178,6 +182,32 @@ class CiA402Device(CiA301Device, ErrorDevice):
         self.feedback_out.update(move_success=success, move_error=error)
         return success, reason
 
+    def get_feedback_sto(self):
+        # Process active STO:  Raise fault on OPERATION ENABLED command
+        if self.feedback_in.get("sto"):
+            # STO inactive (high)
+            if self.feedback_in.changed("sto"):  # Log once
+                self.logger.info(f"{self}:  STO input inactive")
+            return True, None
+
+        # STO active (low)
+        enab_bit = 1 << self.cw_bits["ENABLE_OPERATION"]
+        if not (self.command_out.get("control_word") & enab_bit):
+            # No ENABLE_OPERATION command; log (warning, once) and return
+            if self.feedback_in.changed("sto"):
+                self.logger.warning(f"{self}:  STO input active")
+            return True, None
+        else:
+            # ENABLE_OPERATION command in effect; treat as fault (This fault
+            # condition will last just one update; top-level manager will react
+            # by latching its own fault, which will stop the ENABLE_OPERATION
+            # command)
+            msg = "STO input active during OPERATION ENABLED command"
+            self.feedback_out.update(fault=True, fault_desc=msg)
+            if self.feedback_in.changed("sto"):  # Log once
+                self.logger.error(f"{self}:  {msg} (fault)")
+            return False, f"{msg} (fault)"
+
     def get_feedback(self):
         fb_out = super().get_feedback()
 
@@ -254,6 +284,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
             if pp_reason:
                 goal_reasons.append(pp_reason)
 
+        # Handle STO
+        if self.have_sto:
+            sto_success, sto_reason = self.get_feedback_sto()
+            if not sto_success:
+                fault = True
+                goal_reasons.append(sto_reason)
+
+        # Fault reported by drive
         if self.test_sw_bit(sw, "FAULT"):
             fault = True
             if self.feedback_out.get("error_code"):
@@ -261,6 +299,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
             else:
                 fault_desc = "Drive fault (no error code)"
             goal_reasons.append(fault_desc)
+
+        # Update feedback to controller
         if fault:
             self.feedback_out.update(fault=True, fault_desc=fault_desc)
 
@@ -614,11 +654,15 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
             "control_word", return_vals=True
         )
 
+        if not self.feedback_in.get("online"):
+            sfb_updates = self.sim_feedback_defaults.copy()
+            sfb_updates["sto"] = False  # Too early to read STO
+            return sfb
         if not self.feedback_in.get("oper"):
-            sfb.update(**self.sim_feedback_defaults)
-            if sfb.get("online"):
-                sw = self._add_status_word_flags(0x0000, VOLTAGE_ENABLED=True)
-                sfb.update(status_word=sw)
+            sfb_updates = self.sim_feedback_defaults.copy()
+            sw = self._add_status_word_flags(0x0000, VOLTAGE_ENABLED=True)
+            sfb_updates["status_word"] = sw
+            sfb.update(**sfb_updates)
             return sfb
 
         # State
