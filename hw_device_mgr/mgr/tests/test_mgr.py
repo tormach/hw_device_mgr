@@ -175,9 +175,11 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
 
     def check_interface_values_higher(self, interface, indent=4):
         # Check feedback_in, command_out, sim interfaces
-        expected = self.test_data[interface]
+        expected_raw = self.test_data[interface]
+        expected = self.obj_interface_to_test_case(expected_raw)
         actual_raw = self.obj.interface(interface).get()
         actual = self.obj_interface_to_test_case(actual_raw)
+        # self.print_dict(actual, f"Actual {interface}", indent=2)
         if super().check_data_values(interface, expected, actual, indent):
             return True
         else:
@@ -222,7 +224,8 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         # Check actual against expected data
         passing = True
         # - Mgr
-        actual = self.obj.interface(interface).get()
+        actual_raw = self.obj.interface(interface).get()
+        actual = self.obj_interface_to_test_case(actual_raw)
         # self.print_dict(actual, f"Actual {interface}", indent=2)
         passing &= self.check_data_values(
             interface, mgr_expected, actual, indent=indent

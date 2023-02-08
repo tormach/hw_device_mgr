@@ -217,7 +217,7 @@
     d.1.error_code:  0xDEADBEEF
   feedback_out:
     fault:  True
-    fault_desc:  "Devices set fault:  (0, 11, 0): Unknown error code 0xDEADBEEF"
+    fault_desc:  "Devices set fault:  {address[1]}: Unknown error code 0xDEADBEEF"
     d.1.status_word:  0x001F  # FAULT REACTION ACTIVE + VOLTAGE_ENABLED
     d.1.state:  FAULT REACTION ACTIVE
     d.1.transition:  13
@@ -247,7 +247,7 @@
     d.x.status_word:  0x0017  # QUICK STOP + VOLTAGE_ENABLED
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
   feedback_out:
-    fault_desc:  "Devices set fault:  (0, 11, 0): Unknown error code 0xDEADBEEF"
+    fault_desc:  "Devices set fault:  {address[1]}: Unknown error code 0xDEADBEEF"
     # drive_1 holds state
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.1.state:  FAULT
@@ -261,7 +261,7 @@
     d.x.goal_reached:  False
     d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
   command_out:
-    state_log:  "Devices set fault:  (0, 11, 0): Unknown error code 0xDEADBEEF"
+    state_log:  "Devices set fault:  {address[1]}: Unknown error code 0xDEADBEEF"
     # Manager commands TRANSITION_12 to SWITCH ON DISABLED
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -380,7 +380,7 @@
     d.1.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
   feedback_out:
     fault:  True
-    fault_desc:  "Devices set fault:  (0, 12, 0): Unknown error code 0xDEADBEEF"
+    fault_desc:  "Devices set fault:  {address[2]}: Unknown error code 0xDEADBEEF"
     d.2.status_word:  0x001F  # FAULT REACTION ACTIVE + VOLTAGE_ENABLED
     d.2.state:  FAULT REACTION ACTIVE
     d.2.transition:  13
@@ -401,7 +401,7 @@
     state_cmd:  4  # fault
   command_out:
     state:  4  # fault
-    state_log:  "Devices set fault:  (0, 12, 0): Unknown error code 0xDEADBEEF"
+    state_log:  "Devices set fault:  {address[2]}: Unknown error code 0xDEADBEEF"
     drive_state:  FAULT
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -414,7 +414,7 @@
     d.2.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
-    fault_desc:  "Devices set fault:  (0, 12, 0): Unknown error code 0xDEADBEEF"
+    fault_desc:  "Devices set fault:  {address[2]}: Unknown error code 0xDEADBEEF"
     d.x.status_word:  0x0050
     d.x.state:  SWITCH ON DISABLED
     d.x.transition:  10
@@ -746,7 +746,7 @@
     d.2.status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
   feedback_out:
     fault:  True
-    fault_desc:  "Devices set fault:  (0, 12, 0): No voltage at motor"
+    fault_desc:  "Devices set fault:  {address[2]}: No voltage at motor"
     d.x.status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
     d.2.status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
     d.x.state:  OPERATION ENABLED
@@ -776,7 +776,7 @@
     d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
     d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
   feedback_out:
-    fault_desc:  "Devices set fault:  (0, 12, 0): No voltage at motor"
+    fault_desc:  "Devices set fault:  {address[2]}: No voltage at motor"
     d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
     d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
     d.x.state:  QUICK STOP ACTIVE
