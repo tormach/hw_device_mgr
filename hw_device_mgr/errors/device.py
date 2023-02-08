@@ -57,6 +57,8 @@ class ErrorDevice(Device, ConfigIO):
         fb_out = super().get_feedback()
         error_code = self.feedback_in.get("error_code")
         if not error_code:
+            if self.feedback_in.changed("error_code"):
+                self.logger.info(f"{str(self)}:  error code cleared")
             self.feedback_out.update(**self.no_error)
             return fb_out
 
