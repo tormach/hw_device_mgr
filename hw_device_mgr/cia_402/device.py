@@ -444,7 +444,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 self._home_request_start = time()
                 self.logger.info(f"{self}:  Homing operation requested")
             if self.feedback_out.get("control_mode_fb") == self.MODE_HM:
-                # Only set HOMING_START control word bit in MODE_HM
+                # Don't actually set HOMING_START until in MODE_HM
                 home_request = True
         elif self.command_in.changed("home_request"):  # home_request cleared
             self.logger.info(f"{self}:  Homing operation complete")
@@ -458,8 +458,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 # New request
                 self._move_request_start = time()
                 self.logger.info(f"{self}:  Move operation requested")
-            if self.feedback_out.get("control_mode_fb") == self.MODE_PP:
-                # Only set control word bit in MODE_PP
                 move_request = True
         elif self.command_in.changed("move_request"):  # move_request cleared
             self.logger.info(f"{self}:  Move operation complete")
@@ -618,8 +616,27 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
     real drive.
     """
 
-    sim_feedback_data_types = CiA402Device.feedback_in_data_types
-    sim_feedback_defaults = CiA402Device.feedback_in_defaults
+    # Incoming feedback from drives
+    feedback_in_data_types = dict(
+        position_cmd="float",
+        position_fb="float",
+    )
+    feedback_in_defaults = dict(
+        position_cmd=0.0,
+        position_fb=0.0,
+    )
+
+    sim_feedback_data_types = dict(
+        **CiA402Device.feedback_in_data_types,
+        **feedback_in_data_types,
+    )
+    sim_feedback_defaults = dict(
+        **CiA402Device.feedback_in_defaults,
+        **feedback_in_defaults,
+    )
+
+    # diff. btw. pos. cmd + fb to signal target reached
+    position_goal_tolerance = 0.01
 
     # ------- Sim feedback -------
 
@@ -631,18 +648,19 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
         else:
             return dict()
 
+    def target_reached(self):
+        fb_in = self.feedback_in
+        dtg = abs(fb_in.get("position_cmd") - fb_in.get("position_fb"))
+        return dtg < self.position_goal_tolerance
+
     def set_sim_feedback_pp(self, cw, sw):
         # In MODE_PP, cw OPERATION_MODE_SPECIFIC_1 is NEW_SETPOINT cmd, sw
         # OPERATION_MODE_SPECIFIC_1 is SETPOINT_ACKNOWLEDGE fb
         if self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1"):
             # If cw NEW_SETPOINT is set, then set sw SETPOINT_ACKNOWLEDGE
             return dict(OPERATION_MODE_SPECIFIC_1=True)
-        elif self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1"):
-            # Pretend target reached on falling edge of NEW_SETPOINT
-            return dict(TARGET_REACHED=True)
-        elif self.test_sw_bit(sw, "TARGET_REACHED"):
-            # No cw NEW_SETPOINT command; if sw TARGET_REACHED set last update,
-            # continue to hold set
+        elif self.target_reached():
+            # Target reached when target position reached
             return dict(TARGET_REACHED=True)
         else:
             return dict()
