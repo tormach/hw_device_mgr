@@ -210,12 +210,13 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     def get_feedback(self):
         fb_out = super().get_feedback()
+        fb_in = self.feedback_in
 
         # If lower layer goals not reached (not operational), set
         # default feedback ("START" state)
         if not fb_out.get("goal_reached"):
-            self.feedback_out.update(**self.feedback_out_defaults)
-            return self.feedback_out
+            fb_out.update(**self.feedback_out_defaults)
+            return fb_out
 
         # Goal reached, fault var defaults
         goal_reached = True
@@ -223,9 +224,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
         fault = False
 
         # Status word, control mode from fb in
-        sw = self.feedback_in.get("status_word")
-        cm = self.feedback_in.get("control_mode_fb")
-        self.feedback_out.update(status_word=sw, control_mode_fb=cm)
+        sw = fb_in.get("status_word")
+        cm = fb_in.get("control_mode_fb")
+        fb_out.update(status_word=sw, control_mode_fb=cm)
         cm_cmd = self.command_in.get("control_mode")
         if cm != self.MODE_HM and cm != cm_cmd:
             goal_reached = False
@@ -238,18 +239,18 @@ class CiA402Device(CiA301Device, ErrorDevice):
             # Compare masked status word with pattern to determine current state
             sw_mask, sw_pat = bits
             if sw & sw_mask == sw_pat:
-                self.feedback_out.update(state=state)
+                fb_out.update(state=state)
                 break
         else:
             fault = True
             fault_desc = (
                 f"Unknown status word 0x{sw:X}; "
-                f"state {self.feedback_out.get('state')} unchanged"
+                f"state {fb_out.get('state')} unchanged"
             )
         if self._get_next_transition() >= 0:
             goal_reached = False
             state_cmd = self.command_in.get("state")
-            sw = self.feedback_in.get("status_word")
+            sw = fb_in.get("status_word")
             goal_reasons.append(f"state {state} (0x{sw:08X}) != {state_cmd}")
             if (state_cmd == "OPERATION ENABLED"
                 and not self.test_sw_bit(sw, "VOLTAGE_ENABLED")):
@@ -258,17 +259,17 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 goal_reasons.append(fault_desc)
 
         # Calculate 'transition' feedback
-        new_st, old_st = self.feedback_out.changed("state", return_vals=True)
+        new_st, old_st = fb_out.changed("state", return_vals=True)
         if (old_st, new_st) == ("START", "NOT READY TO SWITCH ON"):
-            self.feedback_out.update(transition=0)
+            fb_out.update(transition=0)
         elif new_st == "FAULT REACTION ACTIVE":
             # Fault will be interpreted below when SW FAULT bit tested
             fb_out.update(transition=13)
         elif self._get_next_state(curr_state=old_st) == new_st:
             next_trans = self._get_next_transition(curr_state=old_st)
-            self.feedback_out.update(transition=next_trans)
+            fb_out.update(transition=next_trans)
         else:
-            self.feedback_out.update(transition=-1)
+            fb_out.update(transition=-1)
 
         # Mode-specific functions
         if cm == self.MODE_HM:
@@ -294,15 +295,15 @@ class CiA402Device(CiA301Device, ErrorDevice):
         # Fault reported by drive
         if self.test_sw_bit(sw, "FAULT"):
             fault = True
-            if self.feedback_out.get("error_code"):
-                fault_desc = self.feedback_out.get("description")
+            if fb_out.get("error_code"):
+                fault_desc = fb_out.get("description")
             else:
                 fault_desc = "Drive fault (no error code)"
             goal_reasons.append(fault_desc)
 
         # Update feedback to controller
         if fault:
-            self.feedback_out.update(fault=True, fault_desc=fault_desc)
+            fb_out.update(fault=True, fault_desc=fault_desc)
 
         if not goal_reached:
             goal_reason = "; ".join(goal_reasons)
