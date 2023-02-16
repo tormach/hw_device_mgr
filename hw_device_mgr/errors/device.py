@@ -70,7 +70,10 @@ class ErrorDevice(Device, ConfigIO):
             )
         fb_out.update(error_code=error_code, **error_info)
         if fb_out.changed("error_code"):
-            desc = error_info["description"]
+            if self.error_descriptions().get(error_code, None) is not None:
+                desc = error_info["description"]
+            else:
+                desc = "(Unknown error code)"
             msg = f"{str(self)}:  error code {error_code}:  {desc}"
             self.logger.error(msg)
         return fb_out
