@@ -116,7 +116,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     # is set of attributes to skip.
     device_translated_interfaces = dict(
         # - goal_reached/goal_reason used by mgr
-        feedback_out=set(),
+        feedback_out={
+            # These are sim only, not needed in debug output
+            "position_cmd", "position_fb",
+        },
         # - Don't expose device `state` cmd, controlled by manager
         command_in={"state"},
     )

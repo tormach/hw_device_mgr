@@ -12,6 +12,8 @@
     # - CiA 402:  Default values before NMT operational
     d.x.status_word:  0x0000  # START
     d.x.control_mode_fb:  0  # Undefined
+    d.x.position_cmd:  0.0
+    d.x.position_fb:  0.0
     # - STO
     d.x.sto:  False
     # - errors
@@ -73,6 +75,8 @@
     # - CiA 402
     d.x.status_word:  0x0000  # START
     d.x.control_mode_fb:  0  # Undefined
+    d.x.position_cmd:  0.0
+    d.x.position_fb:  0.0
     # - STO
     d.x.sto:  False
     # - errors
