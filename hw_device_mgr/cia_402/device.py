@@ -66,7 +66,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     # Status word bits not used for CiA402 state machine operation may
     # have other purposes
-    sw_extra_bits = dict(
+    sw_bits = dict(
         READY_TO_SWITCH_ON=0,  # (CiA402)
         SWITCH_ON=1,  # (CiA402)
         OPERATION_ENABLED=2,  # (CiA402)
@@ -121,11 +121,11 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     @classmethod
     def test_sw_bit(cls, word, name):
-        return bool(word & (1 << cls.sw_extra_bits[name]))
+        return bool(word & (1 << cls.sw_bits[name]))
 
     @classmethod
     def test_cw_bit(cls, word, name):
-        return bool(word & (1 << cls.cw_extra_bits[name]))
+        return bool(word & (1 << cls.cw_bits[name]))
 
     def get_feedback_hm(self, sw):
         if not self.command_in.get("home_request"):
@@ -537,17 +537,16 @@ class CiA402Device(CiA301Device, ErrorDevice):
         # ** Transition 15:  Fault cleared on rising edge of bit 7
     }
 
-    # Control word bits not used for CiA402 state machine operation
-    # may have other purposes
-    cw_extra_bits = dict(
-        # SWITCH_ON=0,                # (CiA402)
-        # ENABLE_VOLTAGE=1,           # (CiA402)
-        # QUICK_STOP=2,               # (CiA402)
-        # ENABLE_OPERATION (S-ON)=3,  # (CiA402)
+    # Control word bits 0-3,7 control CiA402 state machine transitions.
+    cw_bits = dict(
+        SWITCH_ON=0,  # (state machine)
+        ENABLE_VOLTAGE=1,  # (state machine)
+        QUICK_STOP=2,  # (state machine)
+        ENABLE_OPERATION=3,  # (state machine) AKA S-ON
         OPERATION_MODE_SPECIFIC_1=4,  # HM=HOMING_START; PP=NEW_SETPOINT
         OPERATION_MODE_SPECIFIC_2=5,  # PP=CHANGE_SET_IMMEDIATE
         OPERATION_MODE_SPECIFIC_3=6,
-        # FAULT_RESET=7,              # (CiA402)
+        FAULT_RESET=7,  # (state machine)
         HALT=8,
         NA_1=9,
         NA_2=10,
@@ -592,7 +591,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
     def _add_control_word_flags(cls, control_word, **flags):
         # Add mode-specific flags
         for flag, val in flags.items():
-            operand = 1 << cls.cw_extra_bits[flag]
+            operand = 1 << cls.cw_bits[flag]
             if val:
                 control_word |= operand
             else:
@@ -780,7 +779,7 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
     def _add_status_word_flags(cls, status_word, **flags):
         # Add flags by name to status word; used in set_sim_feedback
         for flag, val in flags.items():
-            operand = 1 << cls.sw_extra_bits[flag]
+            operand = 1 << cls.sw_bits[flag]
             if val:
                 status_word |= operand
             else:
