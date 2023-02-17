@@ -1,4 +1,5 @@
 from ...tests.fixtures import MockFixture
+from ..base import HALMixin
 
 
 class MockHALPin(MockFixture):
@@ -19,15 +20,22 @@ class MockHALPin(MockFixture):
         self.storage = storage
         self.storage[self.pname] = 0
 
+    def format_val(self, val):
+        """Format value for printing by fixture"""
+        if self.ptype in (HALMixin.HAL_U32, getattr(HALMixin, "HAL_U64", None)):
+            return f"{val}/0x{val:X}"
+        else:
+            return str(val)
+
     def set(self, val):
         """Mock HAL pin setter."""
-        print(f"MockHALPin {self.pname}: set({val}/0x{val:X})")
+        print(f"MockHALPin {self.pname}: set({self.format_val(val)})")
         self.storage[self.pname] = val
 
     def get(self):
         """Mock HAL pin getter."""
         val = self.storage[self.pname]
-        print(f"MockHALPin {self.pname}: get() -> {val}/0x{val:X}")
+        print(f"MockHALPin {self.pname}: get() -> {self.format_val(val)}")
         return val
 
 
