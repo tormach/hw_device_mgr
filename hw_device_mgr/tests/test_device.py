@@ -386,6 +386,14 @@ class TestDevice(BaseTestClass):
             print(f"  ****ERROR****  Params not checked:  {params}")
             raise KeyError(f"Params not checked:  {params}")
 
+    def load_test_cases(self):
+        rsrc = (self.read_update_write_package, self.read_update_write_yaml)
+        rsrc_str = self.resource_path(*rsrc)
+        test_cases = self.load_yaml_resource(*rsrc)
+        assert test_cases, f"Empty YAML from package resource {rsrc_str}"
+        print(f"Read test cases from package resource {rsrc_str}")
+        return test_cases
+
     #
     # Main function
     #
@@ -400,10 +408,6 @@ class TestDevice(BaseTestClass):
     def test_read_update_write(self, obj):
         if self.read_update_write_package is None:
             return  # No test cases defined for this class
-        rsrc = (self.read_update_write_package, self.read_update_write_yaml)
-        rsrc_str = self.resource_path(*rsrc)
-        test_cases = self.load_yaml_resource(*rsrc)
-        assert test_cases, f"Empty YAML from package resource {rsrc_str}"
-        print(f"Read test cases from package resource {rsrc_str}")
+        test_cases = self.load_test_cases()
         for test_case in test_cases:
             self.read_update_write_loop(test_case)
