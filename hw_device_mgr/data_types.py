@@ -161,6 +161,13 @@ class BitType(DataType, int):
     def _conv(x):
         return 1 if int(x) else 0
 
+    def __str__(self):
+        # Print as boolean
+        return str(bool(self))
+
+    def __repr__(self):
+        return self.__str__()
+
 
 class Int8Type(DataType, int):
     shared_name = "int8"

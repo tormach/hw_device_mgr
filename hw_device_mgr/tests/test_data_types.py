@@ -25,13 +25,13 @@ class TestDataType(BaseTestClass):
     # Triplets:  (raw_value, value, string value)
     conv_cases = dict(
         bit=(
-            (True, 1, "1"),
-            (1, 1, "1"),
-            (100, 1, "1"),
-            ("1", 1, "1"),
-            (False, 0, "0"),
-            (0, 0, "0"),
-            ("0", 0, "0"),
+            (True, 1, "True"),
+            (1, 1, "True"),
+            (100, 1, "True"),
+            ("1", 1, "True"),
+            (False, 0, "False"),
+            (0, 0, "False"),
+            ("0", 0, "False"),
         ),
         int8=(
             (-5, -5, "-5"),
