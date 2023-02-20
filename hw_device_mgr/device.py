@@ -143,11 +143,10 @@ class Device(abc.ABC):
             return
 
         # Goal not reached in previous cycle
-        now = time.time()
         if self._timeout is None:
             # goal_reached just changed to False; set timer
-            self._timeout = now + self.goal_reached_timeout
-        elif now > self._timeout:
+            self.set_timeout(self.goal_reached_timeout)
+        elif time.time() > self._timeout:
             # Goal not reached for longer than timeout; set fault
             reason = fb_out.get_old("goal_reason")
             msg = f"Timeout ({self.goal_reached_timeout}s):  {reason}"
@@ -155,6 +154,10 @@ class Device(abc.ABC):
                 fault=True, fault_desc=msg, goal_reached=False, goal_reason=msg
             )
             self.logger.error(f"{self}:  {msg}")
+
+    def set_timeout(self, timeout_seconds):
+        """Set timeout for `timeout_seconds` in the future"""
+        self._timeout = time.time() + timeout_seconds
 
     def set_command(self, **kwargs) -> Interface:
         """Process `command_in` and return `command_out` interface."""
