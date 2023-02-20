@@ -4,7 +4,6 @@ from ..cia_301.device import (
     CiA301SimDevice,
 )
 from ..errors.device import ErrorDevice, ErrorSimDevice
-from time import time
 
 
 class CiA402Device(CiA301Device, ErrorDevice):
@@ -45,8 +44,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     have_sto = False
 
-    home_timeout = 15.0  # seconds
-    move_timeout = 15.0  # seconds
+    home_timeout = 15  # seconds
+    move_timeout = 15  # seconds
 
     @classmethod
     def control_mode_str(cls, mode):
@@ -128,9 +127,13 @@ class CiA402Device(CiA301Device, ErrorDevice):
         return bool(word & (1 << cls.cw_bits[name]))
 
     def get_feedback_hm(self, sw):
+        # Control mode is HM
         if not self.command_in.get("home_request"):
+            # Home command cleared; reset feedback and return success result
             self.feedback_out.update(home_success=False, home_error=False)
             return True, None
+
+        # Home command in effect
         if self.feedback_out.get("state") != "OPERATION ENABLED":
             fault_desc = "Home request while drive not enabled"
             self.feedback_out.update(
@@ -147,10 +150,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
         elif self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1"):
             # HOMING_ATTAINED bit set
             success = True
-        elif time() - self._home_request_start > self.home_timeout:
-            error = True
-            reason = f"homing timeout after {self.home_timeout}s"
-            self.feedback_out.update(fault=True, fault_desc=reason)
         else:
             reason = "homing not complete"
 
@@ -158,6 +157,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         return success, reason
 
     def get_feedback_pp(self, sw):
+        # Control mode is PP
         if not self.command_in.get("move_request"):
             self.feedback_out.update(move_success=False, move_error=False)
             return True, None
@@ -172,10 +172,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if self.test_sw_bit(sw, "TARGET_REACHED"):
             # done bit set
             success = True
-        elif time() - self._move_request_start > self.move_timeout:
-            error = True
-            reason = f"move timeout after {self.move_timeout}s"
-            self.feedback_out.update(fault=True, fault_desc=reason)
         else:
             reason = "move not complete"
 
@@ -208,13 +204,21 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 self.logger.error(f"{self}:  {msg} (fault)")
             return False, f"{msg} (fault)"
 
+    @property
+    def goal_reached_timeout(self):
+        """Increase goal_reached timeout during homing or PP moves."""
+        if self.command_in.get("home_request"):
+            return self.home_timeout
+        if self.command_in.get("move_request"):
+            return self.move_timeout
+        return super().goal_reached_timeout
+
     def get_feedback(self):
         fb_out = super().get_feedback()
         fb_in = self.feedback_in
 
-        # If lower layer goals not reached (not operational), set
-        # default feedback ("START" state)
-        if not fb_out.get("goal_reached"):
+        # If device not operational, set default "START" state
+        if not fb_out.get("oper"):
             fb_out.update(**self.feedback_out_defaults)
             return fb_out
 
@@ -275,14 +279,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if cm == self.MODE_HM:
             # Calculate homing status
             hm_success, hm_reason = self.get_feedback_hm(sw)
-            goal_reached &= hm_success
-            if hm_reason:
+            if not hm_success:
+                goal_reached = False
                 goal_reasons.append(hm_reason)
         elif cm == self.MODE_PP:
             # Calculate move status
             pp_success, pp_reason = self.get_feedback_pp(sw)
-            goal_reached &= pp_success
-            if pp_reason:
+            if not pp_success:
+                goal_reached = False
                 goal_reasons.append(pp_reason)
 
         # Handle STO
@@ -441,8 +445,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_request = False
         if self.command_in.get("home_request"):
             if self.command_in.changed("home_request"):
-                # New request
-                self._home_request_start = time()
                 self.logger.info(f"{self}:  Homing operation requested")
             if self.feedback_out.get("control_mode_fb") == self.MODE_HM:
                 # Don't actually set HOMING_START until in MODE_HM
@@ -456,8 +458,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
         move_request = False
         if self.command_in.get("move_request"):
             if self.command_in.changed("move_request"):
-                # New request
-                self._move_request_start = time()
                 self.logger.info(f"{self}:  Move operation requested")
                 move_request = True
         elif self.command_in.changed("move_request"):  # move_request cleared

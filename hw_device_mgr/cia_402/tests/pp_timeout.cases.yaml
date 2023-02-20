@@ -1,0 +1,104 @@
+# Test cases for bogus BogusCiA402Device, homing timeouts
+#
+- desc:  "Test case 0:  Command PP move"
+  sim_feedback_set:
+    # Jump directly to online, mode CSP, OPERATION ENABLED
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  1  # MODE_PP
+    position_fb:  15.0
+  command_in_set:
+    # Override command_in "state", queried by get_feedback(), to save
+    # additional setup of previous cycles
+    state:  OPERATION ENABLED
+    control_mode:  1  # MODE_PP
+  feedback_in:
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  1  # MODE_PP
+    position_cmd:  0.0
+    position_fb:  15.0
+    sto:  False
+    error_code:  0x00000000
+  feedback_out:
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  1  # MODE_PP
+    state:  OPERATION ENABLED
+    transition:  -1
+    home_success:  False
+    home_error:  False
+    fault:  False
+    goal_reached:  True
+    goal_reason:  Reached
+    move_success:  False
+    move_error:  False
+    position_cmd:  0.0
+    position_fb:  15.0
+    sto:  False
+    error_code:  0x00000000
+    description:  No error
+    advice:  No error
+    fault_desc: ""
+  command_in:
+    online:  True
+    oper:  True
+    state:  OPERATION ENABLED
+    control_mode:  1  # MODE_PP
+    home_request:  False
+    move_request:  True
+  command_out:
+    control_word:  0x001F  # Bit 4 NEW_SETPOINT set
+    control_mode:  1  # MODE_PP
+  sim_feedback:
+    online:  True
+    oper:  True
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    control_mode_fb:  1  # MODE_PP
+    position_cmd:  0.0
+    position_fb:  0.0
+    sto:  False
+    error_code:  0x00000000
+
+- desc:  "Test case 1:  SETPOINT_ACKNOWLEDGE"
+  sim_feedback_set:
+    position_fb:  15.0
+  feedback_in:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+  feedback_out:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    goal_reached:  False
+    goal_reason:  move not complete
+  command_out:
+    control_word:  0x000F  # OPERATION ENABLED + NEW_SETPOINT
+  sim_feedback:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+
+- desc:  "Test case 2:  Move in progress"
+  sim_feedback_set:
+    position_fb:  15.0
+  feedback_in:
+    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
+  feedback_out:
+    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
+
+
+- desc:  "Test case 3:  Move timeout exceeded; controller commands fault"
+  sim_feedback_set:
+    position_fb:  15.0
+  feedback_out:
+    # Timeout treated as fault
+    fault:  True
+    fault_desc:  "Timeout (15s):  move not complete"
+  command_in:
+    state:  FAULT
+    home_request:  False
+  command_out:
+    control_word:  0x0002  # QUICK STOP ACTIVE
+    control_mode:  1  # MODE_PP
+  sim_feedback:
+    status_word:  0x0017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED - HOMING_START
+    control_mode_fb:  1  # MODE_PP

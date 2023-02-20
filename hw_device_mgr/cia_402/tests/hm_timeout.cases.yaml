@@ -1,0 +1,98 @@
+# Test cases for bogus BogusCiA402Device, homing timeouts
+#
+- desc:  "Test case 0:  from CSP enabled, command HM mode"
+  sim_feedback_set:
+    # Jump directly to online, mode CSP, OPERATION ENABLED
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  8  # MODE_CSP
+  command_in_set:
+    # Override command_in "state", queried by get_feedback(), to save
+    # additional setup of previous cycles
+    state:  OPERATION ENABLED
+  feedback_in:
+    online:  True
+    oper:  True
+    status_word:  0x0037
+    control_mode_fb:  8
+    position_cmd:  0.0
+    position_fb:  0.0
+    sto:  False
+    error_code:  0x00000000
+  feedback_out:
+    online:  True
+    oper:  True
+    status_word:  0x0037
+    control_mode_fb:  8
+    state:  OPERATION ENABLED
+    transition:  -1
+    home_success:  False
+    home_error:  False
+    fault:  False
+    goal_reached:  True
+    goal_reason:  Reached
+    move_success:  False
+    move_error:  False
+    position_cmd:  0.0
+    position_fb:  0.0
+    sto:  False
+    error_code:  0x00000000
+    description:  No error
+    advice:  No error
+    fault_desc: ""
+  command_in:
+    online:  True
+    oper:  True
+    state:  OPERATION ENABLED
+    control_mode:  8
+    home_request:  True
+    move_request:  False
+  command_out:
+    control_word:  0x000F
+    control_mode:  6
+  sim_feedback:
+    online:  True
+    oper:  True
+    status_word:  0x0037
+    control_mode_fb:  6
+    position_cmd:  0.0
+    position_fb:  0.0
+    sto:  False
+    error_code:  0x00000000
+
+- desc:  "Test case 1:  HOMING_START command to drive"
+  feedback_in:
+    control_mode_fb:  6  # MODE_HM
+  feedback_out:
+    control_mode_fb:  6  # MODE_HM
+    transition:  -1
+    goal_reached:  False
+    goal_reason:  homing not complete
+  command_out:
+    control_word:  0x001F  # OPERATION ENABLED + HOMING_START
+  sim_feedback:
+    status_word:  0x1037  # OPERATION ENABLED + HOMING_ATTAINED
+
+- desc:  "Test case 2:  Homing in progress"
+  sim_feedback_set:
+    # Unset HOMING_ATTAINED
+    status_word:  0x0037  # OPERATION ENABLED
+
+- desc:  "Test case 3:  Homing timeout exceeded; controller commands fault"
+  sim_feedback_set:
+    # Unset HOMING_ATTAINED
+    status_word:  0x0037  # OPERATION ENABLED
+  feedback_out:
+    # Timeout treated as fault
+    fault:  True
+    fault_desc:  "Timeout (15s):  homing not complete"
+  command_in:
+    state:  FAULT
+    home_request:  False
+  command_out:
+    control_word:  0x0002  # QUICK STOP ACTIVE
+    control_mode:  8  # MODE_CSP
+  sim_feedback:
+    status_word:  0x0017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED - HOMING_START
+    control_mode_fb:  8  # MODE_CSP
