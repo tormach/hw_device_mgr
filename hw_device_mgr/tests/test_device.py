@@ -266,6 +266,8 @@ class TestDevice(BaseTestClass):
     def get_feedback_and_check(self):
         print("\n*** Overriding feedback_in")
         self.override_data("feedback_in")
+        print("\n*** Overriding command_in")
+        self.override_data("command_in")
         # self.print_dict(self.test_data, "Test data (after override)")
         print("\n*** Running object get_feedback()")
         self.obj.get_feedback()

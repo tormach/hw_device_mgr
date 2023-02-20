@@ -49,6 +49,8 @@ class TestHALDevice(BaseHALTestClass, _TestCiA402Device):
     def override_interface_param(self, interface, ovr_data):
         intf = self.obj.interface(interface)
         intf.update(**ovr_data)
+        if interface not in self.obj.pin_interfaces:
+            return
         dt_names = self.obj.merge_dict_attrs(f"{interface}_data_types")
         for key, val in ovr_data.items():
             dt = dt_names.get(key, None)
