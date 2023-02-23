@@ -180,8 +180,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     def get_feedback_sto(self):
         # Process active STO:  Raise fault on OPERATION ENABLED command
-        if self.feedback_in.get("sto"):
-            # STO inactive (high)
+        if not self.feedback_in.get("sto"):
             if self.feedback_in.changed("sto"):  # Log once
                 self.logger.info(f"{self}:  STO input inactive")
             return True, None
@@ -226,6 +225,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         goal_reached = True
         goal_reasons = list()
         fault = False
+        fault_desc = ""
 
         # Status word, control mode from fb in
         sw = fb_in.get("status_word")
