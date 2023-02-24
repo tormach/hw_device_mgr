@@ -41,3 +41,4 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
     device_error_package = "hw_device_mgr.devices.device_err"
     device_error_yaml = "inovance_sv660n.yaml"
     config_class = InovanceSV660Config
+    have_sto = True
