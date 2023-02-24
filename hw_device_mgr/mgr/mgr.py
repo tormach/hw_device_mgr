@@ -431,6 +431,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         # Get device feedback
         fault = mgr_fb_out.get("fault")
         fault_desc = list()
+        waiting_on_devs = list()
         for dev in self.devices:
             dev_fb_out = self.get_device_feedback(dev)
             prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
@@ -446,6 +447,14 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 fault = True
                 dev_fault_desc = dev_fb_out.get("fault_desc")
                 fault_desc.append(f"{str(dev.address)}: {dev_fault_desc}")
+            if not dev_fb_out.get("goal_reached"):
+                waiting_on_devs.append(str(dev.address))
+
+        if waiting_on_devs:
+            goal_reached = False
+            goal_reason = f"Waiting on devices {', '.join(waiting_on_devs)}"
+        else:
+            goal_reached, goal_reason = True, ""
 
         if self.interface("command_out").get("state") == self.STATE_FAULT:
             # Already in DS402 FAULT state, so throw away faults collected from drives
@@ -456,7 +465,17 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         elif fault_desc:
             # Not in DS402 FAULT state; use drive errors
             fault_desc=["Devices set fault:  " + "; ".join(fault_desc)]
-        mgr_fb_out.update(fault=fault, fault_desc="; ".join(fault_desc))
+            mgr_fb_out.update(
+                fault=fault,
+                fault_desc="; ".join(fault_desc),
+                goal_reached=goal_reached,
+                goal_reason=goal_reason
+            )
+        if mgr_fb_out.changed("goal_reason"):
+            if mgr_fb_out.get("goal_reached"):
+                self.logger.info("All devices reached goal")
+            else:
+                self.logger.info(mgr_fb_out.get("goal_reason"))
         return mgr_fb_out
 
     def set_command(self, **cmd_in_kwargs):
