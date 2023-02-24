@@ -532,6 +532,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # Received new command to stop/start/fault.  Try it
             # by triggering the FSM event; a Canceled exception means
             # it can't be done, so ignore it.
+            self.logger.info(f"state command changed:  {cmd_out.get('state')}")
             event = f"{self.state_str}_command"
             try:
                 self.trigger(event, msg=cmd_out.get("state_log"))
@@ -552,6 +553,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             else:
                 # State transition succeeded; fast-track the next update
                 self.fast_track = True
+
+        if cmd_out.changed("state_log"):
+            self.logger.info(cmd_out.get("state_log"))
 
         # Set drive command and return
         self.set_drive_command()
