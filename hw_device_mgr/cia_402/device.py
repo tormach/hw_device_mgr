@@ -181,18 +181,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
     def get_feedback_sto(self):
         # Process active STO:  Raise fault on OPERATION ENABLED command
         if not self.feedback_in.get("sto"):
+            # STO inactive (low)
             if self.feedback_in.changed("sto"):  # Log once
                 self.logger.info(f"{self}:  STO input inactive")
             return True, None
 
-        # STO active (low)
-        enab_bit = 1 << self.cw_bits["ENABLE_OPERATION"]
-        if not (self.command_out.get("control_word") & enab_bit):
-            # No ENABLE_OPERATION command; log (warning, once) and return
-            if self.feedback_in.changed("sto"):
-                self.logger.warning(f"{self}:  STO input active")
-            return True, None
-        else:
+        # STO active (high)
+        state_cmd = self.command_in.get("state")
+        if state_cmd in ("SWITCHED ON", "OPERATION ENABLED"):
             # ENABLE_OPERATION command in effect; treat as fault (This fault
             # condition will last just one update; top-level manager will react
             # by latching its own fault, which will stop the ENABLE_OPERATION
@@ -202,6 +198,11 @@ class CiA402Device(CiA301Device, ErrorDevice):
             if self.feedback_in.changed("sto"):  # Log once
                 self.logger.error(f"{self}:  {msg} (fault)")
             return False, f"{msg} (fault)"
+        else:
+            # No ENABLE_OPERATION command; log (warning, once) and return
+            if self.feedback_in.changed("sto"):
+                self.logger.warning(f"{self}:  STO input active")
+            return True, None
 
     @property
     def goal_reached_timeout(self):
