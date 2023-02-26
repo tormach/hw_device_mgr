@@ -7,12 +7,7 @@ class Logging:
     _logging_class = logging
 
     def __init__(self, name):
-        lc = self._logging_class
-        lo = self._logger = lc.getLogger(name)
-        lh = self._log_handler = lc.StreamHandler()
-        lf = lc.Formatter("%(asctime)s [%(levelname)s]%(name)s: %(message)s")
-        lh.setFormatter(lf)
-        lo.addHandler(lh)
+        self._logger = self._logging_class.getLogger(name)
 
     # Translate Python str levels to str levels (int levels are the same)
     _level_map = dict(
