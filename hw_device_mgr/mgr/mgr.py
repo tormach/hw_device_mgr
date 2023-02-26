@@ -491,11 +491,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         if self.command_in.rising_edge("state_set"):
             # state_set went high; log it
             if self.command_in.get("state_cmd") != cmd_out.get("state"):
-                new_cmd = self.command_in.get("state_cmd")
-                new_cmd_str = self.cmd_int_to_name_map[new_cmd]
-                self.logger.info(f"Received command update {new_cmd_str}")
+                state_int = self.command_in.get("state_cmd")
+                state = self.cmd_int_to_name_map[state_int]
+                self.logger.info(f"Received command update {state}")
             else:
-                self.logger.info(f"Received unchanged command update")
+                self.logger.info(f"Received unchanged command update {state}")
 
         # Special cases where 'fault' or incoming command update overrides
         # current command:
@@ -532,8 +532,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # Received new command to stop/start/fault.  Try it
             # by triggering the FSM event; a Canceled exception means
             # it can't be done, so ignore it.
-            self.logger.info(f"state command changed:  {cmd_out.get('state')}")
-            event = f"{self.state_str}_command"
+            cmd_int = cmd_out.get('state')
+            cmd_str = self.state_str
+            self.logger.info(f"New state command:  {cmd_str} ({cmd_int})")
+            event = f"{cmd_str}_command"
             try:
                 self.trigger(event, msg=cmd_out.get("state_log"))
             except Canceled as e:
