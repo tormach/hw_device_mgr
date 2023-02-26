@@ -294,7 +294,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if self.have_sto:
             sto_success, sto_reason = self.get_feedback_sto()
             if not sto_success:
-                fault = True
+                goal_reached = False
                 goal_reasons.append(sto_reason)
 
         # Fault reported by drive
