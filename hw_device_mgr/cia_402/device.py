@@ -257,10 +257,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
             state_cmd = self.command_in.get("state")
             sw = fb_in.get("status_word")
             goal_reasons.append(f"state {state} (0x{sw:08X}) != {state_cmd}")
-            if (state_cmd == "OPERATION ENABLED"
+            if (state_cmd in ("SWITCHED ON", "OPERATION ENABLED")
                 and not self.test_sw_bit(sw, "VOLTAGE_ENABLED")):
                 fault = True
-                fault_desc = "No voltage at motor"
+                fault_desc = "Enable command while no voltage at motor"
                 goal_reasons.append(fault_desc)
 
         # Calculate 'transition' feedback
