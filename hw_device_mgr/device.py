@@ -137,17 +137,23 @@ class Device(abc.ABC):
     def check_and_set_timeout(self):
         """Set fault if feedback_out goal_reached is False for too long."""
         fb_out = self._interfaces["feedback_out"]
-        if fb_out.get_old("goal_reached") or fb_out.get_old("fault"):
-            # Goal reached or fault in previous cycle; cancel any timer
-            self._timeout = None
+        old_goal_reached = fb_out.get_old("goal_reached")
+        old_fault = fb_out.get_old("fault")
+
+        # Cancel timer & return if goal reached or fault in previous cycle
+        if old_goal_reached or old_fault:
+            if self._timeout is not None:
+                self._timeout = None
+                self.logger.debug("Cleared timeout")
             return
 
-        # Goal not reached in previous cycle
+        # Otherwise, a timer should be running and monitored
         if self._timeout is None:
-            # goal_reached just changed to False; set timer
+            # No timer running; set one
             self.set_timeout(self.goal_reached_timeout)
+            self.logger.debug(f"Set {self.goal_reached_timeout}s timeout")
         elif time.time() > self._timeout:
-            # Goal not reached for longer than timeout; set fault
+            # Timeout; set fault
             reason = fb_out.get_old("goal_reason")
             msg = f"Timeout ({self.goal_reached_timeout}s):  {reason}"
             fb_out.update(
