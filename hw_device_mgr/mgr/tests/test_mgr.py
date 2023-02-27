@@ -39,10 +39,10 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         return index_map
 
     @cached_property
-    def drive_index_to_addr_map(self):
-        """Map `mgr.devices` list index to drive address."""
-        # This could be a list, but drive_addr_to_index_map can't
-        return dict(enumerate(d.address for d in self.obj.devices))
+    def drive_index_to_logstr_map(self):
+        """Map `mgr.devices` list index to drive log string."""
+        items = enumerate(str(d) for d in self.obj.devices)
+        return dict(items)
 
     @lru_cache
     def obj_interface_to_test_case_kv(self, interface_key, interface_val):
@@ -50,7 +50,7 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         # `Foo (0, 1, 0) bar`
         val = interface_val
         if isinstance(val, str):
-            val = val.format(address=self.drive_index_to_addr_map)
+            val = val.format(drives=self.drive_index_to_logstr_map)
 
         # Extract drive address `(0, 16, 0)` from key  `d0.16.0.control_mode`
         m = self.drive_interface_key_re.match(interface_key)
@@ -212,10 +212,8 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         mgr_expected, device_expected = self.split_drive_data(expected)
         for k, v in mgr_expected.items():
             if isinstance(v, str):
-                mgr_expected[k] = v.format(address=self.drive_index_to_addr_map)
-                print(
-                    "check_interface_values_lower:"
-                    f" k={k} v='{v}' -> '{mgr_expected[k]}'"
+                mgr_expected[k] = v.format(
+                    drives=self.drive_index_to_logstr_map
                 )
         # self.print_dict(mgr_expected, f"Expected {interface}", indent=2)
         # for i, d in enumerate(device_expected):

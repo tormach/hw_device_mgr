@@ -20,8 +20,9 @@
     d.x.error_code:  0x00000000
   feedback_out:
     # Mgr
-    goal_reached:  True
-    goal_reason:  Reached
+    enabled:  False
+    goal_reached:  False
+    goal_reason:  Offline ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
     fault:  False
     fault_desc:  ""
     # Drives
@@ -46,7 +47,6 @@
     # - errors
     d.x.error_code:  0x00000000
     d.x.description:  No error
-    d.x.advice:  No error
   command_in:
     # Mgr
     state_cmd:  0  # init
@@ -89,6 +89,8 @@
     # - CiA 402
     d.x.status_word:  0x0000  # START
   feedback_out:
+    # Mgr
+    goal_reason:  Not operational ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
     # Drives
     # - CiA 301
     d.x.online:  True
@@ -109,6 +111,8 @@
     # - CiA 402
     d.x.status_word:  0x0010  # VOLTAGE_ENABLED
   feedback_out:
+    # Mgr
+    goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON (0x00000010) != SWITCH ON DISABLED ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
     # Drives
     # - CiA 301
     d.x.oper:  True
@@ -126,6 +130,7 @@
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.x.control_mode_fb:  8  # MODE_CSP
   feedback_out:
+    goal_reason:  Waiting on device manager internal transitions
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.x.control_mode_fb:  8  # MODE_CSP
     d.x.state:  SWITCH ON DISABLED
@@ -140,14 +145,23 @@
     command_complete:  1
 - desc:  "Init:  Automatic 'stop' command"
   feedback_out:
+    goal_reached:  True
+    goal_reason:  ""
     d.x.transition:  -1  # No transition
   command_out:
     state_log:  "Automatic transition from init_complete state"
     command_complete:  0
 - desc:  "Init:  Complete"
+  feedback_out:
+    goal_reached:  False
+    goal_reason:  Waiting on device manager internal transitions
   command_out:
     command_complete:  True
-- desc:  "Init:  Hold state"
+- desc:  "Init:  Hold state 1"
+  feedback_out:
+    goal_reached:  True
+    goal_reason:  ""
+- desc:  "Init:  Hold state 2"
 
 #
 # Enable drive
@@ -172,6 +186,8 @@
   feedback_in:
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     d.x.state:  READY TO SWITCH ON
     d.x.transition:  2
@@ -187,6 +203,7 @@
   feedback_in:
     d.x.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
   feedback_out:
+    goal_reason:  Waiting on device manager internal transitions
     d.x.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     d.x.state:  SWITCHED ON
     d.x.transition:  3
@@ -215,6 +232,9 @@
     reset:  0
 - desc:  "Enable:  Hold state OPERATION ENABLED x1"
   feedback_out:
+    enabled:  True
+    goal_reached:  True
+    goal_reason:  ""
     d.x.transition:  -1  # No transition
 - desc:  "Enable:  Hold state OPERATION ENABLED x2"
 
@@ -232,23 +252,24 @@
     d.1.status_word:  0x001F  # FAULT REACTION ACTIVE + VOLTAGE_ENABLED
     d.1.error_code:  0xDEADBEEF
   feedback_out:
+    enabled:  False
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[1]})
     fault:  True
-    fault_desc:  "Devices set fault:  {address[1]}: Unknown error code 0xDEADBEEF"
+    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[1]})
     d.1.status_word:  0x001F  # FAULT REACTION ACTIVE + VOLTAGE_ENABLED
     d.1.state:  FAULT REACTION ACTIVE
     d.1.transition:  13
     d.1.fault:  True
-    d.1.fault_desc:  Unknown error code 0xDEADBEEF
+    d.1.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
     d.1.error_code:  0xDEADBEEF
     d.1.description:  Unknown error code 0xDEADBEEF
-    d.1.advice:  Contact technical support
     d.1.goal_reached:  False
-    d.1.goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
+    d.1.goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
   command_in:
     state_cmd:  4  # fault
   command_out:
     state:  4  # fault
-    state_log:  "Devices set fault:  {address[1]}: Unknown error code 0xDEADBEEF"
+    state_log:  Manager fault
     command_complete:  False
     drive_state:  FAULT
     d.x.control_word:  0x0002  # QUICK STOP ACTIVE
@@ -263,21 +284,29 @@
     d.x.status_word:  0x0017  # QUICK STOP + VOLTAGE_ENABLED
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
   feedback_out:
-    fault_desc:  "Devices set fault:  {address[1]}: Unknown error code 0xDEADBEEF"
+    goal_reached:  False
+    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT; FAULT command from controller (was OPERATION ENABLED) ({drives[0]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
+    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[1]})
     # drive_1 holds state
+    d.1.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.1.state:  FAULT
     d.1.transition:  14
     d.1.goal_reached:  True
     d.1.goal_reason:  Reached
     # ...while other drives enter QUICK STOP ACTIVE
+    d.x.fault:  True
+    d.x.fault_desc:  FAULT command from controller (was OPERATION ENABLED)
     d.x.status_word:  0x0017  # QUICK STOP + VOLTAGE_ENABLED
     d.x.state:  QUICK STOP ACTIVE
     d.x.transition:  11
     d.x.goal_reached:  False
-    d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
+    d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT; FAULT command from controller (was OPERATION ENABLED)
   command_out:
-    state_log:  "Devices set fault:  {address[1]}: Unknown error code 0xDEADBEEF"
+    state_log:  Manager fault
+    # Manager does NOT all drives in FAULT state, but in STATE_FAULT
+    # that's not necessary; drives will continue working towards their goals
+    command_complete:  True
     # Manager commands TRANSITION_12 to SWITCH ON DISABLED
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -290,6 +319,8 @@
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
+    goal_reached:  True
+    goal_reason:  ""
     d.1.transition:  -1
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.1.state:  FAULT
@@ -298,9 +329,6 @@
     d.x.transition:  12
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
-  command_out:
-    # Manager has all drives in FAULT mode
-    command_complete:  True
 - desc:  "Sim fault:  Hold fault command x1"
   sim_feedback_set:
     d.1.error_code:  0xDEADBEEF  # Bogus error code
@@ -332,6 +360,8 @@
     d.1.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.1.error_code:  0x00000000  # Error cleared after control_word 0x0080
   feedback_out:
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]}); state SWITCH ON DISABLED (0x00000050) != SWITCHED ON ({drives[1]})
     fault:  False
     fault_desc:  ""
     # Drive 1 clears fault, entering SWITCH ON DISABLED
@@ -342,10 +372,11 @@
     d.1.fault_desc:  ""
     d.1.error_code:  0x00000000  # Error cleared after control_word 0x0080
     d.x.description:  No error
-    d.x.advice:  No error
     d.1.goal_reached:  False
     d.1.goal_reason:  state SWITCH ON DISABLED (0x00000050) != SWITCHED ON
     # ...while other drives are one step ahead
+    d.x.fault:  False
+    d.x.fault_desc:  ""
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     d.x.state:  READY TO SWITCH ON
     d.x.transition:  2
@@ -364,6 +395,7 @@
     d.1.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     d.x.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
   feedback_out:
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[1]})
     # Faulted drive still lagging
     d.1.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     d.1.state:  READY TO SWITCH ON
@@ -396,17 +428,17 @@
     d.1.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
   feedback_out:
     fault:  True
-    fault_desc:  "Devices set fault:  {address[2]}: Unknown error code 0xDEADBEEF"
+    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[2]})
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != SWITCHED ON; 0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[2]})
     d.2.status_word:  0x001F  # FAULT REACTION ACTIVE + VOLTAGE_ENABLED
     d.2.state:  FAULT REACTION ACTIVE
     d.2.transition:  13
     d.2.fault:  True
-    d.2.fault_desc:  Unknown error code 0xDEADBEEF
+    d.2.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
     d.2.error_code:  0xDEADBEEF
     d.2.description:  Unknown error code 0xDEADBEEF
-    d.2.advice:  Contact technical support
     d.2.goal_reached:  False
-    d.2.goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != SWITCHED ON; Unknown error code 0xDEADBEEF
+    d.2.goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != SWITCHED ON; 0xDEADBEEF Unknown error code 0xDEADBEEF
     d.1.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     d.1.state:  SWITCHED ON
     d.1.transition:  3
@@ -417,7 +449,7 @@
     state_cmd:  4  # fault
   command_out:
     state:  4  # fault
-    state_log:  "Devices set fault:  {address[2]}: Unknown error code 0xDEADBEEF"
+    state_log:  Manager fault
     drive_state:  FAULT
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -430,10 +462,14 @@
     d.2.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
-    fault_desc:  "Devices set fault:  {address[2]}: Unknown error code 0xDEADBEEF"
+    goal_reason:  Waiting on device manager internal transitions
+    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[2]})
+    d.x.fault:  True
+    d.x.fault_desc:  FAULT command from controller (was SWITCHED ON)
     d.x.status_word:  0x0050
     d.x.state:  SWITCH ON DISABLED
     d.x.transition:  10
+    d.2.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
     d.2.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.2.state:  FAULT
     d.2.transition:  14
@@ -444,7 +480,7 @@
     state_cmd:  4  # fault
   command_out:
     state:  4  # fault
-    state_log:  "Devices set fault:  {address[2]}: Unknown error code 0xDEADBEEF"
+    state_log:  Manager fault
     command_complete:  True
     drive_state:  FAULT
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
@@ -455,6 +491,8 @@
   sim_feedback_set:
     d.2.error_code:  0xDEADBEEF  # Bogus error code
   feedback_out:
+    goal_reached:  True
+    goal_reason:  ""
     d.x.transition:  -1  # No transition
 - desc:  "Hold fault:  Hold state x2"
   sim_feedback_set:
@@ -485,17 +523,17 @@
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.2.error_code:  0x00000000  # Fault cleared by control_word 0x0080
   feedback_out:
+    goal_reached:  False
+    goal_reason:  Waiting on device manager internal transitions
     fault:  False
     fault_desc:  ""
-    d.x.transition:  -1  # No transition
-    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
-    d.x.state:  SWITCH ON DISABLED
-    d.2.fault:  False
-    d.2.fault_desc:  ""
+    d.x.fault:  False
+    d.x.fault_desc:  ""
+    d.2.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    d.2.state:  SWITCH ON DISABLED
     d.2.transition:  15
     d.2.error_code:  0x00000000  # Fault cleared by control_word 0x0080
     d.2.description:  No error
-    d.2.advice:  No error
   command_in:
     state_set:  0  # clear command latch
   command_out:
@@ -503,6 +541,8 @@
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
 - desc:  "Disable:  Hold state x1"
   feedback_out:
+    goal_reached:  True
+    goal_reason:  ""
     d.x.transition:  -1  # No transition
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached
@@ -559,6 +599,8 @@
   feedback_in:
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     d.x.state:  READY TO SWITCH ON
     d.x.transition:  2
@@ -574,6 +616,7 @@
   feedback_in:
     d.x.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
   feedback_out:
+    goal_reason:  Waiting on device manager internal transitions
     d.x.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     d.x.state:  SWITCHED ON
     d.x.transition:  3
@@ -611,6 +654,9 @@
     d.0.control_mode_fb:  6  # MODE_HM
     d.1.control_mode_fb:  6  # MODE_HM
   feedback_out:
+    enabled:  True
+    goal_reached:  True
+    goal_reason:  homing not complete ({drives[0]},{drives[1]})
     d.x.transition:  -1  # No transition
     d.0.control_mode_fb:  6  # MODE_HM
     d.1.control_mode_fb:  6  # MODE_HM
@@ -629,6 +675,7 @@
     d.0.status_word:  0x1037  # OPERATION ENABLED + HOMING_ATTAINED
     d.1.status_word:  0x1037  # OPERATION ENABLED + HOMING_ATTAINED
   feedback_out:
+    goal_reason:  ""
     d.0.status_word:  0x1037  # OPERATION ENABLED + HOMING_ATTAINED
     d.1.status_word:  0x1037  # OPERATION ENABLED + HOMING_ATTAINED
     d.0.home_success:  True
@@ -667,6 +714,9 @@
   feedback_in:
     d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
   feedback_out:
+    enabled:  False
+    goal_reached:  False
+    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
     d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
     d.x.state:  QUICK STOP ACTIVE
     d.x.transition:  11
@@ -682,6 +732,7 @@
   feedback_in:
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
+    goal_reason:  Waiting on device manager internal transitions
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.x.state:  SWITCH ON DISABLED
     d.x.transition:  12
@@ -692,13 +743,21 @@
 
 - desc:  "Home:  Hold SWITCH ON DISABLED x1"
   feedback_out:
+    goal_reached:  True
+    goal_reason:  ""
     d.x.transition:  -1  # No transition
 - desc:  "Home:  Hold SWITCH ON DISABLED x2"
 
 #
 # Enable drive, but remove VOLTAGE_ENABLED signal to cause fault
 #
-- desc:  "No voltage:  Latch 'start' command"
+- desc:  "No voltage:  Drive 2 no voltage; latch 'start' command"
+  sim_feedback_set:
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_in:
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_out:
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
   command_in:
     state_cmd:  2  # start
     state_set:  1  # set command latch
@@ -710,120 +769,89 @@
     command_complete:  False
     d.x.control_word:  0x0006  # READY TO SWITCH ON
   sim_feedback:
-    d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
-- desc:  "No voltage:  Drives reach READY TO SWITCH ON state"
+    d.x.status_word:  0x0031
+    d.2.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+- desc:  "No voltage:  Drive 2 refuses to enter READY TO SWITCH ON state; mgr fault"
   sim_feedback_set:
-    d.2.status_word:  0x0021  # READY TO SWITCH ON - VOLTAGE_ENABLED
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
   feedback_in:
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
-    d.2.status_word:  0x0021  # READY TO SWITCH ON - VOLTAGE_ENABLED
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
   feedback_out:
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[1]},{drives[3]},{drives[4]},{drives[5]},{drives[6]}); state SWITCH ON DISABLED (0x00000040) != SWITCHED ON; Enable command while no voltage at motor ({drives[2]})
+    fault:  True
+    fault_desc:  Enable command while no voltage at motor ({drives[2]})
+    d.2.fault:  True
+    d.2.fault_desc:  Enable command while no voltage at motor
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
-    d.2.status_word:  0x0021  # READY TO SWITCH ON - VOLTAGE_ENABLED
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
     d.x.state:  READY TO SWITCH ON
+    d.2.state:  SWITCH ON DISABLED
     d.x.transition:  2
+    d.2.transition:  -1
     d.x.goal_reached:  False
     d.x.goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
-    d.2.goal_reason:  state READY TO SWITCH ON (0x00000021) != SWITCHED ON
+    d.2.goal_reason:  state SWITCH ON DISABLED (0x00000040) != SWITCHED ON; Enable command while no voltage at motor
   command_in:
     state_set:  0  # clear command latch
   command_out:
-    d.x.control_word:  0x0007  # SWITCHED ON
-  sim_feedback:
-    d.x.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
-- desc:  "No voltage:  Drives reach SWITCHED ON state"
-  sim_feedback_set:
-    d.2.status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
-  feedback_in:
-    d.x.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
-    d.2.status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
-  feedback_out:
-    d.x.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
-    d.2.status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
-    d.x.state:  SWITCHED ON
-    d.x.transition:  3
-    # Reached pre-operational SWITCHED ON goal
-    d.x.goal_reached:  True
-    d.x.goal_reason:  Reached
-  command_out:
-    # Continue with OPERATION ENABLED goal
-    drive_state:  OPERATION ENABLED
-    # Reset high for one cycle
-    reset:  1
-    d.x.control_word:  0x000F  # OPERATION ENABLED
-  sim_feedback:
-    d.x.status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
-    d.2.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
-- desc:  "No voltage:  Command OPERATION ENABLED; FAULT state + quick stop"
-  sim_feedback_set:
-    d.2.status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
-  feedback_in:
-    d.x.status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
-    d.2.status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
-  feedback_out:
-    fault:  True
-    fault_desc:  "Devices set fault:  {address[2]}: No voltage at motor"
-    d.x.status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
-    d.2.status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
-    d.x.state:  OPERATION ENABLED
-    d.2.state:  SWITCHED ON
-    d.x.transition:  4
-    d.2.transition:  -1
-    d.2.fault:  True
-    d.2.fault_desc:  No voltage at motor
-    d.x.goal_reached:  True
-    d.2.goal_reached:  False
-    d.x.goal_reason:  Reached
-    d.2.goal_reason:  state SWITCHED ON (0x00000023) != OPERATION ENABLED; No voltage at motor
-  command_out:
     state:  0x04  # FAULT
-    state_log:  "Devices set fault:  {address[2]}: No voltage at motor"
+    state_log:  Manager fault
     drive_state:  FAULT
-    d.x.control_word:  0x0002
-    d.2.control_word:  0x0000
-    reset:  0
-  sim_feedback:
-    d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
-    d.2.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
-- desc:  "No voltage:  React to fault:  disable"
-  sim_feedback_set:
-    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
-  feedback_in:
-    d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
-    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
-  feedback_out:
-    fault_desc:  "Devices set fault:  {address[2]}: No voltage at motor"
-    d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
-    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
-    d.x.state:  QUICK STOP ACTIVE
-    d.2.state:  SWITCH ON DISABLED
-    d.x.transition:  11  # OPERATION ENABLED->QUICK STOP ACTIVE
-    d.2.transition:  10  # SWITCHED ON->SWITCH ON DISABLED
-    d.2.fault:  False
-    d.2.fault_desc:  ""
-    d.x.goal_reached:  False
-    d.2.goal_reached:  True
-    d.x.goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
-    d.2.goal_reason:  Reached
-  command_out:
-    d.x.control_word:  0x0000
+    d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+- desc:  "No voltage:  Hold fault x1"
+  sim_feedback_set:
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_in:
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_out:
+    goal_reason:  Waiting on device manager internal transitions
+    d.x.state:  SWITCH ON DISABLED
+    d.x.transition:  7  # READY TO SWITCH ON->SWITCH ON DISABLED
+    d.2.transition:  -1
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+    d.x.fault:  True
+    d.x.fault_desc:  FAULT command from controller (was READY TO SWITCH ON)
+    d.2.fault_desc:  Enable command while no voltage at motor
+    d.x.goal_reached:  True
+    d.x.goal_reason:  Reached
+  command_out:
+    command_complete:  True
+- desc:  "No voltage:  Hold fault x2"
+  sim_feedback_set:
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_out:
+    goal_reached:  True
+    goal_reason:  ""
+    d.x.transition:  -1
 - desc:  "No voltage:  Motor voltage restored; all drives disabled"
   feedback_in:
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
-    d.x.state:  SWITCH ON DISABLED
-    d.x.transition:  12  # QUICK STOP ACTIVE->SWITCH ON DISABLED *
-    d.2.transition:  -1  # Hold state
-    d.x.goal_reached:  True
-    d.x.goal_reason:  Reached
-  command_out:
-    command_complete:  1
-- desc:  "No voltage:  Hold state"
+- desc:  "No voltage:  Hold state x1"
+- desc:  "No voltage:  Drive 2 no voltage (no 'start' command, no fault)"
+  sim_feedback_set:
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_in:
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
   feedback_out:
-    d.x.transition:  -1
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+- desc:  "No voltage:  Hold state x2"
+  sim_feedback_set:
+    d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
+- desc:  "No voltage:  Motor voltage restored"
+  feedback_in:
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+  feedback_out:
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
 
 #
 # End of tests; hold state

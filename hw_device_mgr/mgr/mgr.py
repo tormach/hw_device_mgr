@@ -198,9 +198,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.fsm_set_drive_state_cmd(e, "FAULT")
         return
 
-    def on_before_fault_complete(self, e):
-        return self.fsm_check_drive_goal_state(e)
-
     def on_enter_fault_complete(self, e):
         self.fsm_finalize_command(e)
 
@@ -426,58 +423,95 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         """Process a device's external feedback."""
         return dev.get_feedback()
 
+    def merge_device_descriptions(self, descriptions):
+        """Merge descriptions into a single string with deduplication"""
+        # descriptions is hash of device:description; invert to hash of
+        # description:[str(device), ...]
+        rev_descriptions = dict()
+        for dev, desc in descriptions.items():
+            if not desc:
+                continue  # Ignore empty descriptions
+            rev_descriptions.setdefault(desc, list()).append(str(dev))
+        # Turn into list of strings:  "description (device,...)"
+        description_strings = list()
+        for desc, dev_list in rev_descriptions.items():
+            devs_str = ",".join(dev_list)
+            description_strings.append(f"{desc} ({devs_str})")
+        # Join list of strings with semicolons & return
+        return "; ".join(description_strings)
+
     def get_feedback(self):
         """Process manager and device external feedback."""
         mgr_fb_out = super().get_feedback()
+        fault = mgr_fb_out.get("fault")
+        fault_desc = mgr_fb_out.get("fault_desc")
+        goal_reached = True
+        goal_reason = ""
+        cmd_out = self.interface("command_out")
 
         # Get device feedback
-        fault = mgr_fb_out.get("fault")
-        fault_desc = list()
-        waiting_on_devs = list()
+        new_fault = False
+        fault_devs = dict()  # device:fault description
+        waiting_devs = dict()  # device:goal reason
         for dev in self.devices:
             dev_fb_out = self.get_device_feedback(dev)
             prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
+            # Copy device fb_out to mgr fb_out, adding prefix
             updates = {
-                # Copy device fb_out to mgr fb_out, adding prefix
                 f"{prefix}{k}": v
                 for k, v in dev_fb_out.get().items()
-                # ...but skip these keys
+                # Skip these keys
                 if k not in self.device_translated_interfaces["feedback_out"]
             }
             mgr_fb_out.update(**updates)
+            # Which devices are in fault state and why
             if dev_fb_out.get("fault"):
-                fault = True
-                dev_fault_desc = dev_fb_out.get("fault_desc")
-                fault_desc.append(f"{str(dev.address)}: {dev_fault_desc}")
+                if dev_fb_out.changed("fault"):
+                    new_fault = True
+                fault_devs[dev] = dev_fb_out.get("fault_desc")
+            # Which devices haven't reached goal state and why
             if not dev_fb_out.get("goal_reached"):
-                waiting_on_devs.append(str(dev.address))
+                waiting_devs[dev] = dev_fb_out.get("goal_reason")
 
-        if waiting_on_devs:
+        # Set goal reached & reason status
+        # if not self.state.endswith("_complete"):
+        if not cmd_out.get("command_complete"):
             goal_reached = False
-            goal_reason = f"Waiting on devices {', '.join(waiting_on_devs)}"
-        else:
-            goal_reached, goal_reason = True, ""
+            if waiting_devs:
+                goal_reason = f"Waiting on {len(waiting_devs)} devices"
+            else:
+                goal_reason = "Waiting on device manager internal transitions"
 
-        if self.interface("command_out").get("state") == self.STATE_FAULT:
-            # Already in DS402 FAULT state, so throw away faults collected from drives
-            # & recycle previous fault log
+        # Fault feedback:  set or not, and fault description
+        if cmd_out.get("state") == self.STATE_FAULT:
+            # When mgr in STATE_FAULT, set fault feedback; stick to previous
+            # fault description that got us here
             fault = True
-            state_fault_log = self.interface("command_out").get("state_log")
-            fault_desc = [state_fault_log]
-        elif fault_desc:
-            # Not in DS402 FAULT state; use drive errors
-            fault_desc=["Devices set fault:  " + "; ".join(fault_desc)]
-            mgr_fb_out.update(
-                fault=fault,
-                fault_desc="; ".join(fault_desc),
-                goal_reached=goal_reached,
-                goal_reason=goal_reason
-            )
+            fault_desc = mgr_fb_out.get_old("fault_desc")
+        elif new_fault:
+            # Outside STATE_FAULT, only new device faults trigger manager fault
+            fault = True
+            # Description of any device faults (new or old)
+            fault_desc = self.merge_device_descriptions(fault_devs)
+
+        # Description of why devices haven't reached goal
+        if waiting_devs:
+            goal_reason = self.merge_device_descriptions(waiting_devs)
+
+        # Update feedback out, log, return
+        mgr_fb_out.update(
+            fault=fault,
+            fault_desc=fault_desc,
+            goal_reached=goal_reached,
+            goal_reason=goal_reason
+        )
         if mgr_fb_out.changed("goal_reason"):
             if mgr_fb_out.get("goal_reached"):
-                self.logger.info("All devices reached goal")
+                self.logger.info("Manager reached goal state")
             else:
-                self.logger.info(mgr_fb_out.get("goal_reason"))
+                self.logger.info(
+                    f"Manager waiting:  {mgr_fb_out.get('goal_reason')}"
+                )
         return mgr_fb_out
 
     def set_command(self, **cmd_in_kwargs):
@@ -490,45 +524,50 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         cmd_out.update(**old_cmd_out)
         cmd_in = self.command_in
 
+        # Check for new command
         if self.command_in.rising_edge("state_set"):
             # state_set went high; log it
+            new_state_cmd = True
+            state_int = self.command_in.get("state_cmd")
+            state = self.cmd_int_to_name_map[state_int]
             if self.command_in.get("state_cmd") != cmd_out.get("state"):
-                state_int = self.command_in.get("state_cmd")
-                state = self.cmd_int_to_name_map[state_int]
                 self.logger.info(f"Received command update {state}")
             else:
                 self.logger.info(f"Received unchanged command update {state}")
+        else:
+            new_state_cmd = False
+
+        # Check for new faults
+        new_device_faults = self.query_devices(fault=True, changed=True)
 
         # Special cases where 'fault' or incoming command update overrides
         # current command:
-        if self.query_devices(fault=True, changed=True):
-            # Devices newly set `fault` since last update
-            fds = self.query_devices(fault=True)
-            msg = "; ".join(
-                f"{str(d.address)}: {d.feedback_out.get('fault_desc')}"
-                for d in fds
-            )
+        if cmd_in.get("state_cmd") not in self.cmd_int_to_name_map:
+            msg = f"Invalid state command, '{cmd_in.get('state_cmd')}'"
+            self.logger.error(msg)
+            cmd_out.update(state=self.STATE_FAULT, state_log=msg)
+        elif (
+            old_cmd_out.get("state") != self.STATE_FAULT and
+            self.feedback_out.get("fault")
+        ):
+            # Fault feedback not from device faults (e.g. timeout)
+            if self.feedback_out.changed("fault"):
+                self.logger.warning(
+                    "Manager/device fault; entering fault state"
+                )
+            if new_state_cmd:
+                self.logger.warning("Ignoring new state command")
             cmd_out.update(
                 state=self.STATE_FAULT,
-                state_log=f"Devices set fault:  {msg}",
+                state_log=f"Manager fault",
             )
-        elif cmd_in.get("state_cmd") not in self.cmd_int_to_name_map:
-            state_cmd = cmd_in.get("state_cmd")
-            self.logger.error(f"Invalid state command, '{state_cmd}'")
-            cmd_out.update(
-                state=self.STATE_FAULT,
-                state_log=f"Invalid state command, '{state_cmd}'",
-            )
-        elif self.command_in.rising_edge("state_set"):
+        elif new_state_cmd:
             # state_set went high; latch state_cmd from kwargs
             cmd_out.update(
                 state=cmd_in.get("state_cmd"),
             )
             if cmd_out.changed("state"):
-                # Assume external command
-                cmd_out.update(
-                    state_log=f"External command '{self.state_str}'",
-                )
+                cmd_out.update(state_log=f"External command '{self.state_str}'")
 
         if cmd_out.changed("state"):
             # Received new command to stop/start/fault.  Try it
