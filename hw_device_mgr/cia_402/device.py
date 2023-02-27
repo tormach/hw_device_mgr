@@ -301,10 +301,24 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if self.test_sw_bit(sw, "FAULT"):
             fault = True
             if fb_out.get("error_code"):
-                fault_desc = fb_out.get("description")
+                error_code = fb_out.get("error_code")
+                error_desc = fb_out.get("description")
+                fault_desc = f"{error_code} {error_desc}"
             else:
-                fault_desc = "Drive fault (no error code)"
+                fault_desc = "Fault (no error code)"
             goal_reasons.append(fault_desc)
+
+        # If in CiA402 FAULT state, set device fault
+        if self.command_in.get("state") == "FAULT":
+            fault = True
+            if not fault_desc:
+                # Recycle previous description if possible
+                fault_desc = fb_out.get_old("fault_desc")
+                # If FAULT is commanded & no device fault, this will be an empty
+                # string
+                if not fault_desc:
+                    fault_desc = f"FAULT command from controller (was {old_st})"
+                goal_reasons.append(fault_desc)
 
         # Update feedback to controller
         if fault:
