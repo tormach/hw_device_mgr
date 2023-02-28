@@ -14,8 +14,6 @@ class EtherCATXMLReader(ConfigIO):
     sdo_class = EtherCATSDO
     _device_registry = dict()
 
-    logger = Logging.getLogger(__name__)
-
     default_datatypes_package = "hw_device_mgr.ethercat"
     default_datatypes_resource = "esi_base_types.xml"
 

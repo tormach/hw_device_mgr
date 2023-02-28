@@ -8,6 +8,7 @@ from .bogus_devices.device import (
     BogusV2Servo,
     BogusV1IO,
 )
+import logging
 
 
 class BaseTestClass(ConfigIO):
@@ -111,12 +112,16 @@ class BaseTestClass(ConfigIO):
     #
 
     @pytest.fixture
+    def log_debug(self, caplog):
+        caplog.set_level(logging.DEBUG)
+
+    @pytest.fixture
     def device_cls(self, _sim_device_data, category_cls):
         """Fixture for configured Device class."""
         yield _sim_device_data["device_cls"]
 
     @pytest.fixture
-    def device_extra_fixtures(self):
+    def device_extra_fixtures(self, log_debug):
         # Use this to add extra fixtures to the `device_cls` fixture
         # in subclasses
         pass
@@ -128,7 +133,7 @@ class BaseTestClass(ConfigIO):
         yield self.device_class
 
     @pytest.fixture
-    def category_extra_fixtures(self):
+    def category_extra_fixtures(self, log_debug):
         # Use this to add extra fixtures to the `category_cls` fixture
         # in subclasses
         pass

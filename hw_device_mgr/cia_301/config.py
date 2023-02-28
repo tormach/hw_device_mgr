@@ -24,13 +24,14 @@ class CiA301Config:
     in order to read/write dictionary objects from/to devices.
     """
 
+    logging_class = Logging
+    class_logger = Logging.getLogger(__name__)
+
     data_type_class = CiA301DataType
     command_class = CiA301Command
     sdo_class = CiA301SDO
 
     init_params_nv = True
-
-    logger = Logging(__name__)
 
     # Mapping of model_id to a dict of (index, subindex) to SDO object
     _model_sdos = dict()
@@ -43,6 +44,7 @@ class CiA301Config:
         self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
         self.skip_optional_config_values = skip_optional_config_values
+        self.logger = self.logging_class.getLogger(f"{self}")
 
     @classmethod
     def format_model_id(cls, model_id):
@@ -73,9 +75,12 @@ class CiA301Config:
             cls._command_objs[cls.__name__] = cls.command_class()
         return cls._command_objs[cls.__name__]
 
-    def __repr__(self):
+    def __str__(self):
         cname = self.__class__.__name__
-        return f"<{cname} addr {self.address} model {self.model_id}>"
+        return f"<{cname}:{self.model_id}@{str(self.address).replace(' ','')}>"
+
+    def __repr__(self):
+        return f"<{self}>"
 
     #
     # Object dictionary
@@ -177,7 +182,7 @@ class CiA301Config:
         if dry_run:
             self.logger.info(f"Dry run:  download {val} to {sdo} {msg}")
             return
-        self.logger.info(f"{self} param download {sdo} = {val} {msg}")
+        self.logger.info(f"Param download {sdo} = {val} {msg}")
         self.command().download(
             address=self.address,
             index=sdo.index,
@@ -340,42 +345,42 @@ class CiA301Config:
         if not self.init_params_nv:
             # Drive params in volatile mode; no need to worry about
             # EEPROM wear, so download all params without uploading first
-            self.logger.info(f"{self} updating (volatile) parameter values")
+            self.logger.info(f"Updating (volatile) parameter values")
             for sdo, value in self.config["param_values"].items():
                 self.download(sdo, value, dry_run=dry_run, force=True)
-            self.logger.info(f"{self} parameter update complete")
+            self.logger.info(f"Parameter update complete")
             return
 
         # Drive params in non-volatile mode; to save NVRAM wear, don't
         # write if all params are correct
-        self.logger.info(f"{self} checking NV parameter values")
+        self.logger.info(f"Checking NV parameter values")
         to_update = list()
         for sdo, value in self.config["param_values"].items():
             curr = self.upload(sdo)
             exp = type(curr)(value)
             if curr != exp:
                 self.logger.debug(
-                    f"{self} sdo {sdo} expected {exp}; current {curr}"
+                    f"SDO {sdo} expected {exp}; current {curr}"
                 )
                 to_update.append((sdo, exp))
         if not to_update:
-            self.logger.info(f"{self} param values correct; no updates needed")
+            self.logger.info(f"Param values correct; no updates needed")
             return
 
         # Save current NV mode setting & set NV mode
         self._old_device_params_nv = self.get_device_params_nv()
-        self.logger.info(f"{self} setting device params in NV mode")
+        self.logger.info(f"Setting device params in NV mode")
         self.set_device_params_nv(dry_run=dry_run)
 
         # Write params that need changing
-        self.logger.info(f"{self} updating {len(to_update)} params")
+        self.logger.info(f"Updating {len(to_update)} params")
         for sdo, value in to_update:
             self.download(sdo, value, dry_run=dry_run, force=True)
-        self.logger.info(f"{self} parameter update complete")
+        self.logger.info(f"Parameter update complete")
 
         if self.init_params_nv and not self._old_device_params_nv:
             self.logger.info(
-                f"{self} returning device params to volatile mode)"
+                f"Returning device params to volatile mode)"
             )
             self.set_device_params_nv(
                 nv=self._old_device_params_nv, dry_run=dry_run

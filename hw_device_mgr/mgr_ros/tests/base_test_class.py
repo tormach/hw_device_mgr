@@ -30,7 +30,7 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
     device_model_classes = ROSHWDeviceMgrTest.device_classes
 
     @pytest.fixture
-    def category_extra_fixtures(self, ros_extra_fixtures):
+    def category_extra_fixtures(self, ros_extra_fixtures, log_debug):
         pass
 
     @pytest.fixture

@@ -130,6 +130,6 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
 
     @pytest.fixture
     def category_extra_fixtures(
-        self, ethercat_extra_fixtures, hal_extra_fixtures
+        self, ethercat_extra_fixtures, hal_extra_fixtures, log_debug
     ):
         pass

@@ -20,14 +20,14 @@ class InovanceSV660Config(EtherCATConfig):
         curr_setting = self.get_device_params_nv()
         if curr_setting != nv:
             self.logger.info(
-                f"{self} setting params {'non' if nv else ''}volatile mode"
+                f"Setting params {'non' if nv else ''}volatile mode"
             )
             self.config.download(
                 "200E-02h", (0, 3)[nv], force=True, dry_run=dry_run
             )
         else:
             self.logger.info(
-                f"{self} params already {'non' if nv else ''}volatile mode"
+                f"Params already {'non' if nv else ''}volatile mode"
             )
 
 

@@ -90,5 +90,5 @@ class BaseEtherCATTestClass(BaseCiA402TestClass):
         yield
 
     @pytest.fixture
-    def category_extra_fixtures(self, ethercat_extra_fixtures):
+    def category_extra_fixtures(self, ethercat_extra_fixtures, log_debug):
         yield

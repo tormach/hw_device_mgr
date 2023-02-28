@@ -13,7 +13,7 @@ class Device(abc.ABC):
     category = "all"  # Device category sets up registry for models
     name = None  # Concrete device model subclasses must define
 
-    logger = Logging.getLogger(__name__)
+    logging_class = Logging
 
     data_type_class = DataType
     interface_class = Interface
@@ -50,6 +50,7 @@ class Device(abc.ABC):
     def __init__(self, address=None):
         self.address = self.canon_address(address)
         self._timeout = None
+        self.logger = self.logging_class.getLogger(f"{self.category}.{self}")
 
     def init(self):
         """
@@ -159,7 +160,7 @@ class Device(abc.ABC):
             fb_out.update(
                 fault=True, fault_desc=msg, goal_reached=False, goal_reason=msg
             )
-            self.logger.error(f"{self}:  {msg}")
+            self.logger.error(msg)
 
     def set_timeout(self, timeout_seconds):
         """Set timeout for `timeout_seconds` in the future"""
@@ -175,10 +176,10 @@ class Device(abc.ABC):
         """Write `command_out` to hardware interface."""
 
     def __str__(self):
-        return f"<{self.name}@{self.address}>"
+        return f"{self.name}@{str(self.address).replace(' ','')}"
 
     def __repr__(self):
-        return self.__str__()
+        return f"<{self.__str__()}>"
 
     ########################################
     # Device category and model registries

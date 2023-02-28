@@ -46,7 +46,7 @@ class HALPinDevice(Device, HALMixin):
         self.pins = {i: dict() for i in self.pin_interfaces}
         self.no_pin_keys = {i: set() for i in self.pins}  # Attrs w/o pins
         for intf_name, intf_pins in self.pins.items():
-            self.logger.debug(f"{self} Init HAL pins;  interface {intf_name}:")
+            self.logger.debug(f"Init HAL pins;  interface {intf_name}:")
             intf = self.interface(intf_name)
             for base_pname in intf.keys():
                 dtype = intf.get_data_type(base_pname)
@@ -79,7 +79,7 @@ class HALPinDevice(Device, HALMixin):
         if not getattr(self, "read_once", False):
             self.read_once = True
             self.logger.info(
-                f"HAL pins read for {self} feedback_in:  {list(pins.keys())}"
+                f"HAL pins read for feedback_in:  {list(pins.keys())}"
             )
             self.logger.info(
                 "   Interface keys:  "

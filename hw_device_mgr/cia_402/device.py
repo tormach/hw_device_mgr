@@ -183,7 +183,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if not self.feedback_in.get("sto"):
             # STO inactive (low)
             if self.feedback_in.changed("sto"):  # Log once
-                self.logger.info(f"{self}:  STO input inactive")
+                self.logger.info(f"STO input inactive")
             return True, None
 
         # STO active (high)
@@ -193,15 +193,15 @@ class CiA402Device(CiA301Device, ErrorDevice):
             # condition will last just one update; top-level manager will react
             # by latching its own fault, which will stop the ENABLE_OPERATION
             # command)
-            msg = "STO input active during OPERATION ENABLED command"
+            msg = "STO input active during enable command"
             self.feedback_out.update(fault=True, fault_desc=msg)
             if self.feedback_in.changed("sto"):  # Log once
-                self.logger.error(f"{self}:  {msg} (fault)")
+                self.logger.error(f"{msg} (fault)")
             return False, f"{msg} (fault)"
         else:
             # No ENABLE_OPERATION command; log (warning, once) and return
             if self.feedback_in.changed("sto"):
-                self.logger.warning(f"{self}:  STO input active")
+                self.logger.warning(f"STO input active")
             return True, None
 
     @property
@@ -328,11 +328,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
             goal_reason = "; ".join(goal_reasons)
             fb_out.update(goal_reached=False, goal_reason=goal_reason)
             if fb_out.changed("goal_reason"):
-                self.logger.info(
-                    f"Device {self.address}:  Goal not reached: {goal_reason}"
-                )
+                self.logger.info(f"Goal not reached: {goal_reason}")
         elif fb_out.changed("goal_reached"):  # Goal just now reached
-            self.logger.info(f"Device {self.address}:  Goal reached")
+            self.logger.info("Goal reached")
         return fb_out
 
     state_bits = {
@@ -460,12 +458,12 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_request = False
         if self.command_in.get("home_request"):
             if self.command_in.changed("home_request"):
-                self.logger.info(f"{self}:  Homing operation requested")
+                self.logger.info(f"Homing operation requested")
             if self.feedback_out.get("control_mode_fb") == self.MODE_HM:
                 # Don't actually set HOMING_START until in MODE_HM
                 home_request = True
         elif self.command_in.changed("home_request"):  # home_request cleared
-            self.logger.info(f"{self}:  Homing operation complete")
+            self.logger.info(f"Homing operation complete")
         return home_request
 
     def _check_pp_request(self):
@@ -473,10 +471,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         move_request = False
         if self.command_in.get("move_request"):
             if self.command_in.changed("move_request"):
-                self.logger.info(f"{self}:  Move operation requested")
+                self.logger.info(f"Move operation requested")
                 move_request = True
         elif self.command_in.changed("move_request"):  # move_request cleared
-            self.logger.info(f"{self}:  Move operation complete")
+            self.logger.info(f"Move operation complete")
         return move_request
 
     def _get_next_control_word(self, next_cm):
@@ -743,13 +741,12 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
             # Log changes
             if sfb.changed("control_mode_fb"):
                 cm = sfb.get("control_mode_fb")
-                self.logger.info(f"{self} sim control_mode_fb:  0x{cm:04X}")
+                self.logger.info(f"sim control_mode_fb:  0x{cm:04X}")
             if sfb.changed("status_word"):
                 flags = ",".join(k for k, v in sw_flags.items() if v)
                 flags = f" flags:  {flags}" if flags else ""
                 self.logger.info(
-                    f"{self} sim status_word:"
-                    f"  0x{status_word:04X} {state} {flags}"
+                    f"sim status_word:  0x{status_word:04X} {state} {flags}"
                 )
 
         return sfb

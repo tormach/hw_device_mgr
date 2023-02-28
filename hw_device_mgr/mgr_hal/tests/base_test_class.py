@@ -21,6 +21,6 @@ class BaseHALMgrTestClass(BaseMgrTestClass, BaseLCECTestClass):
 
     @pytest.fixture
     def category_extra_fixtures(
-        self, mock_hal, ethercat_extra_fixtures
+        self, mock_hal, ethercat_extra_fixtures, log_debug
     ):
         pass
