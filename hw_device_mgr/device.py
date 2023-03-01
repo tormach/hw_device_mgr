@@ -174,9 +174,6 @@ class Device(abc.ABC):
     def write(self):
         """Write `command_out` to hardware interface."""
 
-    def log_status(self):
-        pass
-
     def __str__(self):
         return f"<{self.name}@{self.address}>"
 
