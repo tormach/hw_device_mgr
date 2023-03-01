@@ -263,6 +263,15 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 fault_desc = "Enable command while no voltage at motor"
                 goal_reasons.append(fault_desc)
 
+        # Raise fault if device unexpectedly goes offline
+        if (
+            self.command_in.get("state") == "OPERATION ENABLED" and
+            not self.test_sw_bit(sw, "READY_TO_SWITCH_ON")
+        ):
+            fault = True
+            fault_desc = "Enabled drive unexpectedly disabled"
+            goal_reasons.append(fault_desc)
+
         # Calculate 'transition' feedback
         new_st, old_st = fb_out.changed("state", return_vals=True)
         if (old_st, new_st) == ("START", "NOT READY TO SWITCH ON"):
