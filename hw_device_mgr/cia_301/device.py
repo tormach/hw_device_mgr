@@ -80,8 +80,26 @@ class CiA301Device(Device):
             return fb_out  # Don't clobber lower layers' reasons
         if not self.feedback_in.get("online"):
             fb_out.update(goal_reached=False, goal_reason="Offline")
+            if self.feedback_in.changed("online"):
+                msg = "Drive went offline/non-operational"
+                fb_out.update(fault=True, fault_desc=msg)
+                self.logger.error(msg)
+            elif fb_out.get_old("fault"):
+                # Prev update offline; fault probably from going offline
+                fb_out.update(
+                    fault=True, fault_desc=fb_out.get_old("fault_desc")
+                )
         elif not self.feedback_in.get("oper"):
             fb_out.update(goal_reached=False, goal_reason="Not operational")
+            if self.feedback_in.changed("oper"):
+                msg = "Drive went non-operational"
+                fb_out.update(fault=True, fault_desc=msg)
+                self.logger.error(msg)
+            elif fb_out.get_old("fault"):
+                # Prev update not oper; fault probably from going not oper
+                fb_out.update(
+                    fault=True, fault_desc=fb_out.get_old("fault_desc")
+                )
         return fb_out
 
     @classmethod
