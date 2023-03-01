@@ -84,20 +84,6 @@ class CiA301Device(Device):
             fb_out.update(goal_reached=False, goal_reason="Not operational")
         return fb_out
 
-    def log_status(self):
-        super().log_status()
-        self.log_operational_changes()
-
-    def log_operational_changes(self):
-        if self.feedback_in.changed("online"):
-            st_new, st_old = self.feedback_in.changed("online", True)
-            self.logger.info(f"{self} online status was {st_old}, now {st_new}")
-        if self.feedback_in.changed("oper"):
-            st_new, st_old = self.feedback_in.changed("oper", True)
-            self.logger.info(
-                f"{self} operational status was {st_old}, now {st_new}"
-            )
-
     @classmethod
     def munge_sdo_data(cls, sdo_data):
         # Turn per-model name SDO data from YAML into per-model_id SDO data
