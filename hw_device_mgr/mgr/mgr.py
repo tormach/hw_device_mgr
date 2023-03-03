@@ -355,7 +355,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 for line in traceback.format_exc().splitlines():
                     self.logger.error(line)
                 self.command_out.update(
-                    state=self.STATE_FAULT, msg_log="Unexpected exception"
+                    state=self.STATE_FAULT, state_log="Unexpected exception"
                 )
             if self.fast_track:
                 # This update included a state transition; skip
