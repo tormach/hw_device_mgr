@@ -24,6 +24,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     STATE_START = 2
     STATE_FAULT = 4
 
+    feedback_out_defaults = dict(
+        enabled=False,
+    )
+    feedback_out_data_types = dict(
+        enabled="bit",
+    )
+
     command_in_defaults = dict(
         state_cmd=STATE_INIT,
         state_set=False,
@@ -498,12 +505,19 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         if waiting_devs:
             goal_reason = self.merge_device_descriptions(waiting_devs)
 
+        # Drives enabled or not
+        enabled = (
+            cmd_out.get("state") == self.STATE_START and
+            goal_reached and not fault
+        )
+
         # Update feedback out, log, return
         mgr_fb_out.update(
             fault=fault,
             fault_desc=fault_desc,
             goal_reached=goal_reached,
-            goal_reason=goal_reason
+            goal_reason=goal_reason,
+            enabled=enabled,
         )
         if mgr_fb_out.changed("goal_reason"):
             if mgr_fb_out.get("goal_reached"):
