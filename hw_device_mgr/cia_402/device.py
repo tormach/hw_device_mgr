@@ -648,6 +648,9 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
         position_fb=0.0,
     )
 
+    feedback_out_data_types = dict(**feedback_in_data_types)
+    feedback_out_defaults = dict(**feedback_in_defaults)
+
     sim_feedback_data_types = dict(
         **CiA402Device.feedback_in_data_types,
         **feedback_in_data_types,
