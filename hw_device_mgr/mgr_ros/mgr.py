@@ -85,7 +85,7 @@ class ROSHWDeviceMgr(HWDeviceMgr, ConfigIO):
                 for line in traceback.format_exc().splitlines():
                     self.logger.error(line)
                 self.command_in.set(
-                    state_cmd="fault", msg_log="Unexpected exception"
+                    state_cmd="fault", state_log="Unexpected exception"
                 )
             if self.fast_track:
                 # This update included a state transition; skip
