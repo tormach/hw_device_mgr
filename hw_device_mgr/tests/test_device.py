@@ -145,41 +145,55 @@ class TestDevice(BaseTestClass):
         fb_out = obj.feedback_out
         self.now = 10000  # Fake value returned by time.time()
 
-        # If goal_reached, then timer isn't running
-        fb_out.set(goal_reached=True)
-        fb_out.set()  # Previous goal_reached True
-        assert fb_out.get("goal_reached")  # Sanity:  Now True
-        assert not fb_out.changed("goal_reached")  # Sanity:  Was True
-        obj.check_and_set_timeout()
-        print(fb_out.get())
-        assert not fb_out.get("fault")
+        def fb_get():
+            return fb_out.get("goal_reached"), fb_out.get("fault")
 
-        # If prev goal_reached is newly cleared, then new timer is set
-        fb_out.update(goal_reached=False)
-        fb_out.set()  # Previous goal_reached False
-        assert fb_out.get("goal_reached")  # Sanity:  Now True
-        assert fb_out.changed("goal_reached")  # Sanity:  Was False
-        obj.check_and_set_timeout()
-        print(fb_out.get())
-        assert not fb_out.get("fault")
+        def fb_changed():
+            return fb_out.changed("goal_reached"), fb_out.changed("fault")
 
-        # If timeout period expired and prev goal_reached was already cleared,
-        # then fault is set
-        self.now += obj.goal_reached_timeout + 1  # Timeout expired
-        fb_out.update(goal_reached=False)
-        fb_out.set()  # Previous goal_reached False
-        assert fb_out.get("goal_reached")  # Sanity:  Now True
-        assert fb_out.changed("goal_reached")  # Sanity:  Was False
-        obj.check_and_set_timeout()
-        print(fb_out.get())
-        assert fb_out.get("fault")
+        def fb_set(goal_reached, fault, latch_old=True):
+            fb_out.set(goal_reached=goal_reached, fault=fault)
+            assert fb_get() == (goal_reached, fault)  # Sanity
+            if latch_old:
+                # Run again so that `changed()` is False
+                fb_out.set(goal_reached=goal_reached, fault=fault)
+                assert fb_changed() == (False, False)  # Sanity
 
-        # Next update should clear fault
-        fb_out.set()  # Previous goal_reached False
-        assert fb_out.get("goal_reached")  # Sanity:  Now True
-        assert fb_out.changed("goal_reached")  # Sanity:  Was False
+        def do_test(expected):
+            # Run once to possibly set timer
+            obj.check_and_set_timeout()
+            # Let time pass
+            self.now += 1000
+            # Run again and check against expected result
+            if expected is True:
+                assert obj.check_and_set_timeout()
+            else:
+                assert not obj.check_and_set_timeout()
+
+        # Steady state tests
+        # - Goal reached and no fault:  clear timer
+        fb_set(True, False)
+        do_test(False)
+        # - Goal not reached and fault:  clear timer
+        fb_set(False, True)
+        do_test(False)
+        # - Goal not reached and no fault:  Set timer
+        fb_set(False, False)
+        do_test(True)
+
+        # Test transitions
+        # - Goal not reached and no fault sets timer, but fault clears it
+        fb_set(False, False)
         obj.check_and_set_timeout()
-        assert not fb_out.get("fault")
+        self.now += 1000
+        fb_set(False, True)
+        assert not obj.check_and_set_timeout()
+        # - Goal not reached and no fault sets timer, but goal reached clears it
+        fb_set(False, False)
+        obj.check_and_set_timeout()
+        self.now += 1000
+        fb_set(True, False)
+        assert not obj.check_and_set_timeout()
 
 
     #########################################

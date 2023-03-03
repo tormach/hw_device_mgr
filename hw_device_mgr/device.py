@@ -131,22 +131,26 @@ class Device(abc.ABC):
     def get_feedback(self) -> Interface:
         """Process `feedback_in` and return `feedback_out` interface."""
         fb_in = self._interfaces["feedback_in"].get()
-        self._interfaces["feedback_out"].set(**fb_in)
-        self.check_and_set_timeout()
-        return self._interfaces["feedback_out"]
+        timeout = self.check_and_set_timeout()
+        fb_out = self._interfaces["feedback_out"]
+        fb_out.set(**fb_in)
+        if timeout:
+            fb_out.update(fault=True, fault_desc=timeout)
+        return fb_out
 
     def check_and_set_timeout(self):
         """Set fault if feedback_out goal_reached is False for too long."""
+        # This is still data from previous cycle
         fb_out = self._interfaces["feedback_out"]
-        old_goal_reached = fb_out.get_old("goal_reached")
-        old_fault = fb_out.get_old("fault")
+        old_goal_reached = fb_out.get("goal_reached")
+        old_fault = fb_out.get("fault")
 
         # Cancel timer & return if goal reached or fault in previous cycle
         if old_goal_reached or old_fault:
             if self._timeout is not None:
                 self._timeout = None
                 self.logger.debug("Cleared timeout")
-            return
+            return False
 
         # Otherwise, a timer should be running and monitored
         if self._timeout is None:
@@ -157,10 +161,9 @@ class Device(abc.ABC):
             # Timeout; set fault
             reason = fb_out.get_old("goal_reason")
             msg = f"Timeout ({self.goal_reached_timeout}s):  {reason}"
-            fb_out.update(
-                fault=True, fault_desc=msg, goal_reached=False, goal_reason=msg
-            )
             self.logger.error(msg)
+            return msg
+        return False
 
     def set_timeout(self, timeout_seconds):
         """Set timeout for `timeout_seconds` in the future"""
