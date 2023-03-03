@@ -11,8 +11,7 @@ class ErrorDevice(Device, ConfigIO):
     Error code is fed into `error_code` feedback.
 
     The `set_feedback()` method looks up the error code in the
-    `device_err/{name}.yaml` file and adds `description` and `advice`
-    strings to feedback.
+    `device_err/{name}.yaml` file and adds `description` strings to feedback.
     """
 
     device_error_package = None
@@ -22,10 +21,10 @@ class ErrorDevice(Device, ConfigIO):
     feedback_in_defaults = dict(error_code=0)
 
     feedback_out_defaults = dict(
-        error_code=0, description="No error", advice="No error"
+        error_code=0, description="No error"
     )
     feedback_out_data_types = dict(
-        error_code="uint32", description="str", advice="str"
+        error_code="uint32", description="str"
     )
 
     no_error = feedback_out_defaults
@@ -49,7 +48,10 @@ class ErrorDevice(Device, ConfigIO):
             err_yaml = cls.load_yaml_resource(
                 cls.device_error_package, cls.device_error_yaml
             )
-            for err_code_str, err_data in err_yaml.items():
+            keys = set(cls.no_error.keys())
+            keys.discard("error_code")
+            for err_code_str, err_data_raw in err_yaml.items():
+                err_data = { k:err_data_raw[k] for k in keys }
                 errs[int(err_code_str, 0)] = err_data
         return errs
 
@@ -66,7 +68,6 @@ class ErrorDevice(Device, ConfigIO):
         if error_info is None:
             error_info = dict(
                 description=f"Unknown error code {error_code}",
-                advice="Contact technical support",
             )
         fb_out.update(error_code=error_code, **error_info)
         if fb_out.changed("error_code"):

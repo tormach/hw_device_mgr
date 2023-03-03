@@ -21,5 +21,4 @@ class TestErrorDevice(ErrorBaseTestClass, _TestDevice):
             assert isinstance(err_code, int)
             assert "description" in data
             assert isinstance(data["description"], str)
-            assert isinstance(data.get("advice", ""), str)
             print(f"   code {err_code}:  {data['description']}")
