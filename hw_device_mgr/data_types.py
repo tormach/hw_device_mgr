@@ -147,6 +147,12 @@ class DataType:
     def all_types(cls):
         return cls._shared_name_registry.values()
 
+    @property
+    def base_value(self):
+        val = self.base_type(self)
+        assert not isinstance(val, type(self))
+        return self.base_type(self)
+
     def __str__(self):
         return str(self.base_type(self))
 
@@ -249,5 +255,4 @@ class StringType(DataType, str):
     base_type = str
     num_bits = None  # Variable length
 
-    def __str__(self):
-        return self
+    __str__ = str.__str__
