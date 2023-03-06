@@ -13,9 +13,6 @@
     goal_reason:  Offline
     fault:  False
     fault_desc: ""
-  command_in:
-    online:  True
-    oper:  True
   sim_feedback:
     online:  True
     oper:  False
