@@ -721,10 +721,10 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
                     or self.feedback_out.get("state") in test_states
                 ):
                     # Special case:  No motor power before enabling drive
-                    if next_state == "OPERATION ENABLED":
+                    if next_state == "READY TO SWITCH ON":
                         sw = self.feedback_in.get("status_word")
                         if not self.test_sw_bit(sw, "VOLTAGE_ENABLED"):
-                            break  # Drive silently stays in SWITCHED ON state
+                            break  # Silently stay in SWITCH ON DISABLED state
                     state = next_state
                     break
 
