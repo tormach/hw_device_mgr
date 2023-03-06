@@ -40,12 +40,8 @@
     # errors
     error_code:  0x00000000
     description: No error
-    advice: No error
     fault_desc: ""
   command_in:
-    # CiA 301
-    online:  True
-    oper:  True
     # CiA 402
     state:  SWITCH ON DISABLED
     control_mode:  8  # MODE_CSP
@@ -124,20 +120,20 @@
     # Controller commands OPERATION ENABLED
     state:  OPERATION ENABLED
   command_out:
-    control_word:  0x0006
+    control_word:  0x0006  # READY TO SWITCH ON
   sim_feedback:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
 - desc:  "Enable:  402 state machine transition 2"
   feedback_in:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     state:  READY TO SWITCH ON
     transition:  2
     goal_reached:  False
     goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
   command_out:
-    control_word:  0x0007
+    control_word:  0x0007  # SWITCHED ON
   sim_feedback:
     status_word:  0x0033
 - desc:  "Enable:  402 state machine transition 3"
@@ -149,7 +145,7 @@
     transition:  3
     goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
   command_out:
-    control_word:  0x000F
+    control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "Enable:  402 state machine transition 4"
@@ -178,61 +174,60 @@
   feedback_out:
     status_word:  0x001F
     state:  FAULT REACTION ACTIVE
-    transition:  13
+    transition:  13  # (Any)->FAULT REACTION ACTIVE
     fault:  True
-    fault_desc:  Unknown error code 0xDEADBEEF
+    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
     goal_reached:  False
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
     error_code:  0xDEADBEEF  # Bogus error code
     description:  Unknown error code 0xDEADBEEF
-    advice:  Contact technical support
   command_out:
     control_word:  0x0000
   sim_feedback:
-    status_word:  0x0018
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
 - desc:  "Sim fault:  Recover;  402 state machine transition 14"
   sim_feedback_set:
     error_code:  0xDEADBEEF  # Bogus error code
   feedback_in:
-    status_word:  0x0018
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0018
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     state:  FAULT
-    transition:  14
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
+    transition:  14  # FAULT REACTION ACTIVE->FAULT
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Enabled drive unexpectedly disabled; 0xDEADBEEF Unknown error code 0xDEADBEEF
   command_out:
     # Goal is still OPERATION ENABLED, so automatically clear fault
     control_word:  0x0080  # Clear fault
   sim_feedback:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
 - desc:  "Sim fault:  402 state machine transition 15"
   feedback_in:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
     error_code:  0x00000000  # Cleared by control_word 0x0080
   feedback_out:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
     state:  SWITCH ON DISABLED
-    transition:  15
-    fault:  False
-    fault_desc:  ""
-    goal_reason:  state SWITCH ON DISABLED (0x00000050) != OPERATION ENABLED
+    transition:  15  # FAULT->SWITCH ON DISABLED
+    fault_desc:  Enabled drive unexpectedly disabled
+    goal_reason:  state SWITCH ON DISABLED (0x00000050) != OPERATION ENABLED; Enabled drive unexpectedly disabled
     error_code:  0x00000000  # Cleared by control_word 0x0080
     description:  No error
-    advice:  No error
   command_out:
-    control_word:  0x0006
+    control_word:  0x0006  # READY TO SWITCH ON
   sim_feedback:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
 - desc:  "Sim fault:  402 state machine transition 2"
   feedback_in:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     state:  READY TO SWITCH ON
     transition:  2
     goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
+    fault:  False
+    fault_desc:  ""
   command_out:
-    control_word:  0x0007
+    control_word:  0x0007  # SWITCHED ON
   sim_feedback:
     status_word:  0x0033
 
@@ -250,29 +245,28 @@
   feedback_out:
     status_word:  0x001F
     state:  FAULT REACTION ACTIVE
-    transition:  13
+    transition:  13  # (Any)->FAULT REACTION ACTIVE
     fault:  True
-    fault_desc:  Unknown error code 0xDEADBEEF
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
+    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
     error_code:  0xDEADBEEF
     description:  Unknown error code 0xDEADBEEF
-    advice:  Contact technical support
   command_out:
     control_word:  0x0000
   sim_feedback:
-    status_word:  0x0018
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
 - desc:  "Hold fault:  Goal->FAULT;  402 state machine transition 14"
   sim_feedback_set:
     error_code:  0xDEADBEEF  # Bogus error code
   feedback_in:
-    status_word:  0x0018
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0018
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     state:  FAULT
-    transition:  14
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Unknown error code 0xDEADBEEF
+    transition:  14  # FAULT REACTION ACTIVE->FAULT
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Enabled drive unexpectedly disabled; 0xDEADBEEF Unknown error code 0xDEADBEEF
   command_in:
-  # Controller sees FAULT state and commands hold at that state
+    # Controller sees FAULT state and commands hold at that state
     state:  FAULT
 - desc:  "Hold fault:  Hold state x1"
   sim_feedback_set:
@@ -298,20 +292,19 @@
   command_out:
     control_word:  0x0080  # Clear fault
   sim_feedback:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
 - desc:  "Disable:  402 state machine transition 15"
   feedback_in:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
     error_code:  0x00000000  # Cleared by control_word 0x0080
   feedback_out:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
     state:  SWITCH ON DISABLED
     fault:  False
     fault_desc:  ""
     transition:  15
     error_code:  0x00000000  # Cleared by control_word 0x0080
     description:  No error
-    advice:  No error
   command_out:
     control_word:  0x0000
 - desc:  "Disable:  Hold state x1"
@@ -330,6 +323,9 @@
     # Controller commands FAULT
     state:  FAULT
 - desc:  "Ext fault noop:  Hold state x1"
+  feedback_out:
+    fault:  True
+    fault_desc:  FAULT command from controller (was SWITCH ON DISABLED)
 - desc:  "Ext fault noop:  Hold state x2"
 
 #
@@ -340,20 +336,22 @@
     # Controller commands SWITCHED ON
     state:  SWITCHED ON
   command_out:
-    control_word:  0x0006
+    control_word:  0x0006  # READY TO SWITCH ON
   sim_feedback:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
 - desc:  "Enable multi:  402 state machine transition 2"
   feedback_in:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0031
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     state:  READY TO SWITCH ON
     transition:  2
     goal_reached:  False
     goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
+    fault:  False
+    fault_desc:  ""
   command_out:
-    control_word:  0x0007
+    control_word:  0x0007  # SWITCHED ON
   sim_feedback:
     status_word:  0x0033
 - desc:  "Enable multi:  402 state machine transition 3"
@@ -384,7 +382,7 @@
     status_word:  0x0033
     state:  SWITCHED ON
   command_out:
-    control_word:  0x000F
+    control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "Enable multi:  402 state machine transition 4"
@@ -422,16 +420,18 @@
     state:  QUICK STOP ACTIVE
     transition:  11
     goal_reached:  False
-    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT
+    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT; FAULT command from controller (was OPERATION ENABLED)
+    fault:  True
+    fault_desc:  FAULT command from controller (was OPERATION ENABLED)
   command_out:
     control_word:  0x0000
   sim_feedback:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
 - desc:  "Disable enabled:  Command disable;  402 state machine transition 12"
   feedback_in:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0050
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
     state:  SWITCH ON DISABLED
     transition:  12
     goal_reached:  True
@@ -446,73 +446,83 @@
 # FAULT reported
 #
 - desc:  "No voltage:  Command SWITCHED ON;  402 state machine transition hold"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED
+    status_word:  0x0040   # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_in:
+    status_word:  0x0040   # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0040   # SWITCH ON DISABLED - VOLTAGE_ENABLED
   command_in:
     # Controller commands switched on
     state:  SWITCHED ON
   command_out:
-    control_word:  0x0006
+    control_word:  0x0006  # READY TO SWITCH ON
+  sim_feedback:
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
+- desc:  "No voltage:  402 state machine transition 2 fail"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED
+    status_word:  0x0040   # SWITCH ON DISABLED - VOLTAGE_ENABLED
+  feedback_out:
+    # With no voltage, drive refuses to leave SWITCH ON DISABLED
+    # state:  SWITCH ON DISABLED
+    transition:  -1
+    goal_reached:  False
+    goal_reason:  state SWITCH ON DISABLED (0x00000040) != SWITCHED ON; Enable command while no voltage at motor
+    # fault:  True  # (Already was True)
+    fault_desc:  Enable command while no voltage at motor
+  # command_out:
+  #   # Command unchaged at READY TO SWITCH ON
+  #   control_word:  0x0006  # READY TO SWITCH ON
+- desc:  "No voltage:  402 state machine transition 2 fails"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED
+    status_word:  0x0040   # SWITCH ON DISABLED - VOLTAGE_ENABLED
+- desc:  "No voltage:  Hold state"
+  sim_feedback_set:
+    # Clear VOLTAGE_ENABLED
+    status_word:  0x0040   # SWITCH ON DISABLED - VOLTAGE_ENABLED
+- desc:  "No voltage:  Supply voltage; fault is cleared"
+  sim_feedback_set:
+    # Set VOLTAGE_ENABLED
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
+  feedback_in:
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    goal_reason:  state SWITCH ON DISABLED (0x00000050) != SWITCHED ON
+    fault:  False
+    fault_desc:  ""
   sim_feedback:
     status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
 - desc:  "No voltage:  402 state machine transition 2"
-  sim_feedback_set:
-    # Clear VOLTAGE_ENABLED; not a fault for cmd SWITCHED ON
-    status_word:  0x0021  # READY TO SWITCH ON - VOLTAGE_ENABLED
   feedback_in:
-    status_word:  0x0021
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0021
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     state:  READY TO SWITCH ON
     transition:  2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000021) != SWITCHED ON
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
   command_out:
-    control_word:  0x0007
+    control_word:  0x0007  # SWITCHED ON
   sim_feedback:
     status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
 - desc:  "No voltage:  402 state machine transition 3"
-  sim_feedback_set:
-    # Clear VOLTAGE_ENABLED; not a fault for cmd SWITCHED ON
-    status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
   feedback_in:
-    status_word:  0x0023
+    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0023
+    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     state:  SWITCHED ON
     transition:  3
     goal_reached:  True
     goal_reason:  Reached
-- desc:  "No voltage:  SWITCHED ON goal reached; command OPERATION ENABLED"
-  sim_feedback_set:
-    # Clear VOLTAGE_ENABLED; not a fault for cmd SWITCHED ON
-    status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
   command_in:
     # Controller commands OPERATION ENABLED
     state:  OPERATION ENABLED
-  feedback_out:
-    transition:  -1
   command_out:
-    control_word:  0x000F
-- desc:  "No voltage:  402 state machine transition 4 fails"
-  sim_feedback_set:
-    # Clear VOLTAGE_ENABLED; a fault for cmd OPERATION ENABLED
-    status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
-  feedback_out:
-    fault:  True
-    fault_desc:  No voltage at motor
-    goal_reached:  False
-    goal_reason:  state SWITCHED ON (0x00000023) != OPERATION ENABLED; No voltage at motor
-- desc:  "No voltage:  Hold state"
-  sim_feedback_set:
-    # Clear VOLTAGE_ENABLED; a fault for cmd OPERATION ENABLED
-    status_word:  0x0023  # SWITCHED ON - VOLTAGE_ENABLED
-- desc:  "No voltage:  Supply voltage; fault is cleared"
-  feedback_in:
-    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
-  feedback_out:
-    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
-    fault:  False
-    fault_desc:  ""
-    goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
+    control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "No voltage:  402 state machine transition 4"
@@ -522,8 +532,6 @@
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
     state:  OPERATION ENABLED
     transition:  4
-    goal_reached:  True
-    goal_reason:  Reached
 - desc:  "No voltage:  Hold state OPERATION ENABLED"
   feedback_out:
     transition:  -1
@@ -621,7 +629,7 @@
     state:  OPERATION ENABLED
     control_mode:  1  # MODE_PP
   command_out:
-    control_word:  0x0006
+    control_word:  0x0006  # READY TO SWITCH ON
     control_mode:  1  # MODE_PP
   sim_feedback:
     status_word:  0x0431  # READY TO SWITCH ON + VOLTAGE_ENABLED + TARGET_REACHED
@@ -638,7 +646,7 @@
     goal_reached:  False
     goal_reason:  state READY TO SWITCH ON (0x00000431) != OPERATION ENABLED
   command_out:
-    control_word:  0x0007
+    control_word:  0x0007  # SWITCHED ON
   sim_feedback:
     status_word:  0x0433  # SWITCHED ON + VOLTAGE_ENABLED + TARGET_REACHED
 - desc:  "PP move:  402 state machine transition 3"
@@ -654,7 +662,7 @@
     transition:  3
     goal_reason:  state SWITCHED ON (0x00000433) != OPERATION ENABLED
   command_out:
-    control_word:  0x000F
+    control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "PP move:  402 state machine transition 4; command move_request"
@@ -726,7 +734,7 @@
     move_success:  False
 
 #
-# Command PP-mode move, interrupted by fault
+# Command PP-mode move, interrupted by drive fault
 #
 - desc:  "PP move FAULT:  Command move_request"
   sim_feedback_set:
@@ -756,42 +764,41 @@
     control_word:  0x000F  # Bit 4 NEW_SETPOINT clear
   sim_feedback:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
-- desc:  "PP move FAULT:  Controller commands FAULT"
+- desc:  "PP move FAULT:  FAULT REACTION ACTIVE"
   sim_feedback_set:
     position_fb:  15.0  # Move isn't complete
+    # Simulate the fault
+    status_word:  0x001F  # FAULT REACTION ACTIVE - Bit 12 SETPOINT_ACK clear
   feedback_in:
-    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
+    status_word:  0x001F  # FAULT REACTION ACTIVE - Bit 12 SETPOINT_ACK clear
   feedback_out:
-    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
-  command_in:
-    state:  FAULT
+    status_word:  0x001F  # FAULT REACTION ACTIVE - Bit 12 SETPOINT_ACK clear
+    state:  FAULT REACTION ACTIVE
+    transition:  13  # (Any)->FAULT REACTION ACTIVE
+    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Move request while drive not enabled; Fault (no error code)
+    move_error:  True
+    fault:  True
+    fault_desc:  Fault (no error code)
   command_out:
-    control_word:  0x0002  # Bits 0,2,3 SWITCH_ON QUICK_STOP ENABLE_OPERATION cleared
+    control_word:  0x0000
   sim_feedback:
-    status_word:  0x0017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED
-- desc:  "PP move FAULT:  QUICK STOP ACTIVE"
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
+- desc:  "PP move FAULT:  FAULT; clear fault"
   sim_feedback_set:
     position_fb:  15.0  # Move isn't complete
   feedback_in:
-    status_word:  0x0017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED
-    state:  QUICK STOP ACTIVE
-    transition:  11
-    fault: True
-    fault_desc:  Move request while drive not enabled
-    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT; Move request while drive not enabled
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
+    state:  FAULT
+    transition:  14  # FAULT REACTION ACTIVE->FAULT
+    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled; Fault (no error code)
     move_error:  True
   command_out:
-    control_word:  0x0000  # Bit 1 ENABLE_VOLTAGE cleared
+    control_word:  0x0080  # Clear fault
   sim_feedback:
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
-- desc:  "PP move FAULT:  SWITCH ON DISABLED; cancel move request"
-  command_in:
-    # Cancel PP move setpoint
-    move_request:  False
-  command_out:
-    control_word:  0x0000  # Bit 4 OPERATION_MODE_SPECIFIC_1/NEW_SETPOINT cleared
+- desc:  "PP move FAULT:  Trans 15 FAULT->SWITCH ON DISABLED; cancel move request"
   feedback_in:
     position_fb:  0.0  # Move complete
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
@@ -799,16 +806,43 @@
     position_fb:  0.0  # Move complete
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
     state:  SWITCH ON DISABLED
-    transition:  12
-    goal_reason:  Move request while drive not enabled
-- desc:  "PP move FAULT:  Done"
+    transition:  15  # FAULT->SWITCH ON DISABLED
+    goal_reason:  state SWITCH ON DISABLED (0x00000050) != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled
+    # fault:  True  # Already True
+    fault_desc:  Enabled drive unexpectedly disabled
+  command_in:
+    # Cancel PP move setpoint
+    move_request:  False
+  command_out:
+    control_word:  0x0006  # READY TO SWITCH ON
+  sim_feedback:
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+- desc:  "PP move FAULT:  Command SWITCH ON DISABLED"
+  feedback_in:
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
-    transition:  -1
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+    state:  READY TO SWITCH ON
+    transition:  2  # SWITCH ON DISABLED->READY TO SWITCH ON
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
+    move_error:  False
     fault:  False
     fault_desc:  ""
+  command_in:
+    state:  SWITCH ON DISABLED
+  command_out:
+    control_word:  0x0000
+  sim_feedback:
+    status_word:  0x0450  # SWITCH ON DISABLED + VOLTAGE_ENABLED + TARGET_REACHED
+- desc:  "PP move FAULT:  Done"
+  feedback_in:
+    status_word:  0x0450  # SWITCH ON DISABLED + VOLTAGE_ENABLED + TARGET_REACHED
+  feedback_out:
+    status_word:  0x0450  # SWITCH ON DISABLED + VOLTAGE_ENABLED + TARGET_REACHED
+    state:  SWITCH ON DISABLED
+    transition:  7  # READY TO SWITCH ON->SWITCH ON DISABLED
     goal_reached:  True
     goal_reason:  Reached
-    move_error:  False
   sim_feedback:
     status_word:  0x0450
 - desc:  "PP move FAULT:  Hold"
@@ -816,4 +850,5 @@
     status_word:  0x0450
   feedback_out:
     status_word:  0x0450
+    transition:  -1
 - desc:  "PP move FAULT:  Hold"

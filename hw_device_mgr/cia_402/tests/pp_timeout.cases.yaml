@@ -41,11 +41,8 @@
     sto:  False
     error_code:  0x00000000
     description:  No error
-    advice:  No error
     fault_desc: ""
   command_in:
-    online:  True
-    oper:  True
     state:  OPERATION ENABLED
     control_mode:  1  # MODE_PP
     home_request:  False
