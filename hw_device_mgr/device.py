@@ -62,6 +62,10 @@ class Device(abc.ABC):
         """
         self.init_interfaces()
 
+    def exit(self):
+        """Clean up before exiting."""
+        pass
+
     @classmethod
     def merge_dict_attrs(cls, attr):
         """

@@ -52,3 +52,6 @@ class HALMixin:
 
     def hal_ready(self):
         self.comp.ready()
+
+    def hal_exit(self):
+        self.comp.exit()

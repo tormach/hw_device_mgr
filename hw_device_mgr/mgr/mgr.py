@@ -374,13 +374,16 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             self.run_loop()
         except KeyboardInterrupt:
             self.logger.info("Exiting at keyboard interrupt")
+            self.exit()
             return 0
         except Exception:
             self.logger.error("Exiting at unrecoverable exception:")
             for line in traceback.format_exc().splitlines():
                 self.logger.error(line)
+            self.exit()
             return 1
         self.logger.info("Exiting")
+        self.exit()
         return 0
 
     def read_update_write(self):

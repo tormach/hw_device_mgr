@@ -117,3 +117,7 @@ class HALCompDevice(HALPinDevice):
         super().init(**kwargs)
         self.hal_ready()
         self.logger.info(f"HAL component '{self.compname}' ready")
+
+    def exit(self):
+        self.hal_exit()
+        super().exit()

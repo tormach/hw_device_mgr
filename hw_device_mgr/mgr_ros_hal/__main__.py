@@ -6,7 +6,14 @@ def main(args=None):
     argv = list(sys.argv[1:])  # Knock off executable name
     mgr = ROSHALHWDeviceMgr()
     mgr.init(argv=argv)
-    mgr.run()
+    try:
+        res = mgr.run()
+    except Exception as e:
+        res = 1
+        raise e
+    finally:
+        mgr.exit()
+        return res
 
 
 if __name__ == "__main__":
