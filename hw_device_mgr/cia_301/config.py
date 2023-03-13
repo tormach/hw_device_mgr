@@ -163,10 +163,14 @@ class CiA301Config:
         )
         return sdo.data_type(res_raw)
 
-    def download(self, sdo, val, dry_run=False, force=False, **kwargs):
+    def download(
+        self, sdo, val, dry_run=False, force=False, old=None, **kwargs
+    ):
         # Get SDO object
         sdo = self.sdo(sdo)
-        msg = "(forced)"
+        msg = f"(was {old})" if old is not None else ""
+        if val == old:
+            return  # SDO value already correct
         if not force:
             # Check before setting value to avoid unnecessary NVRAM writes
             res_raw = self.command().upload(
@@ -362,25 +366,22 @@ class CiA301Config:
                 self.logger.debug(
                     f"SDO {sdo} expected {exp}; current {curr}"
                 )
-                to_update.append((sdo, exp))
+                to_update.append((sdo, exp, curr))
         if not to_update:
             self.logger.info(f"Param values correct; no updates needed")
             return
 
-        # Save current NV mode setting & set NV mode
+        # Set NV mode setting & write params that need changing
+        self.logger.info(f"Updating {len(to_update)} params in NV mode")
         self._old_device_params_nv = self.get_device_params_nv()
-        self.logger.info(f"Setting device params in NV mode")
         self.set_device_params_nv(dry_run=dry_run)
-
-        # Write params that need changing
-        self.logger.info(f"Updating {len(to_update)} params")
-        for sdo, value in to_update:
-            self.download(sdo, value, dry_run=dry_run, force=True)
+        for sdo, value, old in to_update:
+            self.download(sdo, value, dry_run=dry_run, force=True, old=old)
         self.logger.info(f"Parameter update complete")
 
         if self.init_params_nv and not self._old_device_params_nv:
             self.logger.info(
-                f"Returning device params to volatile mode)"
+                f"Returning device params to volatile mode"
             )
             self.set_device_params_nv(
                 nv=self._old_device_params_nv, dry_run=dry_run
