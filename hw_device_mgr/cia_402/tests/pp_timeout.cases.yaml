@@ -53,37 +53,47 @@
   sim_feedback:
     online:  True
     oper:  True
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
     control_mode_fb:  1  # MODE_PP
     position_cmd:  0.0
     position_fb:  0.0
     sto:  False
     error_code:  0x00000000
 
-- desc:  "Test case 1:  SETPOINT_ACKNOWLEDGE"
+- desc:  "Test case 1:  NEW_SETPOINT"
   sim_feedback_set:
     position_fb:  15.0
-  feedback_in:
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
   feedback_out:
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
     goal_reached:  False
     goal_reason:  move not complete
   command_out:
     control_word:  0x000F  # OPERATION ENABLED + NEW_SETPOINT
   sim_feedback:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+
+- desc:  "Test case 2:  SETPOINT_ACKNOWLEDGE"
+  sim_feedback_set:
+    position_fb:  15.0
+  feedback_in:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+  feedback_out:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+  sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 
-- desc:  "Test case 2:  Move in progress"
+- desc:  "Test case 3:  Move in progress"
+  # (Repeated once)
   sim_feedback_set:
     position_fb:  15.0
   feedback_in:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
   feedback_out:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
+  sim_feedback:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 
 
-- desc:  "Test case 3:  Move timeout exceeded; controller commands fault"
+- desc:  "Test case 4:  Move timeout exceeded; controller commands fault"
   sim_feedback_set:
     position_fb:  15.0
   feedback_out:

@@ -96,16 +96,21 @@ class TestCiA402Device(_TestCiA301Device, BaseCiA402TestClass):
         self.read_update_write_loop(test_cases[1])
         assert not obj.feedback_out.get("fault")  # No timeout
 
-        # Test case 2:  Move in progress (no time increment)
+        # Test case 2:  SETPOINT_ACKNOWLEDGE feedback (no time increment)
         self.read_update_write_loop(test_cases[2])
         assert not obj.feedback_out.get("fault")  # No timeout
 
-        # Test case 2:  Move in progress (small time increment)
+        # Test case 3:  Move in progress (small time increment)
         self.now = start_time + initial_timeout + 1
-        self.read_update_write_loop(test_cases[2])
+        self.read_update_write_loop(test_cases[3])
         assert not obj.feedback_out.get("fault")  # No timeout
 
-        # Test case 3:  Move timeout exceeded
-        self.now = start_time + obj.move_timeout + 1
+        # Test case 3:  Move in progress (small time increment)
+        self.now = start_time + initial_timeout + 1
         self.read_update_write_loop(test_cases[3])
+        assert not obj.feedback_out.get("fault")  # No timeout
+
+        # Test case 4:  Move timeout exceeded
+        self.now = start_time + obj.move_timeout + 1
+        self.read_update_write_loop(test_cases[4])
         assert obj.feedback_out.get("fault")  # Timeout

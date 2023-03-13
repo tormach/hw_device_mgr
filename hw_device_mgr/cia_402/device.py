@@ -482,8 +482,16 @@ class CiA402Device(CiA301Device, ErrorDevice):
             if self.command_in.changed("move_request"):
                 self.logger.info(f"Move operation requested")
                 move_request = True
-        elif self.command_in.changed("move_request"):  # move_request cleared
-            self.logger.info(f"Move operation complete")
+        else:
+            # Clear move request unless setpoint ack not set after previous new
+            # set point
+            cw = self.command_out.get_old("control_word")
+            prev_nsp = self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1")
+            sw = self.feedback_in.get("status_word")
+            setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+            move_request = prev_nsp and not setpoint_ack
+            if self.command_in.changed("move_request"):  # move_request cleared
+                self.logger.info(f"Move operation request cleared")
         return move_request
 
     def _get_next_control_word(self, next_cm):
@@ -673,8 +681,13 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
         else:
             return dict()
 
-    def target_reached(self):
-        fb_in = self.feedback_in
+    def target_reached(self, sw, cw):
+        fb_in = self.interface("feedback_in")
+        setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+        new_setpoint = self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1")
+        if new_setpoint or setpoint_ack:
+            # Pretend we haven't reached new target before it's even set
+            return False
         dtg = abs(fb_in.get("position_cmd") - fb_in.get("position_fb"))
         return dtg < self.position_goal_tolerance
 
@@ -684,7 +697,7 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
         if self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1"):
             # If cw NEW_SETPOINT is set, then set sw SETPOINT_ACKNOWLEDGE
             return dict(OPERATION_MODE_SPECIFIC_1=True)
-        elif self.target_reached():
+        elif self.target_reached(sw, cw):
             # Target reached when target position reached
             return dict(TARGET_REACHED=True)
         else:
@@ -741,7 +754,9 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
         elif control_mode == self.MODE_HM:
             sw_flags.update(self.set_sim_feedback_hm(control_word))
         elif control_mode == self.MODE_PP:
-            sw_flags.update(self.set_sim_feedback_pp(control_word, sw_prev))
+            # Test previous cw because target_reached() looks at fb_in, which is
+            # set after command_in
+            sw_flags.update(self.set_sim_feedback_pp(cw_prev, sw_prev))
         status_word = self._add_status_word_flags(status_word, **sw_flags)
 
         sfb.update(

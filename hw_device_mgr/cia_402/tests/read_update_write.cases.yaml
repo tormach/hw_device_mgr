@@ -651,12 +651,12 @@
     status_word:  0x0433  # SWITCHED ON + VOLTAGE_ENABLED + TARGET_REACHED
 - desc:  "PP move:  402 state machine transition 3"
   sim_feedback_set:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
   feedback_in:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
     status_word:  0x0433  # SWITCHED ON + VOLTAGE_ENABLED + TARGET_REACHED
   feedback_out:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
     status_word:  0x0433  # SWITCHED ON + VOLTAGE_ENABLED + TARGET_REACHED
     state:  SWITCHED ON
     transition:  3
@@ -667,7 +667,7 @@
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 - desc:  "PP move:  402 state machine transition 4; command move_request"
   sim_feedback_set:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
   feedback_in:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
   feedback_out:
@@ -681,34 +681,43 @@
     move_request:  True
   command_out:
     control_word:  0x001F  # Bit 4 NEW_SETPOINT set
-  sim_feedback:
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
 - desc:  "PP move:  Wait for move (1)"
   sim_feedback_set:
-    position_fb:  10.0  # Move isn't complete
-  feedback_in:
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
-    position_fb:  10.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
   feedback_out:
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
     transition:  -1
     goal_reached:  False
     goal_reason:  move not complete
-    position_fb:  10.0  # Move isn't complete
   command_out:
     control_word:  0x000F  # Bit 4 NEW_SETPOINT clear
   sim_feedback:
-    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
 - desc:  "PP move:  Wait for move (2)"
   sim_feedback_set:
-    position_fb:  5.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
+  feedback_in:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+  feedback_out:
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+  sim_feedback:
+    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
+- desc:  "PP move:  Wait for move (3)"
+  sim_feedback_set:
+    position_fb:  10.0  # Move not complete
   feedback_in:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
-    position_fb:  5.0  # Move isn't complete
+    position_fb:  10.0  # Move not complete
   feedback_out:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
-    position_fb:  5.0  # Move isn't complete
-- desc:  "PP move:  Wait for move (3)"
+    position_fb:  10.0  # Move not complete
+- desc:  "PP move:  Wait for move (4)"
+  sim_feedback_set:
+    position_fb:  5.0  # Move not complete
+  feedback_in:
+    position_fb:  5.0  # Move not complete
+  feedback_out:
+    position_fb:  5.0  # Move not complete
+- desc:  "PP move:  Wait for move (5)"
   sim_feedback_set:
     position_fb:  0.0  # Move complete
   feedback_in:
@@ -738,35 +747,35 @@
 #
 - desc:  "PP move FAULT:  Command move_request"
   sim_feedback_set:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
   feedback_in:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
   feedback_out:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
   command_in:
     # Command move setpoint
     move_request:  True
   command_out:
     control_word:  0x001F  # Bit 4 NEW_SETPOINT set
   sim_feedback:
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    status_word:  0x0037  # Bit 10 TARGET_REACHED clear
 - desc:  "PP move FAULT:  Hold state; wait"
   sim_feedback_set:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
   feedback_in:
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    status_word:  0x0037  # Bit 10 TARGET_REACHED clear
   feedback_out:
-    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    status_word:  0x0037  # Bit 10 TARGET_REACHED clear
     transition:  -1
     goal_reached:  False
     goal_reason:  move not complete
   command_out:
     control_word:  0x000F  # Bit 4 NEW_SETPOINT clear
   sim_feedback:
-    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
+    status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
 - desc:  "PP move FAULT:  FAULT REACTION ACTIVE"
   sim_feedback_set:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
     # Simulate the fault
     status_word:  0x001F  # FAULT REACTION ACTIVE - Bit 12 SETPOINT_ACK clear
   feedback_in:
@@ -785,7 +794,7 @@
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
 - desc:  "PP move FAULT:  FAULT; clear fault"
   sim_feedback_set:
-    position_fb:  15.0  # Move isn't complete
+    position_fb:  15.0  # Move not complete
   feedback_in:
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
   feedback_out:
