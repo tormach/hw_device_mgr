@@ -65,6 +65,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     # mgr_config and device_config are YAML loaded by __main__ and passed in
     def init(self, /, mgr_config, device_config, **kwargs):
         """Initialize Manager instance."""
+        self.logger.info(f"New device manager instance starting")
         self.mgr_config = mgr_config
         # Pass device config to Config class
         assert device_config, "Empty device configuration"
@@ -74,7 +75,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         super().init()
         # Scan & init devices
         self.init_devices(**kwargs)
-        self.logger.info("Initialization complete")
+        self.logger.info("Device manager initialization complete")
 
     @classmethod
     def init_sim(cls, **kwargs):
@@ -94,6 +95,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         bus scans.  Configure devices with data from device
         configuration.
         """
+        self.logger.info("Initializing devices")
+
         # Initialize sim device discovery data, if any
         self.init_sim_devices(sim_device_data=sim_device_data)
 
@@ -315,7 +318,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             self.logger.warning(e.msg)
             return False
         else:
-            self.logger.info(f"Received {state_cmd_str} command:  {e.msg}")
+            self.logger.debug(f"Received {state_cmd_str} command:  {e.msg}")
             self.command_out.update(
                 state=state_cmd, state_log=e.msg, command_complete=False
             )
@@ -524,10 +527,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         )
         if mgr_fb_out.changed("goal_reason"):
             if mgr_fb_out.get("goal_reached"):
-                self.logger.info("Manager reached goal state")
+                self.logger.debug("Manager reached goal state")
             else:
-                self.logger.info(
-                    f"Manager waiting:  {mgr_fb_out.get('goal_reason')}"
+                self.logger.debug(
+                    f"Waiting:  {mgr_fb_out.get('goal_reason')}"
                 )
         return mgr_fb_out
 
@@ -548,9 +551,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             state_int = self.command_in.get("state_cmd")
             state = self.cmd_int_to_name_map[state_int]
             if self.command_in.get("state_cmd") != cmd_out.get("state"):
-                self.logger.info(f"Received command update {state}")
+                self.logger.info(f"State command set:  '{state}'")
             else:
-                self.logger.info(f"Received unchanged command update {state}")
+                self.logger.info(f"State command set:  '{state}' (unchanged)")
         else:
             new_state_cmd = False
 
@@ -592,7 +595,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # it can't be done, so ignore it.
             cmd_int = cmd_out.get('state')
             cmd_str = self.state_str
-            self.logger.info(f"New state command:  {cmd_str} ({cmd_int})")
+            self.logger.debug(f"New state command:  {cmd_str} ({cmd_int})")
             event = f"{cmd_str}_command"
             try:
                 self.trigger(event, msg=cmd_out.get("state_log"))
@@ -615,7 +618,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 self.fast_track = True
 
         if cmd_out.changed("state_log"):
-            self.logger.info(cmd_out.get("state_log"))
+            self.logger.debug(f"State:  {cmd_out.get('state_log')}")
 
         # Set drive command and return
         self.set_drive_command()
