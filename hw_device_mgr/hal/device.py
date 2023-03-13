@@ -78,10 +78,10 @@ class HALPinDevice(Device, HALMixin):
         self.interface("feedback_in").update(**vals)
         if not getattr(self, "read_once", False):
             self.read_once = True
-            self.logger.info(
+            self.logger.debug(
                 f"HAL pins read for feedback_in:  {list(pins.keys())}"
             )
-            self.logger.info(
+            self.logger.debug(
                 "   Interface keys:  "
                 f"{list(self.interface('feedback_in').keys())}"
             )
