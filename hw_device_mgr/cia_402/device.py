@@ -457,9 +457,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if not self.feedback_in.get("oper"):
             cmd_out.update(**self.command_out_defaults)
             return cmd_out
-        next_cm = self._get_next_control_mode()
-        next_cw = self._get_next_control_word(next_cm)
-        cmd_out.update(control_word=next_cw, control_mode=next_cm)
+        self._get_next_control_mode(cmd_out)
+        self._get_next_control_word(cmd_out)
         return cmd_out
 
     def _check_hm_request(self):
@@ -494,7 +493,27 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 self.logger.info(f"Move operation request cleared")
         return move_request
 
-    def _get_next_control_word(self, next_cm):
+    def cw_to_str(self, cw):
+        # Decode control word
+        cmd = None
+        for bit in self.cmd_bits:
+            truth = False if bit == "QUICK_STOP" else True
+            if self.test_cw_bit(cw, bit) is truth:
+                cmd = bit
+                break
+        else:
+            cmd = "SWITCH_ON_DISABLED"
+        cw_bits = self.cw_bits
+        flags = [
+            k  # Names of set bits not part of the CiA402 command
+            for k,v in self.cw_bits.items()
+            if k not in self.cmd_bits and cw & (1<<v)
+        ]
+        flags = ",".join(flags) if flags else "(none)"
+        cw = self.data_types.by_shared_name("uint16")(cw)  # Format
+        return f"{cw} {cmd} flags: {flags}"
+
+    def _get_next_control_word(self, cmd_out):
         # Get base control word
         if self._get_next_transition() < 0:
             # Holding current state
@@ -504,16 +523,21 @@ class CiA402Device(CiA301Device, ErrorDevice):
             control_word = self._get_transition_control_word()
 
         # Add flags and return
+        next_cm = cmd_out.get("control_mode")
         if next_cm == self.MODE_HM:
             operation_mode_specific_1 = self._check_hm_request()
         elif next_cm == self.MODE_PP:
             operation_mode_specific_1 = self._check_pp_request()
         else:
             operation_mode_specific_1 = False
-        return self._add_control_word_flags(
+        next_cw = self._add_control_word_flags(
             control_word,
             OPERATION_MODE_SPECIFIC_1=operation_mode_specific_1,
         )
+        cmd_out.update(control_word=next_cw)
+        if cmd_out.changed("control_word"):
+            cw_str = self.cw_to_str(next_cw)
+            self.logger.info(f"control_word:  {cw_str}")
 
     # Map drive states to control word that maintains the state.
     # `None` indicates hold state N/A in automatic transition states
@@ -531,9 +555,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
     }
 
     def _get_hold_state_control_word(self):
-        control_word = self.hold_state_control_word[
-            self.feedback_out.get("state")
-        ]
+        state = self.feedback_out.get("state")
+        control_word = self.hold_state_control_word[state]
         if control_word is None:
             raise ValueError(
                 f"BUG:  No hold state cw for {self.feedback_out.get('state')}"
@@ -588,6 +611,16 @@ class CiA402Device(CiA301Device, ErrorDevice):
         MANUFACTURER_SPECIFIC_5=15,
     )
 
+    # Control word bits that atomically make up the command, ordered for
+    # decoding
+    cmd_bits = (
+        "FAULT_RESET",
+        "QUICK_STOP",
+        "ENABLE_OPERATION",
+        "SWITCH_ON",
+        "ENABLE_VOLTAGE",
+    )
+
     def _get_transition_control_word(self):
         # Look up next transition and return control word to effect it
         transition = self._get_next_transition()
@@ -630,12 +663,18 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
         return control_word
 
-    def _get_next_control_mode(self):
-        # If `home_request` is set, command homing mode
+    def _get_next_control_mode(self, cmd_out):
         if self.command_in.get("home_request"):
-            return self.MODE_HM
-        # Get control_mode from command_in
-        return self.command_in.get("control_mode")
+            # If `home_request` is set, command homing mode
+            next_cm = self.MODE_HM
+        else:
+            # Otherwise, copy control_mode from command_in
+            next_cm = self.command_in.get("control_mode")
+
+        cmd_out.update(control_mode=next_cm)
+        if cmd_out.changed("control_mode"):
+            cm_str = self.control_mode_str(next_cm)
+            self.logger.info(f"control_mode:  {cm_str}")
 
 
 class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
