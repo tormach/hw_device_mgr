@@ -22,7 +22,7 @@
     # Mgr
     enabled:  False
     goal_reached:  False
-    goal_reason:  Offline ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
+    goal_reason:  Offline ({all_drives})
     fault:  False
     fault_desc:  ""
     # Drives
@@ -90,7 +90,7 @@
     d.x.status_word:  0x0000  # START
   feedback_out:
     # Mgr
-    goal_reason:  Not operational ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
+    goal_reason:  Not operational ({all_drives})
     # Drives
     # - CiA 301
     d.x.online:  True
@@ -112,7 +112,7 @@
     d.x.status_word:  0x0010  # VOLTAGE_ENABLED
   feedback_out:
     # Mgr
-    goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON (0x00000010) != SWITCH ON DISABLED ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
+    goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON (0x00000010) != SWITCH ON DISABLED ({all_drives})
     # Drives
     # - CiA 301
     d.x.oper:  True
@@ -187,7 +187,7 @@
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({all_drives})
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     d.x.state:  READY TO SWITCH ON
     d.x.transition:  2
@@ -285,7 +285,7 @@
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
   feedback_out:
     goal_reached:  False
-    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT; FAULT command from controller (was OPERATION ENABLED) ({drives[0]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
+    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT; FAULT command from controller (was OPERATION ENABLED) ({drives[0]},{drives[2]},{drives3plus})
     fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[1]})
     # drive_1 holds state
     d.1.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
@@ -361,7 +361,7 @@
     d.1.error_code:  0x00000000  # Error cleared after control_word 0x0080
   feedback_out:
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]}); state SWITCH ON DISABLED (0x00000050) != SWITCHED ON ({drives[1]})
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[2]},{drives3plus}); state SWITCH ON DISABLED (0x00000050) != SWITCHED ON ({drives[1]})
     fault:  False
     fault_desc:  ""
     # Drive 1 clears fault, entering SWITCH ON DISABLED
@@ -600,7 +600,7 @@
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
   feedback_out:
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({all_drives})
     d.x.status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     d.x.state:  READY TO SWITCH ON
     d.x.transition:  2
@@ -716,7 +716,7 @@
   feedback_out:
     enabled:  False
     goal_reached:  False
-    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED ({drives[0]},{drives[1]},{drives[2]},{drives[3]},{drives[4]},{drives[5]},{drives[6]})
+    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED ({all_drives})
     d.x.status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
     d.x.state:  QUICK STOP ACTIVE
     d.x.transition:  11
@@ -779,7 +779,7 @@
     d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
   feedback_out:
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[1]},{drives[3]},{drives[4]},{drives[5]},{drives[6]}); state SWITCH ON DISABLED (0x00000040) != SWITCHED ON; Enable command while no voltage at motor ({drives[2]})
+    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON ({drives[0]},{drives[1]},{drives3plus}); state SWITCH ON DISABLED (0x00000040) != SWITCHED ON; Enable command while no voltage at motor ({drives[2]})
     fault:  True
     fault_desc:  Enable command while no voltage at motor ({drives[2]})
     d.2.fault:  True

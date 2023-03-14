@@ -39,10 +39,15 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         return index_map
 
     @cached_property
-    def drive_index_to_logstr_map(self):
-        """Map `mgr.devices` list index to drive log string."""
+    def string_format_kwargs(self):
+        """YAML string `format()` keyword args."""
         items = enumerate(str(d) for d in self.obj.devices)
-        return dict(items)
+        drive_strs=[item[1] for item in items]
+        return dict(
+            drives=drive_strs,
+            drives3plus=",".join(drive_strs[3:]),
+            all_drives=",".join(drive_strs),
+        )
 
     @lru_cache
     def obj_interface_to_test_case_kv(self, interface_key, interface_val):
@@ -50,7 +55,7 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         # `Foo (0, 1, 0) bar`
         val = interface_val
         if isinstance(val, str):
-            val = val.format(drives=self.drive_index_to_logstr_map)
+            val = val.format(**self.string_format_kwargs)
 
         # Extract drive address `(0, 16, 0)` from key  `d0.16.0.control_mode`
         m = self.drive_interface_key_re.match(interface_key)
@@ -212,9 +217,7 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         mgr_expected, device_expected = self.split_drive_data(expected)
         for k, v in mgr_expected.items():
             if isinstance(v, str):
-                mgr_expected[k] = v.format(
-                    drives=self.drive_index_to_logstr_map
-                )
+                mgr_expected[k] = v.format(**self.string_format_kwargs)
         # self.print_dict(mgr_expected, f"Expected {interface}", indent=2)
         # for i, d in enumerate(device_expected):
         #     self.print_dict(d, f"drive_{i}", indent=4)
