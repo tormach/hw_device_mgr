@@ -114,7 +114,7 @@ class Device(abc.ABC):
 
     def __getattr__(self, name):
         """Provide attributes for each interface."""
-        if name not in self._interfaces:
+        if name not in self.interface_names:
             cname = self.__class__.__name__
             raise AttributeError(f"'{cname}' object has no attribute '{name}'")
         return self._interfaces[name]
