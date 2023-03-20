@@ -42,3 +42,18 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
     device_error_yaml = "inovance_sv660n.yaml"
     config_class = InovanceSV660Config
     have_sto = True
+
+    feedback_out_data_types = dict(
+        home_found="bit",
+    )
+
+    feedback_out_defaults = dict(
+        home_found=False,
+    )
+
+    def get_feedback(self):
+        fb_out = super().get_feedback()
+        sw = self.interface("feedback_in").get("status_word")
+        if self.test_sw_bit(sw, "MANUFACTURER_SPECIFIC_3"):  # "Home found"
+            fb_out.update(home_found=True)
+        return fb_out
