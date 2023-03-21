@@ -28,6 +28,9 @@ class InovanceIS620NForTest(DevicesForTest, InovanceIS620N, CiA402SimDevice):
 
 
 class InovanceSV660NForTest(DevicesForTest, InovanceSV660, CiA402SimDevice):
+    # There's actually a SimInovanceSV660 class, but it's too hard to make an
+    # exception in the read_update_write.cases.yaml for the simulated status
+    # word bit 15 "home found"
     name = "SV660_ECAT_test"
     test_category = "inovance_is620n_test"
 

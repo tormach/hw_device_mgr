@@ -1,6 +1,6 @@
 from ..ethercat.device import EtherCATDevice
 from ..ethercat.config import EtherCATConfig
-from ..cia_402.device import CiA402Device
+from ..cia_402.device import CiA402Device, CiA402SimDevice
 from ..errors.device import ErrorDevice
 
 
@@ -57,3 +57,21 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
         if self.test_sw_bit(sw, "MANUFACTURER_SPECIFIC_3"):  # "Home found"
             fb_out.update(home_found=True)
         return fb_out
+
+class SimInovanceSV660(InovanceSV660, CiA402SimDevice):
+
+    def set_sim_feedback(self):
+        # Simulate home_found feedback
+        sfb = super().set_sim_feedback()
+        sw, old_sw = sfb.changed("status_word", return_vals=True)
+        # In MODE_HM, OPERATION_MODE_SPECIFIC_1 is "homing attained"
+        homing_attained = False
+        if sfb.get("control_mode_fb") == self.MODE_HM:
+            homing_attained = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+        # SV660N:  MANUFACTURER_SPECIFIC_3 (bit 15) is "Home found"
+        old_home_found = self.test_sw_bit(old_sw, "MANUFACTURER_SPECIFIC_3")
+        home_found = old_home_found or homing_attained
+        if home_found:
+            sw = self.add_status_word_flags(sw, MANUFACTURER_SPECIFIC_3=True)
+            sfb.update(status_word=sw)
+        return sfb
