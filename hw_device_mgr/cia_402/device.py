@@ -4,6 +4,7 @@ from ..cia_301.device import (
     CiA301SimDevice,
 )
 from ..errors.device import ErrorDevice, ErrorSimDevice
+from functools import cached_property, lru_cache
 
 
 class CiA402Device(CiA301Device, ErrorDevice):
@@ -117,6 +118,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         move_success=False,
         move_error=False,
     )
+
+    log_status_word_changes = True
 
     @classmethod
     def test_sw_bit(cls, word, name):
@@ -333,6 +336,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if fault:
             fb_out.update(fault=True, fault_desc=fault_desc)
 
+        if self.log_status_word_changes and fb_out.changed("status_word"):
+            self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
+
         if not goal_reached:
             goal_reason = "; ".join(goal_reasons)
             fb_out.update(goal_reached=False, goal_reason=goal_reason)
@@ -341,6 +347,26 @@ class CiA402Device(CiA301Device, ErrorDevice):
         elif fb_out.changed("goal_reached"):  # Goal just now reached
             self.logger.info("Goal reached")
         return fb_out
+
+    @classmethod
+    @lru_cache
+    def sw_to_str(cls, sw):
+        # Decode status word
+        for state, bits in cls.state_bits.items():
+            # Compare masked status word with pattern to determine current state
+            sw_mask, sw_pat = bits
+            if sw & sw_mask == sw_pat:
+                break
+        else:
+            state = "Unknown state"
+        flags = [
+            k
+            for k, v in cls.sw_bits.items()
+            if not sw_mask & (1<<v) and cls.test_sw_bit(sw, k)
+        ]
+        flags = ",".join(flags) if flags else "(none)"
+        sw = cls.data_types.uint16(sw)  # For formatting
+        return f"{sw} {state} flags: {flags}"
 
     state_bits = {
         # 'START': None,  # Initial state; no status words
@@ -493,24 +519,19 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 self.logger.info(f"Move operation request cleared")
         return move_request
 
-    def cw_to_str(self, cw):
+    @classmethod
+    @lru_cache
+    def cw_to_str(cls, cw):
         # Decode control word
-        cmd = None
-        for bit in self.cmd_bits:
-            truth = False if bit == "QUICK_STOP" else True
-            if self.test_cw_bit(cw, bit) is truth:
-                cmd = bit
-                break
-        else:
-            cmd = "SWITCH_ON_DISABLED"
-        cw_bits = self.cw_bits
+        mask = 0x008F  # Mask for bits relevant to command
+        cmd = cls.cw_to_cmd_map().get(cw & mask, "Unknown command")
         flags = [
             k  # Names of set bits not part of the CiA402 command
-            for k,v in self.cw_bits.items()
-            if k not in self.cmd_bits and cw & (1<<v)
+            for k,v in cls.cw_bits.items()
+            if not (1<<v) & mask and cw & (1<<v)
         ]
         flags = ",".join(flags) if flags else "(none)"
-        cw = self.data_types.by_shared_name("uint16")(cw)  # Format
+        cw = cls.data_types.by_shared_name("uint16")(cw)  # Format
         return f"{cw} {cmd} flags: {flags}"
 
     def _get_next_control_word(self, cmd_out):
@@ -553,6 +574,18 @@ class CiA402Device(CiA301Device, ErrorDevice):
         "FAULT REACTION ACTIVE": None,
         "FAULT": 0x0000,  # Anything but 0x0080 will hold state
     }
+
+    @classmethod
+    @lru_cache
+    def cw_to_cmd_map(cls):
+        res = {
+            v:k
+            for k,v in cls.hold_state_control_word.items()
+            if v is not None and k != "FAULT"
+        }
+        res[0x0002] = "QUICK STOP ACTIVE"
+        res[0x0080] = "CLEAR FAULT"
+        return res
 
     def _get_hold_state_control_word(self):
         state = self.feedback_out.get("state")
@@ -609,16 +642,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
         MANUFACTURER_SPECIFIC_3=13,
         MANUFACTURER_SPECIFIC_4=14,
         MANUFACTURER_SPECIFIC_5=15,
-    )
-
-    # Control word bits that atomically make up the command, ordered for
-    # decoding
-    cmd_bits = (
-        "FAULT_RESET",
-        "QUICK_STOP",
-        "ENABLE_OPERATION",
-        "SWITCH_ON",
-        "ENABLE_VOLTAGE",
     )
 
     def _get_transition_control_word(self):
@@ -769,8 +792,7 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
         else:
             for test_cw, test_states, next_state in self.sim_drive_states:
                 if masked_cw == test_cw and (
-                    test_states is None
-                    or self.feedback_out.get("state") in test_states
+                    test_states is None or state in test_states
                 ):
                     # Special case:  No motor power before enabling drive
                     if next_state == "READY TO SWITCH ON":
@@ -802,18 +824,6 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
             status_word=status_word,
             control_mode_fb=control_mode,
         )
-
-        if self.feedback_in.get("oper"):
-            # Log changes
-            if sfb.changed("control_mode_fb"):
-                cm = sfb.get("control_mode_fb")
-                self.logger.info(f"sim control_mode_fb:  0x{cm:04X}")
-            if sfb.changed("status_word"):
-                flags = ",".join(k for k, v in sw_flags.items() if v)
-                flags = f" flags:  {flags}" if flags else ""
-                self.logger.info(
-                    f"sim status_word:  0x{status_word:04X} {state} {flags}"
-                )
 
         return sfb
 

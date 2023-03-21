@@ -5,6 +5,7 @@ from .bogus_devices.device import (
     BogusCiA402V2Servo,
     BogusCiA402V1IO,
 )
+import pytest
 
 
 class BaseCiA402TestClass(BaseCiA301TestClass):
@@ -20,3 +21,9 @@ class BaseCiA402TestClass(BaseCiA301TestClass):
         BogusCiA402V2Servo,
         BogusCiA402V1IO,
     )
+
+    @pytest.fixture
+    def cia402_cls(self):
+        cls = self.device_model_classes[0]
+        assert hasattr(cls, "sw_bits")  # Sanity check: subclass of CiA402Device
+        return cls
