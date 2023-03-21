@@ -29,6 +29,7 @@
     transition:  -1
     home_success:  False
     home_error:  False
+    home_found:  False
     fault:  False
     goal_reached:  True
     goal_reason:  Reached

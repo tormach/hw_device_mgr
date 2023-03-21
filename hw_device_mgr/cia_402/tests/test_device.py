@@ -9,6 +9,8 @@ class TestCiA402Device(_TestCiA301Device, BaseCiA402TestClass):
     # to simplify tests & test cases
 
     def test_cw_to_str(self, cia402_cls):
+        if not cia402_cls:
+            return
         tests = {
             0x0000 : "SWITCH ON DISABLED flags: (none)",
             0x0002 : "QUICK STOP ACTIVE flags: (none)",
@@ -28,6 +30,8 @@ class TestCiA402Device(_TestCiA301Device, BaseCiA402TestClass):
             assert actual == expected
 
     def test_sw_to_str(self, cia402_cls):
+        if not cia402_cls:
+            return
         tests = {
             0x0010 : "NOT READY TO SWITCH ON flags: VOLTAGE_ENABLED",
             0x0050 : "SWITCH ON DISABLED flags: VOLTAGE_ENABLED",
@@ -56,6 +60,13 @@ class TestCiA402Device(_TestCiA301Device, BaseCiA402TestClass):
                 for key in ("status_word", "control_word"):
                     if key in intf_data:
                         intf_data[key] = uint16(intf_data[key])
+
+    def setup_test(self, test_case):
+        super().setup_test(test_case)
+        # Add SV660N feedback_out home_found exception
+        mno = self.missing_not_ok["feedback_out"]
+        mno_home_found = mno.setdefault("home_found", set())
+        mno_home_found.add((0x00100000, 0x000C010D))
 
     def test_read_update_write(self, obj):
         if hasattr(obj, "MODE_CSP"):

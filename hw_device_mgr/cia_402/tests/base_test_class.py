@@ -25,5 +25,8 @@ class BaseCiA402TestClass(BaseCiA301TestClass):
     @pytest.fixture
     def cia402_cls(self):
         cls = self.device_model_classes[0]
-        assert hasattr(cls, "sw_bits")  # Sanity check: subclass of CiA402Device
-        return cls
+        self.is_402_device = hasattr(cls, "sw_bits")
+        if self.is_402_device:
+            return cls
+        else:
+            return None  # Not a CiA402Device

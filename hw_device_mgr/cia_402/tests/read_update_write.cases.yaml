@@ -28,6 +28,7 @@
     transition:  -1
     home_success:  False
     home_error:  False
+    home_found:  False
     fault:  False
     goal_reached:  False
     goal_reason:  Offline
