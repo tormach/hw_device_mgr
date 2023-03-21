@@ -248,6 +248,12 @@ class TestDevice(BaseTestClass):
         self.ovr_data = dict()
         self.munge_test_case_data(test_case, self.ovr_data, suffix="_set")
 
+        # Nested dictionaries of { interface : { attr : { model_id, ... } } }:
+        # model_id must have interface attribute; for other models, missing OK
+        self.missing_not_ok = {
+            i:dict() for i in self.device_class.interface_names
+        }
+
         self.read_update_write_conv_test_data()
         # self.print_dict(self.test_data, "Test data")
         # self.print_dict(self.ovr_data, "Override data")
@@ -373,14 +379,19 @@ class TestDevice(BaseTestClass):
         actual, expected = actual.copy(), expected.copy()
         passing = True
         MISSING = dict()  # Sentinel object
+        mno = self.missing_not_ok.get(interface, dict())
+        model_id = getattr(self.obj, "model_id", None)
+        mno_dfl = set([model_id])  # By default, missing params not OK
         if interface:
             print(f"  {interface}:")
         for param in list(expected.keys()):
             expected_val = expected.pop(param)
             actual_val = actual.pop(param, MISSING)
+            missing_not_ok = model_id in mno.get(param, mno_dfl)
             # Print debug info
             if actual_val is MISSING:
-                print(f'{" "*indent}{prefix}{param}:  MISSING')
+                msg = "MISSING" if missing_not_ok else "(missing; ok)"
+                print(f'{" "*indent}{prefix}{param}:  {msg}')
             elif isinstance(expected_val, dict):
                 if actual_val:
                     self.print_dict(actual_val, prefix + param, indent=indent)
@@ -389,7 +400,7 @@ class TestDevice(BaseTestClass):
             else:
                 self.print_dict(actual_val, param, indent=indent, prefix=prefix)
             # Check param actual vs expected
-            if actual_val != expected_val:
+            if actual_val != expected_val and missing_not_ok:
                 print(f"  ****MISMATCH****  expected:  {expected_val}")
                 passing = False
         # Check expected data is comprehensive, all params checked
