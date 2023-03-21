@@ -36,6 +36,7 @@
     d.x.transition:  -1  # No transition
     d.x.home_success:  False
     d.x.home_error:  False
+    d.x.home_found:  False
     d.x.fault:  False
     d.x.fault_desc:  ""
     d.x.goal_reached:  False

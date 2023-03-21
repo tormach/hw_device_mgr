@@ -243,3 +243,11 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         if not passing:
             print(f"FAILURE at {self.test_desc}")
         return passing
+
+    def setup_test(self, test_case):
+        super().setup_test(test_case)
+        # Add SV660N feedback_out home_found exception
+        mno = self.missing_not_ok["feedback_out"]
+        for i in range(7):
+            attr = f"d.{i}.home_found"
+            mno_home_found = mno.setdefault(attr, set())  # Empty set signified OK
