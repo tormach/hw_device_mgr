@@ -778,7 +778,7 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
             return sfb
         if not self.feedback_in.get("oper"):
             sfb_updates = self.sim_feedback_defaults.copy()
-            sw = self._add_status_word_flags(0x0000, VOLTAGE_ENABLED=True)
+            sw = self.add_status_word_flags(0x0000, VOLTAGE_ENABLED=True)
             sfb_updates["status_word"] = sw
             sfb.update(**sfb_updates)
             return sfb
@@ -818,7 +818,7 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
             # Test previous cw because target_reached() looks at fb_in, which is
             # set after command_in
             sw_flags.update(self.set_sim_feedback_pp(cw_prev, sw_prev))
-        status_word = self._add_status_word_flags(status_word, **sw_flags)
+        status_word = self.add_status_word_flags(status_word, **sw_flags)
 
         sfb.update(
             status_word=status_word,
@@ -865,7 +865,7 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
     ]
 
     @classmethod
-    def _add_status_word_flags(cls, status_word, **flags):
+    def add_status_word_flags(cls, status_word, **flags):
         # Add flags by name to status word; used in set_sim_feedback
         for flag, val in flags.items():
             operand = 1 << cls.sw_bits[flag]
