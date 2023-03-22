@@ -259,7 +259,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
             goal_reached = False
             state_cmd = self.command_in.get("state")
             sw = fb_in.get("status_word")
-            goal_reasons.append(f"state {state} (0x{sw:08X}) != {state_cmd}")
+            goal_reasons.append(f"state {state} != {state_cmd}")
             if (state_cmd in ("SWITCHED ON", "OPERATION ENABLED")
                 and not self.test_sw_bit(sw, "VOLTAGE_ENABLED")):
                 fault = True

@@ -91,7 +91,7 @@
     status_word:  0x0010  # VOLTAGE_ENABLED
     state:  'NOT READY TO SWITCH ON'
     transition:  0
-    goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON (0x00000010) != SWITCH ON DISABLED
+    goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON != SWITCH ON DISABLED
   sim_feedback:
     # CiA 402
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
@@ -132,7 +132,7 @@
     state:  READY TO SWITCH ON
     transition:  2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
   command_out:
     control_word:  0x0007  # SWITCHED ON
   sim_feedback:
@@ -144,7 +144,7 @@
     status_word:  0x0033
     state:  SWITCHED ON
     transition:  3
-    goal_reason:  state SWITCHED ON (0x00000033) != OPERATION ENABLED
+    goal_reason:  state SWITCHED ON != OPERATION ENABLED
   command_out:
     control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
@@ -179,7 +179,7 @@
     fault:  True
     fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
     goal_reached:  False
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
     error_code:  0xDEADBEEF  # Bogus error code
     description:  Unknown error code 0xDEADBEEF
   command_out:
@@ -195,7 +195,7 @@
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     state:  FAULT
     transition:  14  # FAULT REACTION ACTIVE->FAULT
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Enabled drive unexpectedly disabled; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    goal_reason:  state FAULT != OPERATION ENABLED; Enabled drive unexpectedly disabled; 0xDEADBEEF Unknown error code 0xDEADBEEF
   command_out:
     # Goal is still OPERATION ENABLED, so automatically clear fault
     control_word:  0x0080  # Clear fault
@@ -210,7 +210,7 @@
     state:  SWITCH ON DISABLED
     transition:  15  # FAULT->SWITCH ON DISABLED
     fault_desc:  Enabled drive unexpectedly disabled
-    goal_reason:  state SWITCH ON DISABLED (0x00000050) != OPERATION ENABLED; Enabled drive unexpectedly disabled
+    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED; Enabled drive unexpectedly disabled
     error_code:  0x00000000  # Cleared by control_word 0x0080
     description:  No error
   command_out:
@@ -224,7 +224,7 @@
     status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     state:  READY TO SWITCH ON
     transition:  2
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
     fault:  False
     fault_desc:  ""
   command_out:
@@ -249,7 +249,7 @@
     transition:  13  # (Any)->FAULT REACTION ACTIVE
     fault:  True
     fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
     error_code:  0xDEADBEEF
     description:  Unknown error code 0xDEADBEEF
   command_out:
@@ -265,7 +265,7 @@
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     state:  FAULT
     transition:  14  # FAULT REACTION ACTIVE->FAULT
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Enabled drive unexpectedly disabled; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    goal_reason:  state FAULT != OPERATION ENABLED; Enabled drive unexpectedly disabled; 0xDEADBEEF Unknown error code 0xDEADBEEF
   command_in:
     # Controller sees FAULT state and commands hold at that state
     state:  FAULT
@@ -348,7 +348,7 @@
     state:  READY TO SWITCH ON
     transition:  2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
+    goal_reason:  state READY TO SWITCH ON != SWITCHED ON
     fault:  False
     fault_desc:  ""
   command_out:
@@ -421,7 +421,7 @@
     state:  QUICK STOP ACTIVE
     transition:  11
     goal_reached:  False
-    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != FAULT; FAULT command from controller (was OPERATION ENABLED)
+    goal_reason:  state QUICK STOP ACTIVE != FAULT; FAULT command from controller (was OPERATION ENABLED)
     fault:  True
     fault_desc:  FAULT command from controller (was OPERATION ENABLED)
   command_out:
@@ -470,7 +470,7 @@
     # state:  SWITCH ON DISABLED
     transition:  -1
     goal_reached:  False
-    goal_reason:  state SWITCH ON DISABLED (0x00000040) != SWITCHED ON; Enable command while no voltage at motor
+    goal_reason:  state SWITCH ON DISABLED != SWITCHED ON; Enable command while no voltage at motor
     # fault:  True  # (Already was True)
     fault_desc:  Enable command while no voltage at motor
   # command_out:
@@ -492,7 +492,7 @@
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
-    goal_reason:  state SWITCH ON DISABLED (0x00000050) != SWITCHED ON
+    goal_reason:  state SWITCH ON DISABLED != SWITCHED ON
     fault:  False
     fault_desc:  ""
   sim_feedback:
@@ -505,7 +505,7 @@
     state:  READY TO SWITCH ON
     transition:  2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != SWITCHED ON
+    goal_reason:  state READY TO SWITCH ON != SWITCHED ON
   command_out:
     control_word:  0x0007  # SWITCHED ON
   sim_feedback:
@@ -602,7 +602,7 @@
     state:  QUICK STOP ACTIVE
     transition:  11
     goal_reached:  False
-    goal_reason:  state QUICK STOP ACTIVE (0x00000017) != SWITCH ON DISABLED
+    goal_reason:  state QUICK STOP ACTIVE != SWITCH ON DISABLED
   command_out:
     control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
@@ -645,7 +645,7 @@
     state:  READY TO SWITCH ON
     transition:  2
     goal_reached:  False
-    goal_reason:  state READY TO SWITCH ON (0x00000431) != OPERATION ENABLED
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
   command_out:
     control_word:  0x0007  # SWITCHED ON
   sim_feedback:
@@ -661,7 +661,7 @@
     status_word:  0x0433  # SWITCHED ON + VOLTAGE_ENABLED + TARGET_REACHED
     state:  SWITCHED ON
     transition:  3
-    goal_reason:  state SWITCHED ON (0x00000433) != OPERATION ENABLED
+    goal_reason:  state SWITCHED ON != OPERATION ENABLED
   command_out:
     control_word:  0x000F  # OPERATION ENABLED
   sim_feedback:
@@ -785,7 +785,7 @@
     status_word:  0x001F  # FAULT REACTION ACTIVE - Bit 12 SETPOINT_ACK clear
     state:  FAULT REACTION ACTIVE
     transition:  13  # (Any)->FAULT REACTION ACTIVE
-    goal_reason:  state FAULT REACTION ACTIVE (0x0000001F) != OPERATION ENABLED; Move request while drive not enabled; Fault (no error code)
+    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED; Move request while drive not enabled; Fault (no error code)
     move_error:  True
     fault:  True
     fault_desc:  Fault (no error code)
@@ -802,7 +802,7 @@
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     state:  FAULT
     transition:  14  # FAULT REACTION ACTIVE->FAULT
-    goal_reason:  state FAULT (0x00000018) != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled; Fault (no error code)
+    goal_reason:  state FAULT != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled; Fault (no error code)
     move_error:  True
   command_out:
     control_word:  0x0080  # Clear fault
@@ -817,7 +817,7 @@
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
     state:  SWITCH ON DISABLED
     transition:  15  # FAULT->SWITCH ON DISABLED
-    goal_reason:  state SWITCH ON DISABLED (0x00000050) != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled
+    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled
     # fault:  True  # Already True
     fault_desc:  Enabled drive unexpectedly disabled
   command_in:
@@ -834,7 +834,7 @@
     status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     state:  READY TO SWITCH ON
     transition:  2  # SWITCH ON DISABLED->READY TO SWITCH ON
-    goal_reason:  state READY TO SWITCH ON (0x00000031) != OPERATION ENABLED
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
     move_error:  False
     fault:  False
     fault_desc:  ""
