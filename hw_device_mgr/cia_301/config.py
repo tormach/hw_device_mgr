@@ -77,7 +77,7 @@ class CiA301Config:
 
     def __str__(self):
         cname = self.__class__.__name__
-        return f"<{cname}:{self.model_id}@{str(self.address).replace(' ','')}>"
+        return f"{cname}:{self.model_id}@{self.address}".replace(" ","")
 
     def __repr__(self):
         return f"<{self}>"
@@ -119,6 +119,7 @@ class CiA301Config:
         return self._model_sdos[self.model_id].values()
 
     def sdo(self, ix):
+        assert self.model_id in self._model_sdos
         if isinstance(ix, self.sdo_class):
             return ix
         ix = self.sdo_ix(ix)
