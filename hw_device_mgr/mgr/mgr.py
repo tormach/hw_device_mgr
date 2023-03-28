@@ -1,4 +1,4 @@
-from ..logging import Logging
+from ..logging import LoggingMixin
 from ..device import Device, SimDevice
 from ..cia_402.device import CiA402Device, CiA402SimDevice
 
@@ -60,7 +60,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def __init__(self):
         self.state = "init_command"  # Used by FysomGlobalMixin
         super().__init__()
-        self.logger = self.logging_class.getLogger(f"{self}")
 
     # mgr_config and device_config are YAML loaded by __main__ and passed in
     def init(self, /, mgr_config, device_config, **kwargs):
