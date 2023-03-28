@@ -11,6 +11,7 @@ class TestDevice(BaseTestClass):
     expected_mro = [
         "SimDevice",
         "Device",
+        "LoggingMixin",
         "ABC",
     ]
 

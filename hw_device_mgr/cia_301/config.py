@@ -1,11 +1,11 @@
 from .data_types import CiA301DataType
 from .command import CiA301Command, CiA301SimCommand, CiA301CommandException
 from .sdo import CiA301SDO
-from ..logging import Logging
+from ..logging import LoggingMixin
 from functools import cached_property
 
 
-class CiA301Config:
+class CiA301Config(LoggingMixin):
     """
     CiA 301 device configuration interface.
 
@@ -24,8 +24,8 @@ class CiA301Config:
     in order to read/write dictionary objects from/to devices.
     """
 
-    logging_class = Logging
-    class_logger = Logging.getLogger(__name__)
+    def logging_name(self):
+        return __name__
 
     data_type_class = CiA301DataType
     command_class = CiA301Command
@@ -44,7 +44,6 @@ class CiA301Config:
         self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
         self.skip_optional_config_values = skip_optional_config_values
-        self.logger = self.logging_class.getLogger(f"{self}")
 
     @classmethod
     def format_model_id(cls, model_id):
