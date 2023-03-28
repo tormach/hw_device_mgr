@@ -1,5 +1,5 @@
 import abc
-from .logging import Logging
+from .logging import LoggingMixin
 from .interface import Interface
 from .data_types import DataType
 from functools import cached_property
@@ -7,13 +7,11 @@ import re
 import time
 
 
-class Device(abc.ABC):
+class Device(LoggingMixin, abc.ABC):
     """Base device class for both device categories and device models."""
 
     category = "all"  # Device category sets up registry for models
     name = None  # Concrete device model subclasses must define
-
-    logging_class = Logging
 
     data_type_class = DataType
     interface_class = Interface
@@ -50,7 +48,9 @@ class Device(abc.ABC):
     def __init__(self, address=None):
         self.address = self.canon_address(address)
         self._timeout = None
-        self.logger = self.logging_class.getLogger(f"{self.category}.{self}")
+
+    def logging_name(self):
+        return f"{self.category}.{self}"
 
     def init(self):
         """
