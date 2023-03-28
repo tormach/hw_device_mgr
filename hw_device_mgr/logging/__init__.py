@@ -1,4 +1,5 @@
 import logging
+from functools import cached_property
 
 
 class Logging:
@@ -38,3 +39,15 @@ class Logging:
     @classmethod
     def getLogger(cls, name):
         return cls(name)
+
+class LoggingMixin:
+    """Mixin class that provides a `logger` attribute."""
+
+    logging_class = Logging
+
+    def logging_name(self):
+        return str(self)
+
+    @cached_property
+    def logger(self):
+        return self.logging_class.getLogger(self.logging_name())
