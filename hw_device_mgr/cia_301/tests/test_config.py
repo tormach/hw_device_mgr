@@ -1,6 +1,7 @@
 from .base_test_class import BaseCiA301TestClass
 import pytest
 from pprint import pformat
+import time
 
 
 class TestCiA301Config(BaseCiA301TestClass):
@@ -57,7 +58,7 @@ class TestCiA301Config(BaseCiA301TestClass):
             obj.download(sdo_ix, val + 1)
             assert obj.upload(sdo_ix) == val + 1
 
-    def test_initialize_params(self, obj):
+    def test_initialize_params(self, obj, sdo_data, sim_device_data):
         # Test fixture data:  At least one config param value should
         # be different from default to make this test meaningful.  (IO
         # devices have no config values, so ignore those.)
@@ -69,7 +70,26 @@ class TestCiA301Config(BaseCiA301TestClass):
                 something_different = True
         assert something_different or not obj.config["param_values"]
 
-        obj.initialize_params()
+        # Sanity checks
+        pq = obj.params_queue
+        assert pq.all_cmds_complete()
+
+        # Start param init
+        print("Starting param init")
+        assert obj.initialize_params(restart=True) is False
+
+        # Spin while we wait on the worker
+        timeout, incr = 1, 0.01
+        for i in range(int(timeout/incr)):
+            if obj.initialize_params():
+                break
+            time.sleep(incr)
+        else:
+            print("initialize_params() never returned True!")
+        print(f"Spun {i} cycles to init params")
+        assert obj.initialize_params()
+        assert pq.all_cmds_complete()
+
         for sdo_ix, val in obj.config["param_values"].items():
             assert obj.upload(sdo_ix) == val
 

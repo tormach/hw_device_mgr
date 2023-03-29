@@ -13,6 +13,7 @@
     goal_reason:  Offline
     fault:  False
     fault_desc: ""
+    param_state:  0  # Unknown
   sim_feedback:
     online:  True
     oper:  False
@@ -21,7 +22,8 @@
     online:  True
   feedback_out:
     online:  True
-    goal_reason:  Not operational
+    goal_reason:  Not operational, updating device params
+    param_state:  1  # Updating
   sim_feedback:
     oper:  True
 - desc:  "NMT Pre-operational -> Operational"
@@ -31,6 +33,7 @@
     oper:  True
     goal_reached:  True
     goal_reason:  Reached
+    param_state:  2  # Complete
 - desc:  "NMT Operational; hold state x1"
 - desc:  "NMT Operational; hold state x2"
 #
@@ -76,6 +79,7 @@
     goal_reason:  Offline
     fault:  True
     fault_desc:  Drive went offline/non-operational
+    param_state:  0x00  # Unknown
   sim_feedback:
     oper:  False
 - desc:  "NMC offline after online; hold state"
@@ -90,7 +94,8 @@
     online:  True
     oper:  False
     goal_reached:  False
-    goal_reason:  Not operational
+    goal_reason:  Not operational, updating device params
+    param_state:  0x01  # Updating
     fault:  True
     fault_desc:  Drive went offline/non-operational
   sim_feedback:
@@ -102,6 +107,7 @@
     oper:  True
     goal_reached:  True
     goal_reason:  Reached
+    param_state:  0x02  # Complete
     fault:  False
     fault_desc:  ""
 - desc:  "NMC offline after online; hold state"

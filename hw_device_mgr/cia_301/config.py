@@ -1,6 +1,7 @@
 from .data_types import CiA301DataType
 from .command import CiA301Command, CiA301SimCommand, CiA301CommandException
 from .sdo import CiA301SDO
+from .async_params import AsyncParamsQueue
 from ..logging import LoggingMixin
 from functools import cached_property
 
@@ -43,6 +44,7 @@ class CiA301Config(LoggingMixin):
     ):
         self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
+        self.params_queue = AsyncParamsQueue()
         self.skip_optional_config_values = skip_optional_config_values
 
     @classmethod
@@ -161,7 +163,9 @@ class CiA301Config(LoggingMixin):
             datatype=sdo.data_type,
             **kwargs,
         )
-        return sdo.data_type(res_raw)
+        res = sdo.data_type(res_raw)
+        self.logger.debug(f"upload SDO {sdo} = {res}")
+        return res
 
     def download(
         self, sdo, val, dry_run=False, force=False, old=None, **kwargs
@@ -345,47 +349,33 @@ class CiA301Config(LoggingMixin):
         """
         pass
 
-    def initialize_params(self, dry_run=False):
-        if not self.init_params_nv:
-            # Drive params in volatile mode; no need to worry about
-            # EEPROM wear, so download all params without uploading first
-            self.logger.info(f"Updating (volatile) parameter values")
-            for sdo, value in self.config["param_values"].items():
-                self.download(sdo, value, dry_run=dry_run, force=True)
-            self.logger.info(f"Parameter update complete")
-            return
+    def initialize_params(self, restart=False, dry_run=False):
+        """
+        Asynchronously initialize device params.
 
-        # Drive params in non-volatile mode; to save NVRAM wear, don't
-        # write if all params are correct
-        self.logger.info(f"Checking NV parameter values")
-        to_update = list()
-        for sdo, value in self.config["param_values"].items():
-            curr = self.upload(sdo)
-            exp = type(curr)(value)
-            if curr != exp:
-                self.logger.debug(
-                    f"SDO {sdo} expected {exp}; current {curr}"
-                )
-                to_update.append((sdo, exp, curr))
-        if not to_update:
-            self.logger.info(f"Param values correct; no updates needed")
-            return
+        The first time this method is called, or if the `restart` arg is set, it
+        will enqueue device params to be downloaded to the device in a worker
+        thread.  This and following calls (without `restart` set) will return
+        `False` until device params have finished downloading, and then will
+        return `True`.
 
-        # Set NV mode setting & write params that need changing
-        self.logger.info(f"Updating {len(to_update)} params in NV mode")
-        self._old_device_params_nv = self.get_device_params_nv()
-        self.set_device_params_nv(dry_run=dry_run)
-        for sdo, value, old in to_update:
-            self.download(sdo, value, dry_run=dry_run, force=True, old=old)
-        self.logger.info(f"Parameter update complete")
-
-        if self.init_params_nv and not self._old_device_params_nv:
-            self.logger.info(
-                f"Returning device params to volatile mode"
+        When an offline device comes online, this function should be run (with
+        `restart=True` the first time if device was previously offline) in a
+        cycle until it returns `True` to ensure the device parameters are
+        completely configured.
+        """
+        if restart:
+            # Params haven't been queued up, or need requeuing
+            num_params = len(self.config["param_values"])
+            self.logger.info(f"Queueing {num_params} param updates")
+            self.params_queue.download(
+                self, self.config["param_values"], dry_run=dry_run
             )
-            self.set_device_params_nv(
-                nv=self._old_device_params_nv, dry_run=dry_run
-            )
+            return False
+        else:
+            # Params enqueued; waiting on param processing complete
+            complete = self.params_queue.all_cmds_complete()
+            return complete
 
     #
     # Scan bus device config factory

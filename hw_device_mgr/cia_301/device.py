@@ -18,11 +18,20 @@ class CiA301Device(Device):
     data_type_class = CiA301DataType
     config_class = CiA301Config
 
+    # Parameter update state
+    PARAM_STATE_UNKNOWN = 0  # Uninitialized and unchecked before init
+    PARAM_STATE_UPDATING = 1  # Currently being checked & updated
+    PARAM_STATE_COMPLETE = 2  # Params checked and updated
+
     feedback_in_data_types = dict(online="bit", oper="bit")
     feedback_in_defaults = dict(online=False, oper=False)
 
-    feedback_out_data_types = feedback_in_data_types
-    feedback_out_defaults = feedback_in_defaults
+    feedback_out_data_types = dict(
+        param_state="uint8", **feedback_in_data_types
+    )
+    feedback_out_defaults = dict(
+        param_state=PARAM_STATE_UNKNOWN, **feedback_in_defaults
+    )
 
     @classmethod
     def canon_address(cls, address):
@@ -71,16 +80,17 @@ class CiA301Device(Device):
         assert device_config
         cls.config_class.set_device_config(device_config)
 
-    def init(self, **kwargs):
-        super().init(**kwargs)
-        self.config.initialize_params()
-
     def get_feedback(self):
         fb_out = super().get_feedback()
         if not fb_out.get("goal_reached"):
+            # Stop param init
             return fb_out  # Don't clobber lower layers' reasons
         if not self.feedback_in.get("online"):
-            fb_out.update(goal_reached=False, goal_reason="Offline")
+            fb_out.update(
+                goal_reached=False,
+                goal_reason="Offline",
+                param_state=self.PARAM_STATE_UNKNOWN,
+            )
             if self.feedback_in.changed("online"):
                 msg = "Drive went offline/non-operational"
                 fb_out.update(fault=True, fault_desc=msg)
@@ -90,8 +100,30 @@ class CiA301Device(Device):
                 fb_out.update(
                     fault=True, fault_desc=fb_out.get_old("fault_desc")
                 )
-        elif not self.feedback_in.get("oper"):
-            fb_out.update(goal_reached=False, goal_reason="Not operational")
+            # Stop param init
+            return fb_out  # Nothing more to do
+
+        # Device online; update CiA301 feedback
+        goal_reached, goal_reasons = True, list()
+
+        # Param init:  download param values asynchronously after coming online
+        if (
+            self.feedback_in.changed("online") or
+            not self.config.initialize_params()
+        ):
+            restart = self.feedback_in.changed("online")
+            self.config.initialize_params(restart=True)
+            goal_reached = False
+            goal_reasons.append("updating device params")
+            param_state = self.PARAM_STATE_UPDATING
+        else:
+            param_state = self.PARAM_STATE_COMPLETE
+
+        # Update operational status
+        if not self.feedback_in.get("oper"):
+            goal_reached = False
+            goal_reasons.insert(0, "Not operational")
+
             if self.feedback_in.changed("oper"):
                 msg = "Drive went non-operational"
                 fb_out.update(fault=True, fault_desc=msg)
@@ -101,7 +133,24 @@ class CiA301Device(Device):
                 fb_out.update(
                     fault=True, fault_desc=fb_out.get_old("fault_desc")
                 )
+
+        # Update feedback and return
+        goal_reason = "Reached" if goal_reached else ", ".join(goal_reasons)
+        fb_out.update(
+            goal_reached=goal_reached,
+            goal_reason=goal_reason,
+            param_state=param_state
+        )
+        if goal_reached and fb_out.changed("param_state"):
+            self.logger.info("Device param init complete")
+        if not goal_reached and fb_out.changed("goal_reason"):
+            self.logger.info(f"Goal not reached: {goal_reason}")
         return fb_out
+
+    def set_command(self, **kwargs) -> Interface:
+        cmd_out = super().set_command(**kwargs)
+        fb_out = self.interface("feedback_out")
+        return cmd_out
 
     @classmethod
     def munge_sdo_data(cls, sdo_data):

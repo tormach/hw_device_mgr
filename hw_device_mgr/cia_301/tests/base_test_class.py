@@ -129,7 +129,7 @@ class BaseCiA301TestClass(BaseTestClass):
         Device configuration data fixture.
 
         Load device configuration with `load_device_config()` and munge with
-        `mung_device_config()`.
+        `munge_device_config()`.
 
         Device configuration in the same format as non-test
         configuration, described in `Config` classes.
