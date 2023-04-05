@@ -23,6 +23,7 @@
   feedback_out:
     online:  True
     oper:  True
+    param_state:  0x02  # Complete
     status_word:  0x0037
     control_mode_fb:  8
     state:  OPERATION ENABLED

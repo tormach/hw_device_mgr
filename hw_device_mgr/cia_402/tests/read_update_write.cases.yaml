@@ -21,6 +21,7 @@
     # CiA 301
     online:  False
     oper:  False
+    param_state:  0x00  # Unknown
     # CiA 402:  Default values before NMT operational
     status_word:  0x0000
     control_mode_fb:  0  # Undefined
@@ -72,7 +73,8 @@
   feedback_out:
     # CiA 301
     online:  True
-    goal_reason:  Not operational
+    param_state:  0x01  # Updating
+    goal_reason:  Not operational, updating device params
   sim_feedback:
     # CiA 301
     oper:  True
@@ -87,6 +89,7 @@
   feedback_out:
     # CiA 301
     oper:  True
+    param_state:  0x02  # Complete
     # CiA 402
     status_word:  0x0010  # VOLTAGE_ENABLED
     state:  'NOT READY TO SWITCH ON'
