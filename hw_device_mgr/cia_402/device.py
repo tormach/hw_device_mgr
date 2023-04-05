@@ -20,6 +20,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
     - `control_mode`:  Drive control mode, e.g. `MODE_CSP`
     - `home_request`:  Command homing operation (HM mode)
     - `move_request`:  Command move operation (PP mode)
+    - `relative_target`:  Relative vs Absolute move operation (PP mode)
 
     Feedback parameters:
     - `home_success`:  Drive completed homing successfully
@@ -388,12 +389,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
         control_mode=DEFAULT_CONTROL_MODE,
         home_request=False,
         move_request=False,
+        relative_target=False,
     )
     command_in_data_types = dict(
         state="str",
         control_mode="int8",
         home_request="bit",
         move_request="bit",
+        relative_target="bit",
     )
 
     # ------- Command out -------
@@ -503,10 +506,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
     def _check_pp_request(self):
         # Check for move request
         move_request = False
+        relative_target = False
         if self.command_in.get("move_request"):
             if self.command_in.changed("move_request"):
                 self.logger.info(f"Move operation requested")
                 move_request = True
+                if self.command_in.get("relative_target"):
+                    self.logger.info(f"Target position is relative")
+                    relative_target = True
         else:
             # Clear move request unless setpoint ack not set after previous new
             # set point
@@ -517,7 +524,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
             move_request = prev_nsp and not setpoint_ack
             if self.command_in.changed("move_request"):  # move_request cleared
                 self.logger.info(f"Move operation request cleared")
-        return move_request
+        return move_request, relative_target
 
     @classmethod
     @lru_cache
@@ -545,15 +552,19 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
         # Add flags and return
         next_cm = cmd_out.get("control_mode")
+        operation_mode_specific_3 = False
+        # operation mode specific 3 sets the target to relative position
+        # when in PP mode
         if next_cm == self.MODE_HM:
             operation_mode_specific_1 = self._check_hm_request()
         elif next_cm == self.MODE_PP:
-            operation_mode_specific_1 = self._check_pp_request()
+            operation_mode_specific_1, operation_mode_specific_3 = self._check_pp_request()
         else:
             operation_mode_specific_1 = False
         next_cw = self._add_control_word_flags(
             control_word,
             OPERATION_MODE_SPECIFIC_1=operation_mode_specific_1,
+            OPERATION_MODE_SPECIFIC_3=operation_mode_specific_3,
         )
         cmd_out.update(control_word=next_cw)
         if cmd_out.changed("control_word"):
