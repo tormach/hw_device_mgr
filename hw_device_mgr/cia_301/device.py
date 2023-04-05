@@ -1,4 +1,5 @@
 from ..device import Device, SimDevice
+from ..interface import Interface
 from .config import CiA301Config, CiA301SimConfig
 from .data_types import CiA301DataType
 from functools import cached_property, lru_cache

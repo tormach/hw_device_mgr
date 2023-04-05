@@ -16,9 +16,12 @@ class CiA301Command(abc.ABC):
     Upload/download SDOs and scan bus for device identification.
     """
 
-    data_type_class = CiA301DataType
-
     logger = Logging.getLogger(__name__)
+
+    # Add some formatters
+    uint8 = CiA301DataType.uint8
+    uint16 = CiA301DataType.uint16
+    uint32 = CiA301DataType.uint32
 
     @abc.abstractmethod
     def scan_bus(self, bus=0):
@@ -85,10 +88,9 @@ class CiA301SimCommand(CiA301Command):
 
     @classmethod
     def sdo_str_to_ix(cls, sdo_str):
-        dtc = cls.data_type_class
         idx, subidx = (sdo_str.split("-") + ["00h"])[:2]
-        idx = dtc.uint16(int(idx[:4], 16))
-        subidx = dtc.uint8(int(subidx[:2], 16))
+        idx = cls.uint16(int(idx[:4], 16))
+        subidx = cls.uint8(int(subidx[:2], 16))
         return (idx, subidx)
 
     def scan_bus(self, bus=0):
