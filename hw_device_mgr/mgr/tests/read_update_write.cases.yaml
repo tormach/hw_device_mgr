@@ -29,6 +29,7 @@
     # - CiA 301
     d.x.online:  False
     d.x.oper:  False
+    d.x.param_state:  0x00  # Unknown
     # - CiA 402:  Default values before NMT operational
     d.x.status_word:  0x0000  # START
     d.x.control_mode_fb:  0  # Undefined
@@ -91,11 +92,12 @@
     d.x.status_word:  0x0000  # START
   feedback_out:
     # Mgr
-    goal_reason:  Not operational ({all_drives})
+    goal_reason:  Not operational, updating device params ({all_drives})
     # Drives
     # - CiA 301
     d.x.online:  True
-    d.x.goal_reason:  Not operational
+    d.x.goal_reason:  Not operational, updating device params
+    d.x.param_state:  0x01  # Updating
     # - CiA 402
     d.x.status_word:  0x0000  # START
   sim_feedback:
@@ -117,6 +119,7 @@
     # Drives
     # - CiA 301
     d.x.oper:  True
+    d.x.param_state:  0x02  # Complete
     # - CiA 402
     d.x.state:  'NOT READY TO SWITCH ON'
     d.x.status_word:  0x0010  # VOLTAGE_ENABLED

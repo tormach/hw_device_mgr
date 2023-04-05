@@ -2,6 +2,7 @@ from .base_test_class import BaseMgrTestClass
 from ...tests.test_device import TestDevice as _TestDevice
 import re
 import pytest
+import time
 from functools import lru_cache, cached_property
 
 
@@ -251,3 +252,22 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         for i in range(7):
             attr = f"d.{i}.home_found"
             mno_home_found = mno.setdefault(attr, set())  # Empty set signified OK
+
+    def get_feedback_and_check(self):
+        super().get_feedback_and_check()
+        # Asynch param download causes a race condition.  When
+        # feedback_out.param_state == PARAM_STATE_UPDATING, wait for the
+        # param download to complete before the next cycle
+        updating = self.device_base_class.PARAM_STATE_UPDATING
+        test_data = self.test_data["feedback_out"]
+        for i, dev in enumerate(self.obj.devices):
+            if test_data.get(f"d.{i}.param_state", None) != updating:
+                continue
+            # Spin while we wait on the worker
+            timeout, incr = 1, 0.01
+            for i in range(int(timeout/incr)):
+                if dev.config.initialize_params():
+                    break
+                time.sleep(incr)
+            else:
+                print(f"{dev}.initialize_params() never returned True!")
