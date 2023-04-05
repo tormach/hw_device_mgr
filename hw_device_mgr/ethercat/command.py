@@ -11,7 +11,7 @@ class EtherCATCommandException(CiA301CommandException):
 
 
 class EtherCATCommand(CiA301Command):
-    data_type_class = EtherCATDataType
+    pass
 
 
 class EtherCATSimCommand(EtherCATCommand, CiA301SimCommand):
