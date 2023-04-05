@@ -68,7 +68,7 @@ class LCECCommand(EtherCATCommand):
             elif line.startswith("Product code:"):
                 #  Product code:    0x000c0108
                 pc = line.split(":", 1)[1].strip()
-                model_id = (self.data_type_class.uint32(i) for i in (vi, pc))
+                model_id = (self.uint32(i) for i in (vi, pc))
                 device.append(tuple(model_id))
         return devices
 
@@ -97,8 +97,6 @@ class LCECCommand(EtherCATCommand):
     def upload(
         self, address=None, index=None, subindex=0, datatype=None, **kwargs
     ):
-        index = self.data_type_class.uint16(index)
-        subindex = self.data_type_class.uint16(subindex)
         master, position, alias = self.decode_address(address)
         output = self._ethercat(
             "upload",
