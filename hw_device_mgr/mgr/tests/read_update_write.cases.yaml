@@ -58,6 +58,7 @@
     d.x.control_mode:  8  # MODE_CSP
     d.x.home_request: False
     d.x.move_request: False
+    d.x.relative_target: False
   command_out:
     # Mgr
     state:  0  # init

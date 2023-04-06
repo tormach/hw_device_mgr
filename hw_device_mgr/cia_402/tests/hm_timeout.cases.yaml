@@ -47,6 +47,7 @@
     control_mode:  8
     home_request:  True
     move_request:  False
+    relative_target:  False
   command_out:
     control_word:  0x000F
     control_mode:  6
