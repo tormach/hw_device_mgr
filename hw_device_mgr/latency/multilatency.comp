@@ -142,14 +142,12 @@ FUNCTION(cycle_start) {
   time_ns = (int32_t)(now % 1000000000);
   JITTER(cycle_start);
   EXEC_TIME_START(cycle);
-  return(0);
 }
 
 FUNCTION(read_start) {
   uint64_t now = rtapi_get_time();
   CYCLE_ELAPSED_TIME(read_start);
   EXEC_TIME_START(read);
-  return(0);
 }
 
 FUNCTION(read_end) {
@@ -157,14 +155,12 @@ FUNCTION(read_end) {
   JITTER(read);
   CYCLE_ELAPSED_TIME(read_end);
   EXEC_TIME_END(read);
-  return(0);
 }
 
 FUNCTION(write_start) {
   uint64_t now = rtapi_get_time();
   CYCLE_ELAPSED_TIME(write_start);
   EXEC_TIME_START(write);
-  return(0);
 }
 
 FUNCTION(write_end) {
@@ -172,11 +168,9 @@ FUNCTION(write_end) {
   JITTER(write);
   CYCLE_ELAPSED_TIME(write_end);
   EXEC_TIME_END(write);
-  return(0);
 }
 
 FUNCTION(cycle_end) {
   uint64_t now = rtapi_get_time();
   EXEC_TIME_END(cycle);
-  return(0);
 }
