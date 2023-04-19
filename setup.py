@@ -58,7 +58,7 @@ setup_kwargs = dict()
 if os.environ.get("ROS_VERSION", None) != "1":
     # catkin doesn't support zip_safe or entry_points
     setup_kwargs["zip_safe"] = True
-    entry_points = {
+    setup_kwargs["entry_points"] = {
         "console_scripts": [
             "hw_device_mgr = hw_device_mgr.mgr_ros_hal.__main__:main",
             "ecat_pcap_decode = hw_device_mgr.latency.ecat_pcap_decode:main",
