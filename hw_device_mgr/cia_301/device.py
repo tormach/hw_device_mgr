@@ -106,16 +106,15 @@ class CiA301Device(Device):
         goal_reached, goal_reasons = True, list()
 
         # Param init:  download param values asynchronously after coming online
-        if (
-            self.feedback_in.changed("online")
-            or not self.config.initialize_params()
-        ):
+        if self.feedback_in.changed("online"):
             self.config.initialize_params(restart=True)
             goal_reached = False
             goal_reasons.append("updating device params")
             param_state = self.PARAM_STATE_UPDATING
-        else:
+        elif self.config.initialize_params():
             param_state = self.PARAM_STATE_COMPLETE
+        else:
+            param_state = self.PARAM_STATE_UPDATING
 
         # Update operational status
         if not self.feedback_in.get("oper"):
