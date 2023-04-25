@@ -46,7 +46,7 @@ class CiA301Device(Device):
     def __init__(
         self, address=None, skip_optional_config_values=True, **kwargs
     ):
-        if isinstance(address, self.config_class):
+        if hasattr(address, "address"):
             # Config passed in instead of address; reuse it
             config = address
             address = config.address
