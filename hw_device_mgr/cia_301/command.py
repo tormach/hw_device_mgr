@@ -82,6 +82,11 @@ class CiA301SimCommand(CiA301Command):
         for addr, dd in cls.sim_device_data.items():
             sdo_vals = cls.sim_sdo_values[addr] = dict()
             dd_params = dd.get("params", dict())
+            if addr not in cls.sim_sdo_data:
+                cls.logger.warning(
+                    f"Sim device data at {addr} has no corresponding SDO data"
+                )
+                continue
             for ix, sdo in cls.sim_sdo_data[addr].items():
                 default = sdo.default_value
                 sdo_vals[ix] = dd_params.get(str(sdo), default)
