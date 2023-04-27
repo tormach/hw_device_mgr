@@ -4,7 +4,7 @@ from ..cia_301.device import (
     CiA301SimDevice,
 )
 from ..errors.device import ErrorDevice, ErrorSimDevice
-from functools import cached_property, lru_cache
+from functools import lru_cache
 
 
 class CiA402Device(CiA301Device, ErrorDevice):
@@ -141,7 +141,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if self.feedback_out.get("state") != "OPERATION ENABLED":
             fault_desc = "Home request while drive not enabled"
             self.feedback_out.update(
-                home_success=False, home_error=True, fault=True, fault_desc=fault_desc
+                home_success=False,
+                home_error=True,
+                fault=True,
+                fault_desc=fault_desc,
             )
             return False, fault_desc
 
@@ -168,7 +171,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if self.feedback_out.get("state") != "OPERATION ENABLED":
             reason = "Move request while drive not enabled"
             self.feedback_out.update(
-                move_success=False, move_error=True, fault=True, fault_desc=reason
+                move_success=False,
+                move_error=True,
+                fault=True,
+                fault_desc=reason,
             )
             return False, reason
 
@@ -187,7 +193,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if not self.feedback_in.get("sto"):
             # STO inactive (low)
             if self.feedback_in.changed("sto"):  # Log once
-                self.logger.info(f"STO input inactive")
+                self.logger.info("STO input inactive")
             return True, None
 
         # STO active (high)
@@ -205,7 +211,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         else:
             # No ENABLE_OPERATION command; log (warning, once) and return
             if self.feedback_in.changed("sto"):
-                self.logger.warning(f"STO input active")
+                self.logger.warning("STO input active")
             return True, None
 
     @property
@@ -261,16 +267,19 @@ class CiA402Device(CiA301Device, ErrorDevice):
             state_cmd = self.command_in.get("state")
             sw = fb_in.get("status_word")
             goal_reasons.append(f"state {state} != {state_cmd}")
-            if (state_cmd in ("SWITCHED ON", "OPERATION ENABLED")
-                and not self.test_sw_bit(sw, "VOLTAGE_ENABLED")):
+            if state_cmd in (
+                "SWITCHED ON",
+                "OPERATION ENABLED",
+            ) and not self.test_sw_bit(sw, "VOLTAGE_ENABLED"):
                 fault = True
                 fault_desc = "Enable command while no voltage at motor"
                 goal_reasons.append(fault_desc)
 
         # Raise fault if device unexpectedly goes offline
-        if (
-            self.command_in.get("state") == "OPERATION ENABLED" and
-            not self.test_sw_bit(sw, "READY_TO_SWITCH_ON")
+        if self.command_in.get(
+            "state"
+        ) == "OPERATION ENABLED" and not self.test_sw_bit(
+            sw, "READY_TO_SWITCH_ON"
         ):
             fault = True
             fault_desc = "Enabled drive unexpectedly disabled"
@@ -363,7 +372,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         flags = [
             k
             for k, v in cls.sw_bits.items()
-            if not sw_mask & (1<<v) and cls.test_sw_bit(sw, k)
+            if not sw_mask & (1 << v) and cls.test_sw_bit(sw, k)
         ]
         flags = ",".join(flags) if flags else "(none)"
         sw = cls.data_types.uint16(sw)  # For formatting
@@ -495,12 +504,12 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_request = False
         if self.command_in.get("home_request"):
             if self.command_in.changed("home_request"):
-                self.logger.info(f"Homing operation requested")
+                self.logger.info("Homing operation requested")
             if self.feedback_out.get("control_mode_fb") == self.MODE_HM:
                 # Don't actually set HOMING_START until in MODE_HM
                 home_request = True
         elif self.command_in.changed("home_request"):  # home_request cleared
-            self.logger.info(f"Homing operation complete")
+            self.logger.info("Homing operation complete")
         return home_request
 
     def _check_pp_request(self):
@@ -509,10 +518,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         relative_target = False
         if self.command_in.get("move_request"):
             if self.command_in.changed("move_request"):
-                self.logger.info(f"Move operation requested")
+                self.logger.info("Move operation requested")
                 move_request = True
                 if self.command_in.get("relative_target"):
-                    self.logger.info(f"Target position is relative")
+                    self.logger.info("Target position is relative")
                     relative_target = True
         else:
             # Clear move request unless setpoint ack not set after previous new
@@ -523,7 +532,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
             setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
             move_request = prev_nsp and not setpoint_ack
             if self.command_in.changed("move_request"):  # move_request cleared
-                self.logger.info(f"Move operation request cleared")
+                self.logger.info("Move operation request cleared")
         return move_request, relative_target
 
     @classmethod
@@ -534,8 +543,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         cmd = cls.cw_to_cmd_map().get(cw & mask, "Unknown command")
         flags = [
             k  # Names of set bits not part of the CiA402 command
-            for k,v in cls.cw_bits.items()
-            if not (1<<v) & mask and cw & (1<<v)
+            for k, v in cls.cw_bits.items()
+            if not (1 << v) & mask and cw & (1 << v)
         ]
         flags = ",".join(flags) if flags else "(none)"
         cw = cls.data_types.by_shared_name("uint16")(cw)  # Format
@@ -558,7 +567,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if next_cm == self.MODE_HM:
             operation_mode_specific_1 = self._check_hm_request()
         elif next_cm == self.MODE_PP:
-            operation_mode_specific_1, operation_mode_specific_3 = self._check_pp_request()
+            (
+                operation_mode_specific_1,
+                operation_mode_specific_3,
+            ) = self._check_pp_request()
         else:
             operation_mode_specific_1 = False
         next_cw = self._add_control_word_flags(
@@ -590,8 +602,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
     @lru_cache
     def cw_to_cmd_map(cls):
         res = {
-            v:k
-            for k,v in cls.hold_state_control_word.items()
+            v: k
+            for k, v in cls.hold_state_control_word.items()
             if v is not None and k != "FAULT"
         }
         res[0x0002] = "QUICK STOP ACTIVE"

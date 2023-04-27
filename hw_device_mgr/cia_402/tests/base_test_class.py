@@ -9,7 +9,6 @@ import pytest
 
 
 class BaseCiA402TestClass(BaseCiA301TestClass):
-
     # test_read_update_write_402() configuration
     read_update_write_402_package = "hw_device_mgr.cia_402.tests"
     read_update_write_402_yaml = "read_update_write.cases.yaml"
