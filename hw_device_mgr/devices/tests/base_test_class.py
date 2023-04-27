@@ -10,7 +10,6 @@ from .devices import (
 
 
 class BaseDevicesTestClass(BaseEtherCATTestClass):
-
     device_class = DevicesForTest
     # device_class = DevicesForTest
     device_model_classes = (

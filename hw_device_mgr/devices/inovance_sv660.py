@@ -58,8 +58,8 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
             fb_out.update(home_found=True)
         return fb_out
 
-class SimInovanceSV660(InovanceSV660, CiA402SimDevice):
 
+class SimInovanceSV660(InovanceSV660, CiA402SimDevice):
     def set_sim_feedback(self):
         # Simulate home_found feedback
         sfb = super().set_sim_feedback()
