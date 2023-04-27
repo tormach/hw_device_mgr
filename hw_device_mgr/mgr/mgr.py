@@ -1,4 +1,3 @@
-from ..logging import LoggingMixin
 from ..device import Device, SimDevice
 from ..cia_402.device import CiA402Device, CiA402SimDevice
 
@@ -64,7 +63,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     # mgr_config and device_config are YAML loaded by __main__ and passed in
     def init(self, /, mgr_config, device_config, **kwargs):
         """Initialize Manager instance."""
-        self.logger.info(f"New device manager instance starting")
+        self.logger.info("New device manager instance starting")
         self.mgr_config = mgr_config
         # Pass device config to Config class
         assert device_config, "Empty device configuration"
@@ -129,7 +128,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         # - goal_reached/goal_reason used by mgr
         feedback_out={
             # These are sim only, not needed in debug output
-            "position_cmd", "position_fb",
+            "position_cmd",
+            "position_fb",
         },
         # - Don't expose device `state` cmd, controlled by manager
         command_in={"state"},
@@ -436,7 +436,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return dev.get_feedback()
 
     def merge_device_descriptions(self, descriptions):
-        """Merge descriptions into a single string with deduplication"""
+        """Merge descriptions into a single string with deduplication."""
         # descriptions is hash of device:description; invert to hash of
         # description:[str(device), ...]
         rev_descriptions = dict()
@@ -512,8 +512,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
         # Drives enabled or not
         enabled = (
-            cmd_out.get("state") == self.STATE_START and
-            goal_reached and not fault
+            cmd_out.get("state") == self.STATE_START
+            and goal_reached
+            and not fault
         )
 
         # Update feedback out, log, return
@@ -528,9 +529,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             if mgr_fb_out.get("goal_reached"):
                 self.logger.debug("Manager reached goal state")
             else:
-                self.logger.debug(
-                    f"Waiting:  {mgr_fb_out.get('goal_reason')}"
-                )
+                self.logger.debug(f"Waiting:  {mgr_fb_out.get('goal_reason')}")
         return mgr_fb_out
 
     def set_command(self, **cmd_in_kwargs):
@@ -556,19 +555,15 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         else:
             new_state_cmd = False
 
-        # Check for new faults
-        new_device_faults = self.query_devices(fault=True, changed=True)
-
         # Special cases where 'fault' or incoming command update overrides
         # current command:
         if cmd_in.get("state_cmd") not in self.cmd_int_to_name_map:
             msg = f"Invalid state command, '{cmd_in.get('state_cmd')}'"
             self.logger.error(msg)
             cmd_out.update(state=self.STATE_FAULT, state_log=msg)
-        elif (
-            old_cmd_out.get("state") != self.STATE_FAULT and
-            self.feedback_out.get("fault")
-        ):
+        elif old_cmd_out.get(
+            "state"
+        ) != self.STATE_FAULT and self.feedback_out.get("fault"):
             # Fault feedback not from device faults (e.g. timeout)
             if self.feedback_out.changed("fault"):
                 self.logger.warning(
@@ -576,10 +571,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 )
             if new_state_cmd:
                 self.logger.warning("Ignoring new state command")
-            cmd_out.update(
-                state=self.STATE_FAULT,
-                state_log=f"Manager fault",
-            )
+            cmd_out.update(state=self.STATE_FAULT, state_log="Manager fault")
         elif new_state_cmd:
             # state_set went high; latch state_cmd from kwargs
             cmd_out.update(
@@ -592,7 +584,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # Received new command to stop/start/fault.  Try it
             # by triggering the FSM event; a Canceled exception means
             # it can't be done, so ignore it.
-            cmd_int = cmd_out.get('state')
+            cmd_int = cmd_out.get("state")
             cmd_str = self.state_str
             self.logger.debug(f"New state command:  {cmd_str} ({cmd_int})")
             event = f"{cmd_str}_command"
@@ -694,5 +686,4 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
 
 class SimHWDeviceMgr(HWDeviceMgr, SimDevice):
-
     device_base_class = CiA402SimDevice

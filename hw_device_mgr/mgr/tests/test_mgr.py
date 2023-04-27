@@ -43,7 +43,7 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
     def string_format_kwargs(self):
         """YAML string `format()` keyword args."""
         items = enumerate(str(d) for d in self.obj.devices)
-        drive_strs=[item[1] for item in items]
+        drive_strs = [item[1] for item in items]
         return dict(
             drives=drive_strs,
             drives3plus=",".join(drive_strs[3:]),
@@ -250,8 +250,7 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
         # Add SV660N feedback_out home_found exception
         mno = self.missing_not_ok["feedback_out"]
         for i in range(7):
-            attr = f"d.{i}.home_found"
-            mno_home_found = mno.setdefault(attr, set())  # Empty set signified OK
+            mno.setdefault(f"d.{i}.home_found", set())  # Empty set signifies OK
 
     def get_feedback_and_check(self):
         super().get_feedback_and_check()
@@ -265,7 +264,7 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
                 continue
             # Spin while we wait on the worker
             timeout, incr = 1, 0.01
-            for i in range(int(timeout/incr)):
+            for i in range(int(timeout / incr)):
                 if dev.config.initialize_params():
                     break
                 time.sleep(incr)
