@@ -8,6 +8,5 @@ from .bogus_devices.device import (
 
 
 class ErrorBaseTestClass(BaseTestClass):
-
     device_class = BogusErrorDevice
     device_model_classes = BogusErrorV1Servo, BogusErrorV2Servo, BogusErrorV1IO
