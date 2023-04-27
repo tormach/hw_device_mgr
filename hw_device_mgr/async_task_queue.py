@@ -2,13 +2,14 @@ import threading
 import queue
 from functools import cached_property, lru_cache
 
+
 class AsyncTaskQueue:
     """
     Generic class to process commands in an asynchronous queue.
 
-    Multiple instances may `enqueue` commands for a singleton worker instance
-    processing those in a thread with the `process_queue` command (implemented
-    in subclasses).
+    Multiple instances may `enqueue` commands for a singleton worker
+    instance processing those in a thread with the `process_queue`
+    command (implemented in subclasses).
     """
 
     # Class-level dict of singleton queues
@@ -51,8 +52,8 @@ class AsyncTaskQueue:
         """
         Worker thread loop callback.
 
-        Pop commands off command queue and pass to `process_cmd` method.  Repeat
-        untill `join` method is called.
+        Pop commands off command queue and pass to `process_cmd` method.
+        Repeat untill `join` method is called.
         """
         while True:
             cmd_version, cmd = self.cmd_queue.get()
@@ -66,8 +67,9 @@ class AsyncTaskQueue:
         """
         Create new worker instance and start worker thread.
 
-        This may be called from multiple instances enqueuing commands, but will
-        only ever create a single worker instance running a single thread.
+        This may be called from multiple instances enqueuing commands,
+        but will only ever create a single worker instance running a
+        single thread.
         """
         if hasattr(cls, "_worker_instance"):
             assert type(cls._worker_instance) is cls  # Subclass sanity
@@ -125,13 +127,14 @@ class AsyncTaskQueue:
         """
         Return `True` if all commands enqueued by this instance were processed.
 
-        This may return `True` for one instance while returning `False` for
-        another instance with commands still waiting to be processed.
+        This may return `True` for one instance while returning `False`
+        for another instance with commands still waiting to be
+        processed.
         """
         return self.progress_version >= self.cmd_version
 
     def join(self):
-        """Block until all queued items are processed and join worker thread."""
+        """Join worker thread after queue is drained; blocks."""
         self.cmd_queue.join()  # Wait for worker to drain cmd queue & join
         self.all_cmds_complete()  # Drain progress queue
         self.progress_queue.join()  # & join
