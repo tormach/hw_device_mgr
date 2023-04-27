@@ -6,7 +6,6 @@ from ...mgr_hal.tests.test_mgr import TestHALHWDeviceMgr as _TestHALHWDeviceMgr
 class TestROSHWDeviceMgr(
     BaseROSHALMgrTestClass, _TestHALHWDeviceMgr, _TestROSHWDeviceMgr
 ):
-
     expected_mro = [
         "ROSHWDeviceMgrTestCategory",
         "ROSHALSimHWDeviceMgr",
