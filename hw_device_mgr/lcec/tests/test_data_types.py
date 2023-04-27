@@ -8,7 +8,6 @@ from .base_test_class import BaseLCECTestClass
 class TestLCECDataType(
     BaseLCECTestClass, _TestEtherCATDataType, _TestHALDataType
 ):
-
     defined_shared_types = {
         "bit",
         "int8",

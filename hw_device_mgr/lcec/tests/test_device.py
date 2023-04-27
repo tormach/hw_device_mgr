@@ -9,7 +9,6 @@ from .base_test_class import BaseLCECTestClass
 
 
 class TestLCECDevice(BaseLCECTestClass, _TestEtherCATDevice, _TestHALDevice):
-
     expected_mro = [
         "LCECSimDevice",
         "LCECDevice",

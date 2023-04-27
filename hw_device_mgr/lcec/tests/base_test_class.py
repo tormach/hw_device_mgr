@@ -15,7 +15,6 @@ from .bogus_devices.device import (
 
 
 class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
-
     # Classes under test in this module
     data_type_class = LCECDataType
     sdo_class = LCECSDO
