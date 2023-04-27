@@ -3,7 +3,6 @@ from ..cia_301.command import (
     CiA301SimCommand,
     CiA301CommandException,
 )
-from .data_types import EtherCATDataType
 
 
 class EtherCATCommandException(CiA301CommandException):

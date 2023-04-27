@@ -14,7 +14,6 @@ import pytest
 
 
 class BaseEtherCATTestClass(BaseCiA402TestClass):
-
     # Classes under test in this module
     data_type_class = EtherCATDataType
     sdo_class = EtherCATSDO

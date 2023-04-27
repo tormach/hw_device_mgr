@@ -3,7 +3,6 @@ from .base_test_class import BaseEtherCATTestClass
 
 
 class TestEtherCATDevice(BaseEtherCATTestClass, _TestCiA402Device):
-
     expected_mro = [
         "RelocatableESIDevice",
         "EtherCATSimDevice",

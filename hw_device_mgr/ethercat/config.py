@@ -13,9 +13,9 @@ class EtherCATConfig(CiA301Config):
     EtherCAT CoE shares much in common with CiA 301, and this class
     subclasses `CiA301Config`.
 
-    Each EtherCAT device comes with an ESI "EtherCAT Slave
-    Information" XML file that describes the device's object
-    dictionary, sync managers, etc.
+    Each EtherCAT device comes with an ESI "EtherCAT Slave Information"
+    XML file that describes the device's object dictionary, sync
+    managers, etc.
     """
 
     data_type_class = EtherCATDataType
