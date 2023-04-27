@@ -5,7 +5,6 @@ from pprint import pformat
 
 
 class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
-
     expected_mro = [
         "ROSHWDeviceMgrTestCategory",
         "ROSSimHWDeviceMgr",

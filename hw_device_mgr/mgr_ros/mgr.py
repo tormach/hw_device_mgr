@@ -16,15 +16,16 @@ class ROSHWDeviceMgr(HWDeviceMgr, ConfigIO):
         """
         Initialize manager instance.
 
-        Init ROS node, shutdown callback and rate object, and read manager
-        config and device config YAML path from ROS params, in addition to base
-        class init.
+        Init ROS node, shutdown callback and rate object, and read
+        manager config and device config YAML path from ROS params, in
+        addition to base class init.
 
-        The ROS param `device_config_path` must be a `str` containing the path
-        to the device configuration YAML file.
+        The ROS param `device_config_path` must be a `str` containing
+        the path to the device configuration YAML file.
 
-        If the ROS param `sim_device_data_path` is non-empty, it must be a `str`
-        containing the path to a YAML file with the sim device configuration.
+        If the ROS param `sim_device_data_path` is non-empty, it must be
+        a `str` containing the path to a YAML file with the sim device
+        configuration.
         """
         # - Init ROS node
         node_kwargs = dict(

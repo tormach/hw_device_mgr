@@ -65,8 +65,8 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         """
         Device configuration data fixture.
 
-        Load device configuration with `load_device_config()` and munge with
-        `munge_device_config()`.
+        Load device configuration with `load_device_config()` and munge
+        with `munge_device_config()`.
 
         Device configuration in the same format as non-test
         configuration, described in `Config` classes.
