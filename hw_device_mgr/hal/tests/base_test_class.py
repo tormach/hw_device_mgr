@@ -11,7 +11,6 @@ from .mock_hal import MockHALComponent
 
 
 class BaseHALTestClass(BaseCiA402TestClass):
-
     # Classes under test in this module
     data_type_class = HALDataType
     device_class = BogusHALDevice

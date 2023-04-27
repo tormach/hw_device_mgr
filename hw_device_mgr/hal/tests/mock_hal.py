@@ -21,7 +21,7 @@ class MockHALPin(MockFixture):
         self.storage[self.pname] = 0
 
     def format_val(self, val):
-        """Format value for printing by fixture"""
+        """Format value for printing by fixture."""
         if self.ptype in (HALMixin.HAL_U32, getattr(HALMixin, "HAL_U64", None)):
             return f"{val}/0x{val:X}"
         else:
