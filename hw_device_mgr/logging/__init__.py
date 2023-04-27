@@ -40,6 +40,7 @@ class Logging:
     def getLogger(cls, name):
         return cls(name)
 
+
 class LoggingMixin:
     """Mixin class that provides a `logger` attribute."""
 

@@ -22,7 +22,9 @@ class Interface:
     def set_types(self, **values):
         """Set data types for values if a type is defined for that value."""
         for key, val in list(values.items()):
-            assert key in self.data_types, f"No key '{key}' in '{self.name}' interface"
+            assert (
+                key in self.data_types
+            ), f"No key '{key}' in '{self.name}' interface"
             values[key] = self.data_types[key](val)
         return values
 

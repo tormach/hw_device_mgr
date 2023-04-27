@@ -18,14 +18,20 @@ class Device(LoggingMixin, abc.ABC):
 
     feedback_in_data_types = dict()
     feedback_out_data_types = dict(
-        goal_reached="bit", goal_reason="str", fault="bit", fault_desc="str",
+        goal_reached="bit",
+        goal_reason="str",
+        fault="bit",
+        fault_desc="str",
     )
     command_in_data_types = dict()
     command_out_data_types = dict()
 
     feedback_in_defaults = dict()
     feedback_out_defaults = dict(
-        goal_reached=True, goal_reason="Reached", fault=False, fault_desc="",
+        goal_reached=True,
+        goal_reason="Reached",
+        fault=False,
+        fault_desc="",
     )
     command_in_defaults = dict()
     command_out_defaults = dict()
@@ -170,7 +176,7 @@ class Device(LoggingMixin, abc.ABC):
         return False
 
     def set_timeout(self, timeout_seconds):
-        """Set timeout for `timeout_seconds` in the future"""
+        """Set timeout for `timeout_seconds` in the future."""
         self._timeout = time.time() + timeout_seconds
 
     def set_command(self, **kwargs) -> Interface:
@@ -375,7 +381,6 @@ class Device(LoggingMixin, abc.ABC):
 
 
 class SimDevice(Device):
-
     sim_feedback_data_types = dict()
     sim_feedback_defaults = dict()
 

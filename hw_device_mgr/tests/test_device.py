@@ -2,7 +2,6 @@ import pytest
 from .base_test_class import BaseTestClass
 from ..device import Device
 import subprocess
-import time
 from pprint import pformat
 
 
@@ -196,7 +195,6 @@ class TestDevice(BaseTestClass):
         fb_set(True, False)
         assert not obj.check_and_set_timeout()
 
-
     #########################################
     # Test read()/update()/write() integration
     #
@@ -252,7 +250,7 @@ class TestDevice(BaseTestClass):
         # Nested dictionaries of { interface : { attr : { model_id, ... } } }:
         # model_id must have interface attribute; for other models, missing OK
         self.missing_not_ok = {
-            i:dict() for i in self.device_class.interface_names
+            i: dict() for i in self.device_class.interface_names
         }
 
         self.read_update_write_conv_test_data()

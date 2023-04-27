@@ -9,7 +9,6 @@ import logging
 
 
 class HalSamplerDecoder:
-
     logger = logging.getLogger(__name__)
 
     sampler_pin_re = re.compile(

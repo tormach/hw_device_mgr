@@ -2,7 +2,6 @@ from .base_test_class import BaseTestClass
 
 
 class TestDataType(BaseTestClass):
-
     # All shared types in the base `DataType` class
     all_shared_types = {
         "bit",
