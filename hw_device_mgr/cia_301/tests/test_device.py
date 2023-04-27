@@ -33,7 +33,7 @@ class TestCiA301Device(BaseCiA301TestClass, _TestDevice):
             return
         # Spin while we wait on the worker
         timeout, incr = 1, 0.01
-        for i in range(int(timeout/incr)):
+        for i in range(int(timeout / incr)):
             if self.obj.config.initialize_params():
                 break
             time.sleep(incr)

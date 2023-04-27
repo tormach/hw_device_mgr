@@ -1,5 +1,4 @@
 from ..device import Device, SimDevice
-from ..interface import Interface
 from .config import CiA301Config, CiA301SimConfig
 from .data_types import CiA301DataType
 from functools import cached_property, lru_cache
@@ -108,10 +107,9 @@ class CiA301Device(Device):
 
         # Param init:  download param values asynchronously after coming online
         if (
-            self.feedback_in.changed("online") or
-            not self.config.initialize_params()
+            self.feedback_in.changed("online")
+            or not self.config.initialize_params()
         ):
-            restart = self.feedback_in.changed("online")
             self.config.initialize_params(restart=True)
             goal_reached = False
             goal_reasons.append("updating device params")
@@ -139,18 +137,13 @@ class CiA301Device(Device):
         fb_out.update(
             goal_reached=goal_reached,
             goal_reason=goal_reason,
-            param_state=param_state
+            param_state=param_state,
         )
         if goal_reached and fb_out.changed("param_state"):
             self.logger.info("Device param init complete")
         if not goal_reached and fb_out.changed("goal_reason"):
             self.logger.info(f"Goal not reached: {goal_reason}")
         return fb_out
-
-    def set_command(self, **kwargs) -> Interface:
-        cmd_out = super().set_command(**kwargs)
-        fb_out = self.interface("feedback_out")
-        return cmd_out
 
     @classmethod
     def munge_sdo_data(cls, sdo_data):

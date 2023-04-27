@@ -70,14 +70,14 @@ class BaseCiA301TestClass(BaseTestClass):
         Return a copy of `device_config` with minor processing.
 
         Optionally, to make the YAML file reusable, each configuration's
-        `vendor_id` and `product_code` keys may be replaced with a `category`
-        key matching a parent of classes listed; this fixture will re-add those
-        keys.
+        `vendor_id` and `product_code` keys may be replaced with a
+        `category` key matching a parent of classes listed; this fixture
+        will re-add those keys.
 
-        The `addresses` key contains a list of device addresses.  To be reusable
-        for EtherCAT, addresses are lists of two or three integers, `[bus,
-        position, (optional) alias]`.  Plain CiA301 devices don't use aliases,
-        so the `alias` element is removed.
+        The `addresses` key contains a list of device addresses.  To be
+        reusable for EtherCAT, addresses are lists of two or three
+        integers, `[bus, position, (optional) alias]`.  Plain CiA301
+        devices don't use aliases, so the `alias` element is removed.
         """
         new_device_config = list()
         for conf in device_config:
@@ -128,8 +128,8 @@ class BaseCiA301TestClass(BaseTestClass):
         """
         Device configuration data fixture.
 
-        Load device configuration with `load_device_config()` and munge with
-        `munge_device_config()`.
+        Load device configuration with `load_device_config()` and munge
+        with `munge_device_config()`.
 
         Device configuration in the same format as non-test
         configuration, described in `Config` classes.

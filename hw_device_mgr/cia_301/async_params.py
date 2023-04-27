@@ -1,5 +1,6 @@
 from ..async_task_queue import AsyncTaskQueue
 
+
 class AsyncParamsQueue(AsyncTaskQueue):
     """Process device configuration commands in an asynchronous queue."""
 
@@ -11,5 +12,5 @@ class AsyncParamsQueue(AsyncTaskQueue):
     def download(self, config, values, **cmd_kwargs):
         """Enqueue one param config 'download' command."""
         for sdo, val in values.items():
-            cmd = (config, 'download', (sdo, val), cmd_kwargs)
+            cmd = (config, "download", (sdo, val), cmd_kwargs)
             super().enqueue(cmd)

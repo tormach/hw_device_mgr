@@ -3,7 +3,6 @@ from .base_test_class import BaseCiA301TestClass
 
 
 class TestCiA301DataType(BaseCiA301TestClass, _TestDataType):
-
     defined_shared_types = {
         "bit",
         "int8",

@@ -10,16 +10,15 @@ class CiA301Config(LoggingMixin):
     """
     CiA 301 device configuration interface.
 
-    This class presents a high-level configuration interface to
-    CiA 301 devices.  The class can scan the bus for devices and
-    their models & positions.  Class instances correspond to a single
-    device, and can initialize device parameter values from a
-    configuration at init, and can upload and download SDO values
-    during operation.
+    This class presents a high-level configuration interface to CiA 301
+    devices.  The class can scan the bus for devices and their models &
+    positions.  Class instances correspond to a single device, and can
+    initialize device parameter values from a configuration at init, and
+    can upload and download SDO values during operation.
 
     It uses a low-level `CiA301Command` interface to scan the bus and
-    upload/download object dictionary values, and presents a
-    high-level interface for manipulating devices.
+    upload/download object dictionary values, and presents a high-level
+    interface for manipulating devices.
 
     This abstract class must be subclassed and `command_class` defined
     in order to read/write dictionary objects from/to devices.
@@ -81,7 +80,7 @@ class CiA301Config(LoggingMixin):
 
     def __str__(self):
         cname = self.__class__.__name__
-        return f"{cname}:{self.model_id}@{self.address}".replace(" ","")
+        return f"{cname}:{self.model_id}@{self.address}".replace(" ", "")
 
     def __repr__(self):
         return f"<{self}>"
@@ -356,16 +355,16 @@ class CiA301Config(LoggingMixin):
         """
         Asynchronously initialize device params.
 
-        The first time this method is called, or if the `restart` arg is set, it
-        will enqueue device params to be downloaded to the device in a worker
-        thread.  This and following calls (without `restart` set) will return
-        `False` until device params have finished downloading, and then will
-        return `True`.
+        The first time this method is called, or if the `restart` arg is
+        set, it will enqueue device params to be downloaded to the
+        device in a worker thread.  This and following calls (without
+        `restart` set) will return `False` until device params have
+        finished downloading, and then will return `True`.
 
-        When an offline device comes online, this function should be run (with
-        `restart=True` the first time if device was previously offline) in a
-        cycle until it returns `True` to ensure the device parameters are
-        completely configured.
+        When an offline device comes online, this function should be run
+        (with `restart=True` the first time if device was previously
+        offline) in a cycle until it returns `True` to ensure the device
+        parameters are completely configured.
         """
         if restart:
             # Params haven't been queued up, or need requeuing

@@ -80,7 +80,7 @@ class TestCiA301Config(BaseCiA301TestClass):
 
         # Spin while we wait on the worker
         timeout, incr = 1, 0.01
-        for i in range(int(timeout/incr)):
+        for i in range(int(timeout / incr)):
             if obj.initialize_params():
                 break
             time.sleep(incr)
