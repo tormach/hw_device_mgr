@@ -1,7 +1,7 @@
 <!-- Expected lcec config generated from ../../cia_301/tests/device_config.yaml -->
 <masters>
   <master idx="0" appTimePeriod="1000000" refClockSyncCycles="1">
-    <slave idx="10" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true">
+    <slave idx="10" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true" overlappingPdos="false">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
@@ -18,7 +18,7 @@
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="11" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true">
+    <slave idx="11" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true" overlappingPdos="false">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
@@ -35,7 +35,7 @@
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="12" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905061" configPdos="true">
+    <slave idx="12" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905061" configPdos="true" overlappingPdos="true">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
@@ -69,7 +69,7 @@
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="16" alias="0" type="generic" vid="0x00B090C0" pid="0xB0901060" configPdos="true">
+    <slave idx="16" alias="0" type="generic" vid="0x00B090C0" pid="0xB0901060" configPdos="true" overlappingPdos="false">
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
       <syncManager idx="2" dir="out">
@@ -93,7 +93,7 @@
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="0" alias="4" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true">
+    <slave idx="0" alias="4" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true" overlappingPdos="false">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
@@ -110,7 +110,7 @@
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="0" alias="5" type="generic" vid="0x00B090C0" pid="0xB0905061" configPdos="true">
+    <slave idx="0" alias="5" type="generic" vid="0x00B090C0" pid="0xB0905061" configPdos="true" overlappingPdos="true">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>

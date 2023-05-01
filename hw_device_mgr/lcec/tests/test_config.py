@@ -10,7 +10,7 @@ class TestLCECConfig(BaseLCECTestClass, _TestEtherCATConfig):
     ethercat_conf_xml_package = "hw_device_mgr.lcec.tests"
     ethercat_conf_xml_resource = "ethercat.conf.xml"
 
-    def test_gen_ethercat_xml(self, config_cls, tmp_path):
+    def test_gen_ethercat_xml(self, config_cls, tmp_path, dcs_data):
         # Read expected conf.xml
         rsrc = (self.ethercat_conf_xml_package, self.ethercat_conf_xml_resource)
         with self.open_resource(*rsrc) as f:
