@@ -188,9 +188,7 @@ class CiA301Device(Device):
     def get_device(cls, address=None, **kwargs):
         registry = cls._address_registry.setdefault(cls.name, dict())
         config = address
-        address = (
-            config.address if isinstance(address, cls.config_class) else address
-        )
+        address = config.address if hasattr(address, "address") else address
         if address in registry:
             return registry[address]
         # kwargs will contain skip_optional_config_values at this point, but it
