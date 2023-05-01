@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.4.0
     hooks:
       - id: check-ast
       - id: fix-byte-order-marker
@@ -25,18 +25,18 @@ repos:
         types: [python]
 
 - repo: https://github.com/myint/docformatter
-  rev: v1.4
+  rev: v1.6.4
   hooks:
     - id: docformatter
       args: [--pre-summary-newline, --in-place]
 
 -   repo: https://github.com/pycqa/flake8
-    rev: 4.0.1
+    rev: 6.0.0
     hooks:
     -   id: flake8
 
 - repo: https://github.com/pycqa/pydocstyle
-  rev: 6.1.1
+  rev: 6.3.0
   hooks:
   - id: pydocstyle
     args:
