@@ -221,6 +221,7 @@ class CiA301Config(LoggingMixin):
 
         - `vendor_id`, `product_code`:  `int` values for matching device
           model
+        - Other device-specific keys
         - `bus`:  Bus `int` value
         - `positions`:  `list` of matching `int` positions on bus
 
