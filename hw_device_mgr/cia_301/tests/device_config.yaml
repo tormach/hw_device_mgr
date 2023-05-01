@@ -73,6 +73,7 @@
   #
   # vendor_id:  0xB090C0
   # product_code:  0xB0905011
+  overlappingPdos:  true
 
   addresses:
     # [bus, position, (optional) alias]; alias (default 0) is used by
