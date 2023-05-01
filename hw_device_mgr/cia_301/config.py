@@ -52,7 +52,10 @@ class CiA301Config(LoggingMixin):
         name=None,
         skip_optional_config_values=True,
     ):
-        self.address = self.canon_address(address)
+        if hasattr(address, "address"):
+            self.address = address.address  # Config object passed as address
+        else:
+            self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
         self.name = name or str(self.model_id)
         self.params_queue = AsyncTaskQueue(self.name)
