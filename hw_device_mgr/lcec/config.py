@@ -44,7 +44,9 @@ class LCECConfig(EtherCATConfig):
             masters[dev.bus] = (master, bus_conf)
         # Set up <slave/> elements & their child elements
         for dev in devs:
+            config = cls.gen_config(dev.model_id, dev.address)
             master, bus_conf = masters[dev.bus]
+            # <slave/> element
             slave_xml = etree.Element(
                 "slave",
                 idx=str(0 if dev.alias else dev.position),
@@ -54,8 +56,10 @@ class LCECConfig(EtherCATConfig):
                 pid=str(dev.product_code),
                 configPdos="true",
             )
+            overlapping_pdos = config.get("overlappingPdos", False)
+            if overlapping_pdos:
+                slave_xml["overlappingPdos"] = "true"
             master.append(slave_xml)
-            config = cls.gen_config(dev.model_id, dev.address)
             # <dcConf/>
             if dev.dcs():
                 assign_activate = max(
