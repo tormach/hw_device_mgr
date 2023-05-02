@@ -112,13 +112,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             for name, skip_set in self.device_translated_interfaces.items():
                 dev_intf = dev.interface(name)
                 mgr_intf = self.interface(name)
-                for attr_name, val in dev_intf.get().items():
+                for attr_name in dev_intf.keys():
                     if attr_name in skip_set:
                         continue
                     mgr_attr_name = prefix + attr_name
-                    mgr_intf.add_attribute(
-                        mgr_attr_name, val, dev_intf.get_data_type(attr_name)
-                    )
+                    default = dev_intf.defaults[attr_name]
+                    data_type = dev_intf.get_data_type(attr_name)
+                    mgr_intf.add_attribute(mgr_attr_name, default, data_type)
 
     @classmethod
     def scan_devices(cls, **kwargs):
@@ -701,6 +701,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         reset = self.command_out.get("reset_fault_cmd")
         shutdown = self.command_in.get("shutdown")
         for dev in self.devices:
+            if not hasattr(dev, "MODE_CSP"):
+                continue  # Not a CiA402 device
             if "command_in" in self.device_translated_interfaces:
                 # Copy mgr command_out to matching device command_in
                 dev_command_in = dev.interface("command_in")
