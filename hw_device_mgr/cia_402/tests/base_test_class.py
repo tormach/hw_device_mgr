@@ -4,6 +4,7 @@ from .bogus_devices.device import (
     BogusCiA402V1Servo,
     BogusCiA402V2Servo,
     BogusCiA402V1IO,
+    BogusCiA402V1JBox,
 )
 import pytest
 
@@ -19,6 +20,7 @@ class BaseCiA402TestClass(BaseCiA301TestClass):
         BogusCiA402V1Servo,
         BogusCiA402V2Servo,
         BogusCiA402V1IO,
+        BogusCiA402V1JBox,
     )
 
     @pytest.fixture

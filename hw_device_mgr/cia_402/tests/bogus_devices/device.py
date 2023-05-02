@@ -29,3 +29,9 @@ class BogusCiA402V1IO(BogusCiA402Device):
     name = "bogo_cia402_v1_io"
     test_category = "bogus_v1_io"
     product_code = 0xB0901020
+
+
+class BogusCiA402V1JBox(BogusCiA402Device):
+    name = "bogo_cia402_v1_jbox"
+    test_category = "bogus_v1_jbox"
+    product_code = 0xB0908020
