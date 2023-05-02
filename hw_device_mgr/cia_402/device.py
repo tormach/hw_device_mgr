@@ -347,7 +347,11 @@ class CiA402Device(CiA301Device, ErrorDevice):
             fb_out.update(fault=True, fault_desc=fault_desc)
 
         if self.log_status_word_changes and fb_out.changed("status_word"):
-            self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
+            sw_old, sw_new = fb_out.changed("status_word", return_vals=True)
+            sw_old &= 0x3FFF
+            sw_new &= 0x3FFF
+            if sw_old != sw_new:
+                self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
 
         if not goal_reached:
             goal_reason = "; ".join(goal_reasons)
