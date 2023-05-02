@@ -25,3 +25,9 @@ class BogusHALV1IO(BogusHALDevice):
     name = "bogo_hal_v1_io"
     test_category = "bogus_v1_io"
     product_code = 0xB0901050
+
+
+class BogusHALV1JBox(BogusHALDevice):
+    name = "bogo_hal_v1_jbox"
+    test_category = "bogus_v1_jbox"
+    product_code = 0xB0908050

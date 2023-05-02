@@ -6,6 +6,7 @@ from .bogus_devices.device import (
     BogusHALV1Servo,
     BogusHALV2Servo,
     BogusHALV1IO,
+    BogusHALV1JBox,
 )
 from .mock_hal import MockHALComponent
 
@@ -14,7 +15,12 @@ class BaseHALTestClass(BaseCiA402TestClass):
     # Classes under test in this module
     data_type_class = HALDataType
     device_class = BogusHALDevice
-    device_model_classes = BogusHALV1Servo, BogusHALV2Servo, BogusHALV1IO
+    device_model_classes = (
+        BogusHALV1Servo,
+        BogusHALV2Servo,
+        BogusHALV1IO,
+        BogusHALV1JBox,
+    )
 
     @pytest.fixture
     def mock_halcomp(self):
