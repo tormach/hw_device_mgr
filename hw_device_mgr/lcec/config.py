@@ -56,7 +56,7 @@ class LCECConfig(EtherCATConfig):
                 pid=str(dev.product_code),
                 configPdos="true",
             )
-            overlapping_pdos = config.get("overlappingPdos", False)
+            overlapping_pdos = config.get("overlapping_pdos", False)
             if overlapping_pdos:
                 slave_xml.attrib["overlappingPdos"] = "true"
             master.append(slave_xml)
