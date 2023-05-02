@@ -4,9 +4,15 @@ from .bogus_devices.device import (
     BogusErrorV1Servo,
     BogusErrorV2Servo,
     BogusErrorV1IO,
+    BogusErrorV1JBox,
 )
 
 
 class ErrorBaseTestClass(BaseTestClass):
     device_class = BogusErrorDevice
-    device_model_classes = BogusErrorV1Servo, BogusErrorV2Servo, BogusErrorV1IO
+    device_model_classes = (
+        BogusErrorV1Servo,
+        BogusErrorV2Servo,
+        BogusErrorV1IO,
+        BogusErrorV1JBox,
+    )
