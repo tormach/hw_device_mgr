@@ -33,3 +33,11 @@ class BogusEtherCATIO(BogusEtherCATDevice):
     product_code = 0xB0901030
     xml_description_fname = "BogusIO.xml"
     device_error_yaml = "bogus_v1_error_io.yaml"
+
+
+class BogusEtherCATJBox(BogusEtherCATDevice):
+    name = "bogo_ethercat_jbox"
+    test_category = "bogus_v1_jbox"
+    product_code = 0xB0908030
+    xml_description_fname = "BogusJunction.xml"
+    device_error_yaml = "unpopulated.yaml"

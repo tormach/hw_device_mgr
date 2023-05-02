@@ -8,6 +8,7 @@ from .bogus_devices.device import (
     BogusEtherCATServo,
     BogusOtherCATServo,
     BogusEtherCATIO,
+    BogusEtherCATJBox,
 )
 import re
 import pytest
@@ -24,6 +25,7 @@ class BaseEtherCATTestClass(BaseCiA402TestClass):
         BogusEtherCATServo,
         BogusOtherCATServo,
         BogusEtherCATIO,
+        BogusEtherCATJBox,
     )
     sdo_model_id_clone = tuple(
         [
@@ -32,6 +34,7 @@ class BaseEtherCATTestClass(BaseCiA402TestClass):
                 (0x00B090C0, 0xB0905030),
                 (0x00B090C0, 0xB0905031),
                 (0x00B090C0, 0xB0901030),
+                (0x00B090C0, 0xB0908030),
             )
         ]
     )
