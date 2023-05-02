@@ -214,3 +214,23 @@
               - bitLen:  5
 
   # (No parameters)
+
+
+#
+# B090.80 Junction Box
+#
+-
+  test_category:  bogus_v1_jbox
+  # test_category will be replaced with the following (or similar) in
+  #   the `device_config` fixture:
+  #
+  # vendor_id:  0xB090C0
+  # product_code:  0xB0908010
+
+  addresses:
+    # [bus, alias, position]; alias is used by EtherCAT devices and
+    # will be ignored for plain cia_301 device tests
+    - [0, 18]
+
+  config_pdos:  False
+  # (No sync managers,no parameters)

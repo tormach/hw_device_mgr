@@ -27,3 +27,9 @@ class BogusCiA301V1IO(BogusCiA301Device):
     name = "bogo_cia301_v1_io"
     test_category = "bogus_v1_io"
     product_code = 0xB0901010
+
+
+class BogusCiA301V1JBox(BogusCiA301Device):
+    name = "bogo_cia301_v1_jbox"
+    test_category = "bogus_v1_jbox"
+    product_code = 0xB0908010

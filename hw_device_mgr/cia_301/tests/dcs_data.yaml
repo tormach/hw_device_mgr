@@ -19,3 +19,4 @@ bogus_v2_servo:
     Desc:  DC unused
     AssignActivate:  0x0
 bogus_v1_io:  []  # No DCs
+bogus_v1_jbox:  []  # No DCs
