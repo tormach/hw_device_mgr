@@ -26,6 +26,9 @@ class TestCiA301Config(BaseCiA301TestClass):
         print("test obj model_id:", obj.model_id)
         assert obj.model_id in config_cls._model_sdos
         obj_sdos = obj._model_sdos[obj.model_id]
+        if not sdo_data:
+            assert not obj_sdos
+            return
         assert obj_sdos
         print("test obj SDOs:\n", pformat(obj_sdos))
         assert list(sorted(obj_sdos)) == list(sorted(sdo_data))

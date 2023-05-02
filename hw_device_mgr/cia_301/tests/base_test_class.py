@@ -8,6 +8,7 @@ from .bogus_devices.device import (
     BogusCiA301V1Servo,
     BogusCiA301V2Servo,
     BogusCiA301V1IO,
+    BogusCiA301V1JBox,
 )
 from ..command import CiA301SimCommand
 
@@ -41,6 +42,7 @@ class BaseCiA301TestClass(BaseTestClass):
         BogusCiA301V1Servo,
         BogusCiA301V2Servo,
         BogusCiA301V1IO,
+        BogusCiA301V1JBox,
     )
 
     @classmethod

@@ -652,3 +652,4 @@ bogus_v1_io:
     subindex:  0x01
     data_type:  uint8
     name:  Inputs
+bogus_v1_jbox:  {}

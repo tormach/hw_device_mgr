@@ -51,7 +51,7 @@ class CiA301Config(LoggingMixin):
 
     @classmethod
     def format_model_id(cls, model_id):
-        assert None not in model_id
+        assert None not in model_id, f"Invalid model ID {model_id} for {cls}"
         return tuple(cls.data_type_class.uint32(i) for i in model_id)
 
     @cached_property
