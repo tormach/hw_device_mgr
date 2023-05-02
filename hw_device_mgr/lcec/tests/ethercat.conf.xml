@@ -1,48 +1,48 @@
 <!-- Expected lcec config generated from ../../cia_301/tests/device_config.yaml -->
 <masters>
   <master idx="0" appTimePeriod="1000000" refClockSyncCycles="1">
-    <slave idx="10" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true" overlappingPdos="false">
+    <slave idx="10" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
       <syncManager idx="2" dir="out">
         <pdo idx="0x1600">
-          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halPin="control_word" halType="U32"/>
-          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halPin="position_cmd" halType="S32"/>
+          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halType="u32" halPin="control_word"/>
+          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halType="s32" halPin="position_cmd"/>
         </pdo>
       </syncManager>
       <syncManager idx="3" dir="in">
         <pdo idx="0x1A00">
-          <pdoEntry idx="0x6041" subIdx="0x00" bitLen="16" halPin="status_word" halType="U32"/>
-          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halPin="position_fb" halType="S32"/>
+          <pdoEntry idx="0x6041" subIdx="0x00" bitLen="16" halType="u32" halPin="status_word"/>
+          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halType="s32" halPin="position_fb"/>
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="11" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true" overlappingPdos="false">
+    <slave idx="11" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
       <syncManager idx="2" dir="out">
         <pdo idx="0x1600">
-          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halPin="control_word" halType="U32"/>
-          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halPin="position_cmd" halType="S32"/>
+          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halType="u32" halPin="control_word"/>
+          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halType="s32" halPin="position_cmd"/>
         </pdo>
       </syncManager>
       <syncManager idx="3" dir="in">
         <pdo idx="0x1A00">
-          <pdoEntry idx="0x6041" subIdx="0x00" bitLen="16" halPin="status_word" halType="U32"/>
-          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halPin="position_fb" halType="S32"/>
+          <pdoEntry idx="0x6041" subIdx="0x00" bitLen="16" halType="u32" halPin="status_word"/>
+          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halType="s32" halPin="position_fb"/>
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="12" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905061" configPdos="true" overlappingPdos="true">
+    <slave idx="12" alias="0" type="generic" vid="0x00B090C0" pid="0xB0905061" configPdos="true">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
       <syncManager idx="2" dir="out">
         <pdo idx="0x1601">
-          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halPin="control_word" halType="U32"/>
-          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halPin="position_cmd" halType="FLOAT" scale="-42.555555553" offset="42"/>
+          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halType="u32" halPin="control_word"/>
+          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halType="float" halPin="position_cmd" scale="-42.555555553" offset="42"/>
         </pdo>
       </syncManager>
       <syncManager idx="3" dir="in">
@@ -65,11 +65,11 @@
             <complexEntry bitLen="1" halType="bit" halPin="status_bit14"/>
             <complexEntry bitLen="1" halType="bit" halPin="homing_done_fb"/>
           </pdoEntry>
-          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halPin="position_fb" halType="S32"/>
+          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halType="s32" halPin="position_fb"/>
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="16" alias="0" type="generic" vid="0x00B090C0" pid="0xB0901060" configPdos="true" overlappingPdos="false">
+    <slave idx="16" alias="0" type="generic" vid="0x00B090C0" pid="0xB0901060" configPdos="false">
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
       <syncManager idx="2" dir="out">
@@ -93,31 +93,15 @@
         </pdo>
       </syncManager>
     </slave>
-    <slave idx="0" alias="4" type="generic" vid="0x00B090C0" pid="0xB0905060" configPdos="true" overlappingPdos="false">
-      <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
-      <syncManager idx="0" dir="out"/>
-      <syncManager idx="1" dir="in"/>
-      <syncManager idx="2" dir="out">
-        <pdo idx="0x1600">
-          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halPin="control_word" halType="U32"/>
-          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halPin="position_cmd" halType="S32"/>
-        </pdo>
-      </syncManager>
-      <syncManager idx="3" dir="in">
-        <pdo idx="0x1A00">
-          <pdoEntry idx="0x6041" subIdx="0x00" bitLen="16" halPin="status_word" halType="U32"/>
-          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halPin="position_fb" halType="S32"/>
-        </pdo>
-      </syncManager>
-    </slave>
-    <slave idx="0" alias="5" type="generic" vid="0x00B090C0" pid="0xB0905061" configPdos="true" overlappingPdos="true">
+    <slave idx="18" alias="0" type="generic" vid="0x00B090C0" pid="0xB0908060" configPdos="false"/>
+    <slave idx="0" alias="5" type="generic" vid="0x00B090C0" pid="0xB0905061" configPdos="true">
       <dcConf assignActivate="0x300" sync0Cycle="*1" sync0Shift="500000"/>
       <syncManager idx="0" dir="out"/>
       <syncManager idx="1" dir="in"/>
       <syncManager idx="2" dir="out">
         <pdo idx="0x1601">
-          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halPin="control_word" halType="U32"/>
-          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halPin="position_cmd" halType="FLOAT" scale="-42.555555553" offset="42"/>
+          <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halType="u32" halPin="control_word"/>
+          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halType="float" halPin="position_cmd" scale="-42.555555553" offset="42"/>
         </pdo>
       </syncManager>
       <syncManager idx="3" dir="in">
@@ -140,7 +124,7 @@
             <complexEntry bitLen="1" halType="bit" halPin="status_bit14"/>
             <complexEntry bitLen="1" halType="bit" halPin="homing_done_fb"/>
           </pdoEntry>
-          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halPin="position_fb" halType="S32"/>
+          <pdoEntry idx="0x6064" subIdx="0x00" bitLen="32" halType="s32" halPin="position_fb"/>
         </pdo>
       </syncManager>
     </slave>
