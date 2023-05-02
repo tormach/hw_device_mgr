@@ -47,6 +47,7 @@ class LCECConfig(EtherCATConfig):
             config = cls.gen_config(dev.model_id, dev.address)
             master, bus_conf = masters[dev.bus]
             # <slave/> element
+            config_pdos = "true" if config.get("config_pdos", True) else "false"
             slave_xml = etree.Element(
                 "slave",
                 idx=str(0 if dev.alias else dev.position),
@@ -54,7 +55,7 @@ class LCECConfig(EtherCATConfig):
                 type="generic",
                 vid=str(dev.vendor_id),
                 pid=str(dev.product_code),
-                configPdos="true",
+                configPdos=config_pdos,
             )
             overlapping_pdos = config.get("overlapping_pdos", False)
             if overlapping_pdos:
@@ -77,7 +78,8 @@ class LCECConfig(EtherCATConfig):
                     sync0Shift=str(s0s),
                 )
             # <syncManager/>
-            for sm_ix, sm_data in config["sync_manager"].items():
+            sync_manager = config.get("sync_manager", dict())
+            for sm_ix, sm_data in sync_manager.items():
                 assert "dir" in sm_data
                 assert sm_data["dir"] in {"in", "out"}
                 sm_xml = etree.Element(

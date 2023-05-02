@@ -11,6 +11,7 @@ from .bogus_devices.device import (
     BogusLCECV1Servo,
     BogusLCECV2Servo,
     BogusLCECV1IO,
+    BogusLCECV1JBox,
 )
 
 
@@ -21,7 +22,12 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
     command_class = LCECSimCommand
     config_class = LCECSimConfig
     device_class = BogusLCECDevice
-    device_model_classes = BogusLCECV1Servo, BogusLCECV2Servo, BogusLCECV1IO
+    device_model_classes = (
+        BogusLCECV1Servo,
+        BogusLCECV2Servo,
+        BogusLCECV1IO,
+        BogusLCECV1JBox,
+    )
 
     @classmethod
     def lcec_data_type(cls, type_str):

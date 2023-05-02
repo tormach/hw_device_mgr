@@ -34,3 +34,11 @@ class BogusLCECV1IO(BogusLCECDevice):
     product_code = 0xB0901060
     xml_description_fname = "BogusIO.xml"
     device_error_yaml = "bogus_v1_error_io.yaml"
+
+
+class BogusLCECV1JBox(BogusLCECDevice):
+    name = "bogo_lcec_v1_jbox"
+    test_category = "bogus_v1_jbox"
+    product_code = 0xB0908060
+    xml_description_fname = "BogusJunction.xml"
+    device_error_yaml = "unpopulated.yaml"
