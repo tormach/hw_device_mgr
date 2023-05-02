@@ -31,3 +31,10 @@ class BogusErrorV1IO(BogusErrorDevice):
     test_category = "bogus_v1_io"
     model_id = 0xB0901041
     device_error_yaml = "bogus_v1_error_io.yaml"
+
+
+class BogusErrorV1JBox(BogusErrorDevice):
+    name = "bogus_v1_error_jbox"
+    test_category = "bogus_v1_jbox"
+    model_id = 0xB0908041
+    device_error_yaml = "unpopulated.yaml"

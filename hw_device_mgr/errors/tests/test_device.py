@@ -16,6 +16,9 @@ class TestErrorDevice(ErrorBaseTestClass, _TestDevice):
         print("yaml:", obj.device_error_package, obj.device_error_yaml)
         errs = obj.error_descriptions()
         assert isinstance(errs, dict)
+        if obj.device_error_yaml == "unpopulated.yaml":
+            assert len(errs) == 0
+            return
         assert len(errs) > 0
         for err_code, data in errs.items():
             assert isinstance(err_code, int)
