@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<EtherCATInfo
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="EtherCATInfo.xsd"
+    Version="1.2">
+  <Vendor FileVersion="2">
+    <Id>#xB090C0</Id>
+    <Name>Bogus HW Devices Inc. Co., Ltd.</Name>
+    <URL>www.bogus-devices.com</URL>
+  </Vendor>
+  <Descriptions>
+    <Groups>
+      <Group>
+        <Type>BOGO Series</Type>
+	<Name LcId="1033">EtherCAT Infrastructure components</Name>
+      </Group>
+    </Groups>
+    <Devices>
+      <Device Physics="KYYY">
+	<Type ProductCode="#xB0908030" RevisionNo="#x00000002">B090.JU_BOX.3.0</Type>
+	<Name LcId="1033"><![CDATA[JU_BOX EtherCAT junction]]></Name>
+	<Info>
+	  <Port>
+	    <Type>EBUS</Type>
+	  </Port>
+	  <Port>
+	    <Type>MII</Type>
+	    <Label>X7</Label>
+	  </Port>
+	  <Port>
+	    <Type>MII</Type>
+	    <Label>X8 OUT</Label>
+	  </Port>
+	  <Port>
+	    <Type>MII</Type>
+	    <Label>X6 </Label>
+	  </Port>
+	</Info>
+	<GroupType>EC_INF</GroupType>
+	<Profile></Profile>
+	<Eeprom>
+	  <ByteSize>2048</ByteSize>
+	  <ConfigData>000D00000A00
+          </ConfigData>
+	</Eeprom>
+      </Device>
+    </Devices>
+  </Descriptions>
+</EtherCATInfo>
