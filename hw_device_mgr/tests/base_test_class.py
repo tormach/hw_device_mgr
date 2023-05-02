@@ -7,6 +7,7 @@ from .bogus_devices.device import (
     BogusV1Servo,
     BogusV2Servo,
     BogusV1IO,
+    BogusV1JBox,
 )
 import logging
 
@@ -22,7 +23,7 @@ class BaseTestClass(ConfigIO):
     # Classes under test in this module
     data_type_class = BogusDataType
     device_class = BogusDevice
-    device_model_classes = BogusV1IO, BogusV2Servo, BogusV1Servo
+    device_model_classes = BogusV1IO, BogusV2Servo, BogusV1Servo, BogusV1JBox
 
     # Sim mode by default
     sim = True

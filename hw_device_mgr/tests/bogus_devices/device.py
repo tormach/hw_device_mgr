@@ -25,3 +25,9 @@ class BogusV1IO(BogusDevice):
     name = "bogo_v1_io"
     test_category = "bogus_v1_io"
     model_id = 0xB0901000
+
+
+class BogusV1JBox(BogusDevice):
+    name = "bogo_v1_jbox"
+    test_category = "bogus_v1_jbox"
+    model_id = 0xB0908000
