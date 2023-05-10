@@ -18,7 +18,7 @@ class EtherCATDataType(DataType):
         uint16=dict(name="UINT"),
         uint32=dict(name="UDINT"),
         uint64=dict(name="ULINT"),
-        float=dict(name="REAL"),  # Never seen in the wild
+        float=dict(name="REAL"),
         double=dict(name="LREAL"),  # Never seen in the wild
         str=dict(
             # Sequence of octets
