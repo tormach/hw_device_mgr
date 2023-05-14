@@ -104,7 +104,7 @@
             name: control_word
           - index: 607Ah
             name: position_cmd
-            scale:  -42.555555553
+            scale:  [-10, -11, -12, -13, -0.4, -0.5]
             offset:  42
     '3':
       # TPDOs:  Transmit PDOs ("in" from drive)
