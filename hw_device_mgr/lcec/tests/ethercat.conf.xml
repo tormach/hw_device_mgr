@@ -42,7 +42,7 @@
       <syncManager idx="2" dir="out">
         <pdo idx="0x1601">
           <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halType="u32" halPin="control_word"/>
-          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halType="float" halPin="position_cmd" scale="-42.555555553" offset="42"/>
+          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halType="float" halPin="position_cmd" scale="-12" offset="42"/>
         </pdo>
       </syncManager>
       <syncManager idx="3" dir="in">
@@ -101,7 +101,7 @@
       <syncManager idx="2" dir="out">
         <pdo idx="0x1601">
           <pdoEntry idx="0x6040" subIdx="0x00" bitLen="16" halType="u32" halPin="control_word"/>
-          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halType="float" halPin="position_cmd" scale="-42.555555553" offset="42"/>
+          <pdoEntry idx="0x607A" subIdx="0x00" bitLen="32" halType="float" halPin="position_cmd" scale="-0.5" offset="42"/>
         </pdo>
       </syncManager>
       <syncManager idx="3" dir="in">
