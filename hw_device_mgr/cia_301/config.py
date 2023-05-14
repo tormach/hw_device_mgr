@@ -283,6 +283,23 @@ class CiA301Config(LoggingMixin):
                 break
         else:
             raise KeyError(f"No address '{address}' in device config '{addrs}'")
+
+        # Flatten out sync_manager pdo_mapping entries; needs deep copy
+        sm_conf = config_cooked.get("sync_manager", dict()).copy()
+        config_cooked["sync_manager"] = sm_conf
+        for sm_idx, sm_idx_conf in list(sm_conf.items()):
+            if sm_idx_conf.get("pdo_mapping", {}).get("entries", None) is None:
+                continue  # Targeting PDO mapping entries with scale/offset keys
+            sm_conf[sm_idx] = sm_idx_conf = sm_idx_conf.copy()
+            pm = sm_idx_conf["pdo_mapping"] = sm_idx_conf["pdo_mapping"].copy()
+            assert isinstance(pm["entries"], list)
+            entries = pm["entries"] = list(pm["entries"])  # Copy list
+            for entry_idx, entry in enumerate(entries):
+                entries[entry_idx] = entry = entry.copy()
+                for key, val in entry.items():
+                    if isinstance(val, list) and key != "bits":
+                        entry[key] = val[pos_ix]
+
         # Flatten out param_values key
         config_cooked["param_values"] = dict()
         for ix, val in config_raw.get("param_values", dict()).items():
@@ -302,6 +319,7 @@ class CiA301Config(LoggingMixin):
             if isinstance(val, list):
                 val = val[pos_ix]
             config_cooked["param_values"][ix] = val
+
         # Return pruned config dict
         return config_cooked
 
