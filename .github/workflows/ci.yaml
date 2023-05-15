@@ -18,11 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - IMAGE: foxy-ci
-            CLANG_TIDY: pedantic
+          - IMAGE: humble-ci
     env:
       CXXFLAGS: "-Wall -Wextra -Wwrite-strings -Wunreachable-code -Wpointer-arith -Wredundant-decls -Wno-deprecated-copy"
-      DOCKER_IMAGE: ghcr.io/ros-planning/moveit2:${{ matrix.env.IMAGE }}
+      DOCKER_IMAGE: moveit/moveit2:${{ matrix.env.IMAGE }}
       UPSTREAM_WORKSPACE: .github/workflows/upstream.rosinstall
       BEFORE_SETUP_UPSTREAM_WORKSPACE: .github/workflows/upstream_install.sh
       # Pull any updates to the upstream workspace (after restoring it from cache)
@@ -32,18 +31,14 @@ jobs:
       AFTER_BUILD_TARGET_WORKSPACE: ccache -s
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       BASEDIR: ${{ github.workspace }}/.work
-      CLANG_TIDY_BASE_REF: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref || github.ref) || '' }}
-      BEFORE_CLANG_TIDY_CHECKS: (cd $TARGET_REPO_PATH; clang-tidy --list-checks)
-      CC: ${{ matrix.env.CLANG_TIDY && 'clang' }}
-      CXX: ${{ matrix.env.CLANG_TIDY && 'clang++' }}
 
-    name: ${{ matrix.env.IMAGE }}${{ matrix.env.CLANG_TIDY && (github.event_name != 'workflow_dispatch' && ' + clang-tidy (delta)' || ' + clang-tidy (all)') || '' }}
+    name: ${{ matrix.env.IMAGE }}
     runs-on: ubuntu-latest
     steps:
       - name: "Free up disk space"
         if: matrix.env.CCOV
         run: |
-          sudo apt-get -qq purge build-essential "ghc*"
+          sudo apt-get -qq purge build-essential ghc\*
           sudo apt-get clean
           # cleanup docker images not used by us
           docker system prune -af
@@ -98,12 +93,6 @@ jobs:
         with:
           name: test-results-${{ matrix.env.IMAGE }}
           path: ${{ env.BASEDIR }}/target_ws/**/test_results/**/*.xml
-      - name: Upload clang-tidy changes
-        uses: rhaschke/upload-git-patch-action@main
-        if: matrix.env.CLANG_TIDY
-        with:
-          name: clang-tidy
-          path: ${{ env.BASEDIR }}/target_ws/src/$(basename $(pwd))
       - name: Prepare target_ws for cache
         run: |
           du -sh ${{ env.BASEDIR }}/target_ws
