@@ -41,6 +41,20 @@ cat >$UPSTREAM_ROSDEP_YML <<-EOF
 	  debian: [machinekit-hal-dev]
 	  ubuntu: [machinekit-hal-dev]
 	EOF
+
+# FIXME  Waiting for these to shake out:
+# https://github.com/ros/rosdistro/pull/36888
+# https://github.com/ros/rosdistro/pull/36893
+cat >>$UPSTREAM_ROSDEP_YML <<-EOF
+	python-attrs-pip:
+	  debian:
+	    pip:
+	      packages: [attrs]
+	  ubuntu:
+	    pip:
+	      packages: [attrs]
+	EOF
+
 echo "yaml file://$UPSTREAM_ROSDEP_YML" > \
     /etc/ros/rosdep/sources.list.d/10-local.list
 rosdep update
