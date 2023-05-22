@@ -57,7 +57,7 @@ class ROSHWDeviceMgr(HWDeviceMgr, ConfigIO):
         if "sim_device_data" in kwargs:
             raise TypeError("unexpected 'sim_device_data' argument")
         sim_device_data_path = self.get_param("sim_device_data_path", None)
-        if sim_device_data_path is not None:
+        if sim_device_data_path:
             sim_device_data = self.load_yaml_path(sim_device_data_path)
             assert sim_device_data, f"Empty YAML file '{sim_device_data_path}'"
             kwargs["sim_device_data"] = sim_device_data
