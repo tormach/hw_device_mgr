@@ -228,6 +228,7 @@ class CiA301SimDevice(CiA301Device, SimDevice):
                 model_id = (uint16(c["vendor_id"]), uint16(c["product_code"]))
                 c["vendor_id"], c["product_code"] = model_id
                 device_cls = cls.get_model(model_id=model_id)
+                assert device_cls is not None, f"unknown model ID {model_id}"
                 c["category"] = device_cls.category
                 config_cooked.append(c)
                 continue
