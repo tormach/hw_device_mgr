@@ -48,23 +48,29 @@ class EtherCATXMLReader(ConfigIO):
         clobber an old value; if `prefix` is set, prepend to `key` if
         the change would clobber.
         """
-        if key in dst:
-            if dst[key] == val:
+        if key not in dst:  # No conflict
+            dst[key] = val
+            return
+
+        elif dst[key] == val:  # Already set & value matches
+            return
+
+        elif prefix is None:  # Top-level obj already set but value mismatch
+            print(f"Unsafe set '({prefix}){key}' = {repr(val)} processing dst:")
+            pprint(dst)
+            raise RuntimeError(f"Unsafe set key {key} = val {val}")
+
+        else:  # 2nd-level obj; try adding prefix
+            try:
+                self.safe_set(dst, prefix + key, dst[key])
+                dst[key] = val
                 return
-            elif prefix is not None:
-                try:
-                    self.safe_set(dst, prefix + key, dst[key])
-                except RuntimeError as e:
-                    print(
-                        f"Exception setting '({prefix}){key}' = '{val}'; dst:"
-                    )
-                    pprint(dst)
-                    raise e
-            else:
-                print(f"Unsafe set '({prefix}){key}' = '{val}' processing dst:")
+            except RuntimeError as e:
+                print(
+                    f"Exception setting '({prefix}){key}' = {repr(val)}; dst:"
+                )
                 pprint(dst)
-                raise RuntimeError(f"Unsafe set key {key} = val {val}")
-        dst[key] = val
+                raise e
 
     def safe_update(self, dst, src, prefix=None):
         """
