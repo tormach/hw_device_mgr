@@ -144,6 +144,7 @@ class EtherCATXMLReader(ConfigIO):
                 "Access",
                 "PdoMapping",
                 "DefaultString",
+                "Comment",
             }:
                 res[key] = subobj.text.rstrip()
             elif key in {"BitSize", "BitOffs", "SubIdx", "LBound", "Elements"}:
@@ -169,7 +170,7 @@ class EtherCATXMLReader(ConfigIO):
                 print(key)
                 pprint(type(key))
                 pprint(type(key).__name__)
-                res[key] = self.tree_to_obj(subobj)
+                raise RuntimeError(f"Encountered unknown key '{key}'")
         if subindex is not None:
             if "SubIndex" in res:  # Sanity
                 raise RuntimeError("'SubIndex' redefined")
