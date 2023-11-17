@@ -390,12 +390,12 @@ class TestDevice(BaseTestClass):
             # Print debug info
             if actual_val is MISSING:
                 msg = "MISSING" if missing_not_ok else "(missing; ok)"
-                print(f'{" "*indent}{prefix}{param}:  {msg}')
+                print(f'{" " * indent}{prefix}{param}:  {msg}')
             elif isinstance(expected_val, dict):
                 if actual_val:
                     self.print_dict(actual_val, prefix + param, indent=indent)
                 else:
-                    print(f'{" "*indent}{prefix}{param}:  {{}}')
+                    print(f'{" " * indent}{prefix}{param}:  {{}}')
             else:
                 self.print_dict(actual_val, param, indent=indent, prefix=prefix)
             # Check param actual vs expected

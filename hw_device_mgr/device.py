@@ -189,7 +189,7 @@ class Device(LoggingMixin, abc.ABC):
         """Write `command_out` to hardware interface."""
 
     def __str__(self):
-        return f"{self.name}@{str(self.address).replace(' ','')}"
+        return f"{self.name}@{str(self.address).replace(' ', '')}"
 
     def __repr__(self):
         return f"<{self.__str__()}>"
