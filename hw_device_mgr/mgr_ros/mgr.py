@@ -85,8 +85,8 @@ class ROSHWDeviceMgr(HWDeviceMgr, ConfigIO):
                 self.logger.error("Ignoring unexpected exception; details:")
                 for line in traceback.format_exc().splitlines():
                     self.logger.error(line)
-                self.command_in.set(
-                    state_cmd=self.STATE_FAULT, state_log="Unexpected exception"
+                self.command_out.update(
+                    state=self.STATE_FAULT, state_log="Unexpected exception"
                 )
             if self.fast_track:
                 # This update included a state transition; skip
