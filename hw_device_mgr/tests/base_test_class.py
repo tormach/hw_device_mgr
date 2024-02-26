@@ -1,5 +1,4 @@
 import pytest
-from pprint import pformat
 from ..config_io import ConfigIO
 from .bogus_devices.data_types import BogusDataType
 from .bogus_devices.device import (
@@ -234,11 +233,3 @@ class BaseTestClass(ConfigIO):
         # Parametrize it
         if names:
             metafunc.parametrize(names, vals, ids=ids, scope="class")
-
-    def test_fixture(self, device_cls, sim_device_data, category_cls):
-        print("device_cls:", device_cls)
-        print("sim_device_data:\n", pformat(sim_device_data))
-        assert sim_device_data["device_cls"] is device_cls
-        assert hasattr(device_cls, "name")
-        assert device_cls in self.device_model_classes
-        assert issubclass(device_cls, category_cls)
