@@ -1,4 +1,4 @@
-from ..ethercat.device import EtherCATDevice
+from ..ethercat.device import EtherCATDevice, EtherCATSimDevice
 from ..ethercat.config import EtherCATConfig
 from ..cia_402.device import CiA402Device, CiA402SimDevice
 from ..errors.device import ErrorDevice
@@ -59,7 +59,7 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
         return fb_out
 
 
-class SimInovanceSV660(InovanceSV660, CiA402SimDevice):
+class SimInovanceSV660(InovanceSV660, EtherCATSimDevice, CiA402SimDevice):
     def set_sim_feedback(self):
         # Simulate home_found feedback
         sfb = super().set_sim_feedback()
