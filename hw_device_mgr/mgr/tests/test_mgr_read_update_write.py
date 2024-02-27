@@ -217,6 +217,20 @@ class TestHWDeviceMgrRUW(BaseMgrTestClass, _TestDeviceRUW):
         for i in range(7):
             mno.setdefault(f"d.{i}.home_found", set())  # Empty set signifies OK
 
+    def set_override_data(self, test_case):
+        start_state = test_case.pop("mgr_state", None)
+        if start_state:
+            self.set_mgr_state = f"{start_state}_complete"
+            cmd_out_state = self.obj.cmd_name_to_int_map[start_state]
+            self.obj.command_out.update(state=cmd_out_state)
+        super().set_override_data(test_case)
+
+    def set_command_and_check(self):
+        if getattr(self, "set_mgr_state", None):
+            print(f"\n*** Overriding mgr state:  {self.set_mgr_state}")
+            self.obj.state = self.set_mgr_state
+        super().set_command_and_check()
+
     def get_feedback_and_check(self):
         super().get_feedback_and_check()
         # Asynch param download causes a race condition.  When

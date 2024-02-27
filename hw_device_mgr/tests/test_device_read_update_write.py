@@ -54,13 +54,12 @@ class TestDeviceRUW(BaseTestClass):
         self.test_data = getattr(self, "test_data", dict())
         self.munge_test_case_data(test_case, self.test_data)
 
-        # Override feedback/command/sim_feedback data
+        # Override feedback/command/sim_feedback data & mgr state
         #
         # Unlike check data, override data isn't carried over from
         # previous iterations
         #
-        self.ovr_data = dict()
-        self.munge_test_case_data(test_case, self.ovr_data, suffix="_set")
+        self.set_override_data(test_case)
 
         # Nested dictionaries of { interface : { attr : { model_id, ... } } }:
         # model_id must have interface attribute; for other models, missing OK
@@ -71,6 +70,10 @@ class TestDeviceRUW(BaseTestClass):
         self.read_update_write_conv_test_data()
         # self.print_dict(self.test_data, "Test data")
         # self.print_dict(self.ovr_data, "Override data")
+
+    def set_override_data(self, test_case):
+        self.ovr_data = dict()  # Clear overrides from previous round
+        self.munge_test_case_data(test_case, self.ovr_data, suffix="_set")
 
     def munge_test_case_data(self, test_case, dst, suffix=""):
         for intf in self.device_class.interface_names:
@@ -116,6 +119,8 @@ class TestDeviceRUW(BaseTestClass):
         return self.test_data[interface]
 
     def set_command_and_check(self):
+        print("\n*** Overriding feedback_out")
+        self.override_data("feedback_out")
         print("\n*** Running object set_command()")
         self.obj.set_command(**self.munge_interface_data("command_in"))
         assert self.check_interface_values("command_in")
@@ -250,5 +255,11 @@ class TestDeviceRUW(BaseTestClass):
         if self.read_update_write_package is None:
             return  # No test cases defined for this class
         test_cases = self.load_test_cases()
+        # Start by overriding feedback_out and command_out
+        print("\n*** Overriding feedback_out and command_out")
+        self.set_override_data(test_cases[0])
+        self.override_data("feedback_out")
+        self.override_data("command_out")
+        # Now loop over cases
         for test_case in test_cases:
             self.read_update_write_loop(test_case)

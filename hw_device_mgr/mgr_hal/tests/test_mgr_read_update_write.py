@@ -21,7 +21,7 @@ class TestHALHWDeviceMgrRUW(
                 pname = dev.pin_name(interface, key)
                 self.set_pin(pname, val)
             else:
-                super().override_interface_param(interface, key, val)
+                super().override_interface_param(interface, {key: val})
 
     def copy_sim_feedback(self):
         super().copy_sim_feedback()
