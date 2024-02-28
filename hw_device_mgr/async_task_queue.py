@@ -134,9 +134,7 @@ class AsyncTaskQueue:
         return self.progress_version >= self.cmd_version
 
     def join(self):
-        """
-        Block until all queued items are processed and join worker thread.
-        """
+        """Block until queue processed and join worker thread."""
         self.cmd_queue.join()  # Wait for worker to drain cmd queue & join
         self.all_cmds_complete()  # Drain progress queue
         self.progress_queue.join()  # & join

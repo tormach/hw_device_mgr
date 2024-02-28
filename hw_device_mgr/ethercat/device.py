@@ -10,11 +10,11 @@ class EtherCATDevice(CiA301Device, abc.ABC):
     """
     Abstract class representing an EtherCAT CoE device.
 
-    Device instances are addressed by `(master, alias, position)`.  For no
-    alias, use 0; with alias, use position 0.
+    Device instances are addressed by `(master, alias, position)`.  For
+    no alias, use 0; with alias, use position 0.
 
-    Device model subclasses have matching XML description and other features
-    specific to that model.
+    Device model subclasses have matching XML description and other
+    features specific to that model.
     """
 
     # Resource names for locating device description XML and error files
