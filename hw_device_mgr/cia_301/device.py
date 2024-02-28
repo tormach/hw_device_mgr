@@ -55,6 +55,7 @@ class CiA301Device(Device):
                 model_id=self.model_id,
                 skip_optional_config_values=skip_optional_config_values,
             )
+        config.set_name(f"{self.name}_cfg")
         self.config = config
         super().__init__(address=address, **kwargs)
 

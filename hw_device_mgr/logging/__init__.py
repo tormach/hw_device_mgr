@@ -1,5 +1,5 @@
 import logging
-from functools import cached_property
+from functools import cached_property, lru_cache
 
 
 class Logging:
@@ -28,6 +28,7 @@ class Logging:
     def getLevel(self):
         return self._logger.getEffectiveLevel()
 
+    @lru_cache
     def __getattr__(self, name):
         if name in self._level_map:
             return getattr(self._logger, self._level_map[name])
@@ -46,9 +47,10 @@ class LoggingMixin:
 
     logging_class = Logging
 
+    @cached_property
     def logging_name(self):
         return str(self)
 
     @cached_property
     def logger(self):
-        return self.logging_class.getLogger(self.logging_name())
+        return self.logging_class.getLogger(self.logging_name)

@@ -55,8 +55,9 @@ class Device(LoggingMixin, abc.ABC):
         self.address = self.canon_address(address)
         self._timeout = None
 
+    @cached_property
     def logging_name(self):
-        return f"{self.category}.{self}"
+        return self.__str__()
 
     def init(self):
         """

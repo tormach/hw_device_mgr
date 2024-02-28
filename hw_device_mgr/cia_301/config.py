@@ -25,8 +25,9 @@ class CiA301Config(LoggingMixin):
     in order to read/write dictionary objects from/to devices.
     """
 
+    @cached_property
     def logging_name(self):
-        return __name__
+        return f"{self.name}@{str(self.address).replace(' ','')}"
 
     data_type_class = CiA301DataType
     command_class = CiA301Command
@@ -40,10 +41,15 @@ class CiA301Config(LoggingMixin):
     _model_dcs = dict()
 
     def __init__(
-        self, address=None, model_id=None, skip_optional_config_values=True
+        self,
+        address=None,
+        model_id=None,
+        name=None,
+        skip_optional_config_values=True,
     ):
         self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
+        self.name = name or str(self.model_id)
         self.params_queue = AsyncParamsQueue()
         self.skip_optional_config_values = skip_optional_config_values
 
@@ -75,6 +81,11 @@ class CiA301Config(LoggingMixin):
         if cls.__name__ not in cls._command_objs:
             cls._command_objs[cls.__name__] = cls.command_class()
         return cls._command_objs[cls.__name__]
+
+    def set_name(self, name):
+        self.name = name
+        if "logging_name" in self.__dict__:
+            del self.logging_name  # clear cached property
 
     def __str__(self):
         cname = self.__class__.__name__
@@ -172,6 +183,7 @@ class CiA301Config(LoggingMixin):
     ):
         # Get SDO object
         sdo = self.sdo(sdo)
+        val = sdo.data_type(val)
         msg = f"(was {old})" if old is not None else ""
         if val == old:
             return  # SDO value already correct
