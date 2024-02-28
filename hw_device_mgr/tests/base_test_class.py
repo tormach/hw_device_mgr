@@ -63,7 +63,7 @@ class BaseTestClass(ConfigIO):
         for dev in sim_device_data:
             # Fill in missing device data based on `test_category` key
             if "test_category" in dev:
-                device_cls = cls.test_category_class(dev["test_category"])
+                device_cls = cls.get_test_category_class(dev["test_category"])
                 assert device_cls
                 assert device_cls.name
                 # Set model_id key
@@ -85,7 +85,7 @@ class BaseTestClass(ConfigIO):
         return new_sim_device_data
 
     @classmethod
-    def test_category_class(cls, test_category):
+    def get_test_category_class(cls, test_category):
         for dmc in cls.device_model_classes:
             assert dmc.name
             if dmc.test_category == test_category:
@@ -205,7 +205,7 @@ class BaseTestClass(ConfigIO):
         for dev in dev_data:
             # Fill in `device_cls` key with actual class
             if "test_category" in dev:
-                device_cls = self.test_category_class(dev["test_category"])
+                device_cls = self.get_test_category_class(dev["test_category"])
             else:
                 device_cls = self.sim_device_data_device_cls(dev)
             assert device_cls is not None
