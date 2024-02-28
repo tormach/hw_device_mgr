@@ -13,7 +13,9 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
     ]
 
     @pytest.fixture
-    def obj(self, mgr_config, device_config, all_device_data):
+    def obj(
+        self, mgr_config, device_config, all_device_data, extra_obj_fixtures
+    ):
         self.obj = self.device_class()
         self.obj.init(
             mgr_config=mgr_config,

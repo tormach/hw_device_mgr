@@ -64,3 +64,8 @@ class BaseMgrTestClass(BaseDevicesTestClass):
         """Fixture for Device class category."""
         self.init_sim()
         yield self.device_base_class
+
+    @pytest.fixture
+    def extra_obj_fixtures(self):
+        # Subclasses may add extra fixtures to the obj() fixture
+        pass

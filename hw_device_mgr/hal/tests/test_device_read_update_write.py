@@ -18,9 +18,11 @@ class TestHALDeviceRUW(BaseHALTestClass, _TestCiA402DeviceRUW):
     # Test read()/update()/write() integration
     #
 
-    def override_interface_param(self, interface, ovr_data):
+    def override_interface_param(self, interface, ovr_data, double=False):
         intf = self.obj.interface(interface)
         intf.update(**ovr_data)
+        if double:
+            intf.set(**intf.values)
         if interface not in self.obj.pin_interfaces:
             return
         dt_names = self.obj.merge_dict_attrs(f"{interface}_data_types")

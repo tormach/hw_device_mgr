@@ -84,7 +84,6 @@ class TestDeviceRUW(BaseTestClass):
     # Read, get_feedback, set_command, write
     #
     def read_and_check(self):
-        print("\n*** Overriding sim_feedback")
         self.override_data("sim_feedback")
         print("\n*** Running object read() and checking feedback")
         self.pre_read_actions()
@@ -101,9 +100,7 @@ class TestDeviceRUW(BaseTestClass):
         pass
 
     def get_feedback_and_check(self):
-        print("\n*** Overriding feedback_in")
         self.override_data("feedback_in")
-        print("\n*** Overriding command_in")
         self.override_data("command_in")
         # self.print_dict(self.test_data, "Test data (after override)")
         print("\n*** Running object get_feedback()")
@@ -119,13 +116,11 @@ class TestDeviceRUW(BaseTestClass):
         return self.test_data[interface]
 
     def set_command_and_check(self):
-        print("\n*** Overriding feedback_out")
         self.override_data("feedback_out")
         print("\n*** Running object set_command()")
         self.obj.set_command(**self.munge_interface_data("command_in"))
         assert self.check_interface_values("command_in")
         assert self.check_interface_values("command_out")
-        print("\n*** Overriding command_out")
         self.override_data("command_out")
         # self.print_dict(self.test_data, "Test data (after override)")
 
@@ -143,16 +138,22 @@ class TestDeviceRUW(BaseTestClass):
     # Utilities
     #
 
-    def override_interface_param(self, interface, ovr_data):
+    def override_interface_param(self, interface, ovr_data, double=False):
         intf = self.obj.interface(interface)
         intf.update(**ovr_data)
+        if double:
+            # Apply overrides again to look like nothing changed since last
+            # update cycle
+            intf.set(**intf.values)
 
-    def override_data(self, interface):
+    def override_data(self, interface, double=False):
         ovr_data = self.ovr_data.get(interface, dict())
         if not ovr_data:
             print(f"  {interface}:  {{}}  (no overrides)")
             return
-        self.override_interface_param(interface, ovr_data)
+        double_str = " (overwriting last update)" if double else ""
+        print(f"\n*** Overriding {interface}{double_str}")
+        self.override_interface_param(interface, ovr_data, double=double)
         self.print_dict(ovr_data, interface, indent=2)
         # self.print_dict(intf_data, interface, indent=2)
 
@@ -244,6 +245,18 @@ class TestDeviceRUW(BaseTestClass):
     # Main function
     #
 
+    def set_initial_state(self, initial_state):
+        # Apply initial overrides *twice* so that nothing seems to have changed
+        # on the last update cycle
+        # Start by overriding feedback_out and command_out
+        print("\n*** Forcing all interfaces")
+        self.setup_test(initial_state)
+        self.override_data("feedback_in", double=True)
+        self.override_data("feedback_out", double=True)
+        self.override_data("command_in", double=True)
+        self.override_data("command_out", double=True)
+        self.override_data("sim_feedback", double=True)
+
     def read_update_write_loop(self, test_case):
         self.setup_test(test_case)
         self.read_and_check()
@@ -252,14 +265,11 @@ class TestDeviceRUW(BaseTestClass):
         self.write_and_check()
 
     def test_read_update_write(self, obj):
+        self.obj = obj
         if self.read_update_write_package is None:
             return  # No test cases defined for this class
         test_cases = self.load_test_cases()
-        # Start by overriding feedback_out and command_out
-        print("\n*** Overriding feedback_out and command_out")
-        self.set_override_data(test_cases[0])
-        self.override_data("feedback_out")
-        self.override_data("command_out")
+        self.set_initial_state(test_cases[0])
         # Now loop over cases
         for test_case in test_cases:
             self.read_update_write_loop(test_case)

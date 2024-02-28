@@ -10,7 +10,9 @@ from functools import lru_cache, cached_property
 
 class TestHWDeviceMgrRUW(BaseMgrTestClass, _TestDeviceRUW):
     @pytest.fixture
-    def obj(self, mgr_config, device_config, all_device_data):
+    def obj(
+        self, mgr_config, device_config, all_device_data, extra_obj_fixtures
+    ):
         self.obj = self.device_class()
         self.obj.init(
             mgr_config=mgr_config,
@@ -126,15 +128,22 @@ class TestHWDeviceMgrRUW(BaseMgrTestClass, _TestDeviceRUW):
 
         return data
 
-    def override_interface_param(self, interface, ovr_data):
+    def override_interface_param(self, interface, ovr_data, double=False):
+        interfaces = set([self.obj.interface(interface)])
         for key, val in ovr_data.items():
             match = self.test_case_key_re.match(key)
             if match:
                 index, key = match.groups()
                 intf = self.obj.devices[int(index)].interface(interface)
                 intf.update(**{key: val})
+                interfaces.add(intf)
             else:
                 super().override_interface_param(interface, {key: val})
+        if double:
+            # Call intf.set() with same values to simulate nothing changed since
+            # last update
+            for intf in interfaces:
+                intf.set(**intf.values)
 
     def check_interface_values(self, interface, indent=4):
         if interface in {"feedback_out", "command_in"}:
@@ -217,13 +226,15 @@ class TestHWDeviceMgrRUW(BaseMgrTestClass, _TestDeviceRUW):
         for i in range(7):
             mno.setdefault(f"d.{i}.home_found", set())  # Empty set signifies OK
 
-    def set_override_data(self, test_case):
-        start_state = test_case.pop("mgr_state", None)
+    def set_initial_state(self, initial_state):
+        super().set_initial_state(initial_state)
+        # Force initial mgr state to a `mgr_state` key, if it exists
+        start_state = initial_state.pop("mgr_state", None)
         if start_state:
+            print(f"\n*** Forcing initial mgr state = {start_state}")
             self.set_mgr_state = f"{start_state}_complete"
             cmd_out_state = self.obj.cmd_name_to_int_map[start_state]
             self.obj.command_out.update(state=cmd_out_state)
-        super().set_override_data(test_case)
 
     def set_command_and_check(self):
         if getattr(self, "set_mgr_state", None):

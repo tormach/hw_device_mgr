@@ -12,7 +12,7 @@ class TestHALHWDeviceMgrRUW(
 ):
     halcomp_name = "hal_mgr"
 
-    def override_interface_param(self, interface, ovr_data):
+    def override_interface_param(self, interface, ovr_data, double=False):
         for key, val in ovr_data.items():
             match = self.test_case_key_re.match(key)
             if match:
@@ -21,7 +21,9 @@ class TestHALHWDeviceMgrRUW(
                 pname = dev.pin_name(interface, key)
                 self.set_pin(pname, val)
             else:
-                super().override_interface_param(interface, {key: val})
+                super().override_interface_param(
+                    interface, {key: val}, double=double
+                )
 
     def copy_sim_feedback(self):
         super().copy_sim_feedback()
