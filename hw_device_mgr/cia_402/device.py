@@ -107,6 +107,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         transition="int8",
         home_success="bit",
         home_error="bit",
+        move_setpoint_ack="bit",
         move_success="bit",
         move_error="bit",
     )
@@ -116,6 +117,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         transition=-1,
         home_success=False,
         home_error=False,
+        move_setpoint_ack=False,
         move_success=False,
         move_error=False,
     )
@@ -166,11 +168,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
     def get_feedback_pp(self, sw):
         # Control mode is PP
         if not self.command_in.get("move_request"):
-            self.feedback_out.update(move_success=False, move_error=False)
+            self.feedback_out.update(
+                move_setpoint_ack=False, move_success=False, move_error=False
+            )
             return True, None
         if self.feedback_out.get("state") != "OPERATION ENABLED":
             reason = "Move request while drive not enabled"
             self.feedback_out.update(
+                move_setpoint_ack=False,
                 move_success=False,
                 move_error=True,
                 fault=True,
@@ -178,14 +183,17 @@ class CiA402Device(CiA301Device, ErrorDevice):
             )
             return False, reason
 
-        success, error, reason = False, False, None
+        success, reason = False, None
+        sp_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
         if self.test_sw_bit(sw, "TARGET_REACHED"):
             # done bit set
             success = True
         else:
             reason = "move not complete"
 
-        self.feedback_out.update(move_success=success, move_error=error)
+        self.feedback_out.update(
+            move_success=success, move_error=False, move_setpoint_ack=sp_ack
+        )
         return success, reason
 
     def get_feedback_sto(self):
