@@ -348,7 +348,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     def run_loop(self):
         """Program main loop."""
-        update_period = 1.0 / self.mgr_config.get("update_rate", 10.0)
+        conf = self.mgr_config
+        update_period = 1.0 / conf.get("update_rate", 10.0)
+        update_period_ft = 1.0 / conf.get("update_rate_fast_track", 100.0)
         self.fast_track = False
         self.shutdown = False
         while not self.shutdown:
@@ -364,11 +366,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                     state=self.STATE_FAULT, state_log="Unexpected exception"
                 )
             if self.fast_track:
-                # This update included a state transition; skip
-                # the `sleep()` before the next update
+                # This update included a state transition or device requests
+                # fast track
                 self.fast_track = False
-                continue
-            time.sleep(update_period)
+                cycle_update_period = update_period_ft
+            else:
+                cycle_update_period = update_period
+            time.sleep(cycle_update_period)
 
     def run(self):
         """Program main."""
@@ -667,6 +671,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 dev.set_command(
                     state=self.command_out.get("drive_state"),
                 )
+            if dev.command_out.get("fasttrack"):
+                self.fast_track = True
 
     def query_devices(self, changed=False, **kwargs):
         res = list()
