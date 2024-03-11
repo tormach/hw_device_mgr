@@ -507,7 +507,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         self._get_next_control_word(cmd_out)
         return cmd_out
 
-    def _check_hm_request(self):
+    def hm_request_cw_flags(self):
         # Check for home request
         home_request = False
         if self.command_in.get("home_request"):
@@ -518,9 +518,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 home_request = True
         elif self.command_in.changed("home_request"):  # home_request cleared
             self.logger.info("Homing operation complete")
-        return home_request
+        return dict(OPERATION_MODE_SPECIFIC_1=home_request)
 
-    def _check_pp_request(self):
+    def pp_request_cw_flags(self):
         # Check for move request
         move_request = False
         relative_target = False
@@ -541,7 +541,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
             move_request = prev_nsp and not setpoint_ack
             if self.command_in.changed("move_request"):  # move_request cleared
                 self.logger.info("Move operation request cleared")
-        return move_request, relative_target
+        return dict(
+            OPERATION_MODE_SPECIFIC_1=move_request,
+            OPERATION_MODE_SPECIFIC_3=relative_target,
+        )
 
     @classmethod
     @lru_cache
@@ -569,23 +572,17 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
         # Add flags and return
         next_cm = cmd_out.get("control_mode")
+        cw_flags = dict(OPERATION_MODE_SPECIFIC_3=False)
         operation_mode_specific_3 = False
         # operation mode specific 3 sets the target to relative position
         # when in PP mode
         if next_cm == self.MODE_HM:
-            operation_mode_specific_1 = self._check_hm_request()
+            cw_flags.update(self.hm_request_cw_flags())
         elif next_cm == self.MODE_PP:
-            (
-                operation_mode_specific_1,
-                operation_mode_specific_3,
-            ) = self._check_pp_request()
+            cw_flags.update(self.pp_request_cw_flags())
         else:
-            operation_mode_specific_1 = False
-        next_cw = self._add_control_word_flags(
-            control_word,
-            OPERATION_MODE_SPECIFIC_1=operation_mode_specific_1,
-            OPERATION_MODE_SPECIFIC_3=operation_mode_specific_3,
-        )
+            cw_flags.update(OPERATION_MODE_SPECIFIC_1=False)
+        next_cw = self._add_control_word_flags(control_word, **cw_flags)
         cmd_out.update(control_word=next_cw)
         if cmd_out.changed("control_word"):
             cw_str = self.cw_to_str(next_cw)
