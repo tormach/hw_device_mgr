@@ -525,12 +525,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         move_request = False
         relative_target = False
         if self.command_in.get("move_request"):
-            if self.command_in.changed("move_request"):
+            if self.command_in.changed("move_request"):  # Rising edge
                 self.logger.info("Move operation requested")
                 move_request = True
-                if self.command_in.get("relative_target"):
-                    self.logger.info("Target position is relative")
-                    relative_target = True
+                self.command_out.update(fasttrack=True)
         else:
             # Clear move request unless setpoint ack not set after previous new
             # set point
@@ -541,6 +539,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
             move_request = prev_nsp and not setpoint_ack
             if self.command_in.changed("move_request"):  # move_request cleared
                 self.logger.info("Move operation request cleared")
+        if move_request:
+            if self.command_in.get("relative_target"):
+                self.logger.info("Target position is relative")
+                relative_target = True
         return dict(
             OPERATION_MODE_SPECIFIC_1=move_request,
             OPERATION_MODE_SPECIFIC_3=relative_target,
@@ -786,9 +788,12 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
         # OPERATION_MODE_SPECIFIC_1 is SETPOINT_ACKNOWLEDGE fb
         if self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1"):
             # If cw NEW_SETPOINT is set, then set sw SETPOINT_ACKNOWLEDGE
+            self.logger.info("sim SETPOINT_ACKNOWLEDGE set")
             return dict(OPERATION_MODE_SPECIFIC_1=True)
         elif self.target_reached(sw, cw):
             # Target reached when target position reached
+            if not self.test_sw_bit(sw, "TARGET_REACHED"):
+                self.logger.info("sim TARGET_REACHED set")
             return dict(TARGET_REACHED=True)
         else:
             return dict()
