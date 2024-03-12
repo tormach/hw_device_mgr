@@ -528,7 +528,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
             if self.command_in.changed("move_request"):  # Rising edge
                 self.logger.info("Move operation requested")
                 move_request = True
-                self.command_out.update(fasttrack=True)
+            # Fast track as long as move_request in effect
+            self.command_out.update(fasttrack=True)
         else:
             # Clear move request unless setpoint ack not set after previous new
             # set point
