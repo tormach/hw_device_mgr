@@ -44,6 +44,7 @@
     d.x.goal_reason:  Offline
     d.x.move_success: False
     d.x.move_error: False
+    d.x.move_setpoint_ack: False
     # - STO
     d.x.sto:  False
     # - errors

@@ -36,6 +36,7 @@
     goal_reason:  Reached
     move_success:  False
     move_error:  False
+    move_setpoint_ack: False
     position_cmd:  0.0
     position_fb:  0.0
     sto:  False

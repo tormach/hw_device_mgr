@@ -38,6 +38,7 @@
     goal_reason:  Reached
     move_success:  False
     move_error:  False
+    move_setpoint_ack: False
     position_cmd:  0.0
     position_fb:  15.0
     sto:  False
@@ -53,6 +54,7 @@
   command_out:
     control_word:  0x001F  # Bit 4 NEW_SETPOINT set
     control_mode:  1  # MODE_PP
+    fasttrack:  True
   sim_feedback:
     online:  True
     oper:  True
@@ -81,6 +83,7 @@
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
   feedback_out:
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    move_setpoint_ack:  True
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 
@@ -92,6 +95,7 @@
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
   feedback_out:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
+    move_setpoint_ack:  False
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 

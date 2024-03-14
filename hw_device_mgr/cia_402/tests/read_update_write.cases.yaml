@@ -35,6 +35,7 @@
     goal_reason:  Offline
     move_success:  False
     move_error:  False
+    move_setpoint_ack:  False
     position_cmd:  0
     position_fb:  0
     # STO
@@ -687,6 +688,7 @@
     move_request:  True
   command_out:
     control_word:  0x001F  # Bit 4 NEW_SETPOINT set
+    fasttrack:  True
 - desc:  "PP move:  Wait for move (1)"
   sim_feedback_set:
     position_fb:  15.0  # Move not complete
@@ -705,6 +707,7 @@
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
   feedback_out:
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    move_setpoint_ack:  True
   sim_feedback:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
 - desc:  "PP move:  Wait for move (3)"
@@ -716,6 +719,7 @@
   feedback_out:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
     position_fb:  10.0  # Move not complete
+    move_setpoint_ack:  False
 - desc:  "PP move:  Wait for move (4)"
   sim_feedback_set:
     position_fb:  5.0  # Move not complete
@@ -744,6 +748,8 @@
   command_in:
     # Controller cancels move setpoint command
     move_request:  False
+  command_out:
+    fasttrack:  False
 - desc:  "PP move:  Hold state"
   feedback_out:
     move_success:  False
@@ -763,6 +769,7 @@
     move_request:  True
   command_out:
     control_word:  0x001F  # Bit 4 NEW_SETPOINT set
+    fasttrack:  True
   sim_feedback:
     status_word:  0x0037  # Bit 10 TARGET_REACHED clear
 - desc:  "PP move FAULT:  Hold state; wait"
@@ -830,6 +837,7 @@
     move_request:  False
   command_out:
     control_word:  0x0006  # READY TO SWITCH ON
+    fasttrack:  False
   sim_feedback:
     status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
 - desc:  "PP move FAULT:  Command SWITCH ON DISABLED"
