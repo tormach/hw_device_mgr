@@ -54,6 +54,7 @@
     # CiA 402
     control_word:  0x0000
     control_mode:  8  # MODE_CSP
+    fasttrack:  False
   sim_feedback:
     # CiA 301
     online:  True

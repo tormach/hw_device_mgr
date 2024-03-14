@@ -66,10 +66,12 @@
     command_complete: False
     drive_state: SWITCH ON DISABLED
     reset: False
+    fasttrack: False
     # Drives
     # - CiA 402
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
     d.x.control_mode:  8  # MODE_CSP
+    d.x.fasttrack: False
   sim_feedback:
     # Drives
     # - CiA 301

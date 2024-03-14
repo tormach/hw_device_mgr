@@ -51,6 +51,7 @@
   command_out:
     control_word:  0x000F
     control_mode:  6
+    fasttrack:  False
   sim_feedback:
     online:  True
     oper:  True

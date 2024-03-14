@@ -14,6 +14,8 @@
     fault:  False
     fault_desc: ""
     param_state:  0  # Unknown
+  command_out:
+    fasttrack:  False
   sim_feedback:
     online:  True
     oper:  False
