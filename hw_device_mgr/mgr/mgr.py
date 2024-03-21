@@ -180,9 +180,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.logger.info("Waiting for devices to come online before init")
 
     def on_before_init_complete(self, e):
-        if self.fsm_check_devices_online(e, "INIT"):
-            return False
-        return self.fsm_check_drive_goal_state(e)
+        return not self.fsm_check_devices_offline(e, "INIT")
 
     def on_enter_init_complete(self, e):
         self.fsm_finalize_command(e)
@@ -294,23 +292,16 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def fsm_command_from_event(cls, e):
         return e.dst.split("_")[0]
 
-    def fsm_check_devices_online(self, e, state):
+    def fsm_check_devices_offline(self, e, state):
         return self.query_devices(oper=False)
 
     def fsm_check_command(self, e):
         state_cmd_str = self.fsm_command_from_event(e)
         state_cmd = self.cmd_name_to_int_map[state_cmd_str]
-        if state_cmd == self.STATE_FAULT:
-            # Allow only fault commands to preempt init
-            self.logger.debug(f"Received fault command:  {e.msg}")
-            self.command_out.update(
-                state=state_cmd, state_log=e.msg, command_complete=False
-            )
-            return True
-        elif (
+        if (
             e.src.startswith("init") and e.src != "init_complete"
         ) and state_cmd != self.STATE_INIT:
-            # Don't preempt init
+            # Don't preempt init (fault)
             msg = f"Ignoring {state_cmd_str} command in init state {e.src}"
             self.command_out.update(state=self.STATE_INIT, state_log=msg)
             if self.command_out.changed("state"):
