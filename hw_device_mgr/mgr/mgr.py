@@ -298,16 +298,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def fsm_check_command(self, e):
         state_cmd_str = self.fsm_command_from_event(e)
         state_cmd = self.cmd_name_to_int_map[state_cmd_str]
-        if (
-            e.src.startswith("init") and e.src != "init_complete"
-        ) and state_cmd != self.STATE_INIT:
-            # Don't preempt init (fault)
-            msg = f"Ignoring {state_cmd_str} command in init state {e.src}"
-            self.command_out.update(state=self.STATE_INIT, state_log=msg)
-            if self.command_out.changed("state"):
-                self.logger.warning(msg)
-            return False
-        elif e.src != f"{state_cmd_str}_command" and e.src.startswith(
+        if e.src != f"{state_cmd_str}_command" and e.src.startswith(
             state_cmd_str
         ):
             # Already running
