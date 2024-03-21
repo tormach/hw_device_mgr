@@ -1,6 +1,7 @@
 import abc
 from .data_types import CiA301DataType
 from ..logging import Logging
+import time
 
 __all__ = ("CiA301Command", "CiA301CommandException")
 
@@ -56,6 +57,9 @@ class CiA301Command(abc.ABC):
 class CiA301SimCommand(CiA301Command):
     """Simulated CiA 301 device."""
 
+    # Sleep this long (s) to simulate command execution
+    cmd_exec_time = None  # None = don't sleep
+
     # Per-category sim device definitions from sim_devices.yaml:
     # [category] = {sdo data dict}
     sim_device_data = dict()
@@ -63,6 +67,11 @@ class CiA301SimCommand(CiA301Command):
     sim_sdo_data = dict()
     # Per-device param value storage:  [address][ix, subix] = value
     sim_sdo_values = dict()
+
+    def sim_sleep(self):
+        self.logger.debug("(command running)")
+        if self.cmd_exec_time:
+            time.sleep(self.cmd_exec_time)
 
     @classmethod
     def init_sim(cls, sim_device_data=None, sdo_data=None):
@@ -101,6 +110,7 @@ class CiA301SimCommand(CiA301Command):
     def scan_bus(self, bus=0):
         res = list()
         for dd in self.sim_device_data.values():
+            self.sim_sleep()
             if dd["address"][0] != bus:
                 continue
             res.append([dd["address"], dd["model_id"]])
@@ -110,6 +120,7 @@ class CiA301SimCommand(CiA301Command):
         sdo = self.sim_sdo_data[address][index, subindex]
         val = self.sim_sdo_values[address][index, subindex]
         assert datatype is sdo.data_type
+        self.sim_sleep()
         return val or 0
 
     def download(
@@ -123,4 +134,5 @@ class CiA301SimCommand(CiA301Command):
         sdo = self.sim_sdo_data[address][index, subindex]
         assert datatype is sdo.data_type
         value = datatype(value)
+        self.sim_sleep()
         self.sim_sdo_values[address][index, subindex] = value
