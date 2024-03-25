@@ -21,6 +21,7 @@ class CiA301Device(Device):
     PARAM_STATE_UNKNOWN = 0  # Uninitialized and unchecked before init
     PARAM_STATE_UPDATING = 1  # Currently being checked & updated
     PARAM_STATE_COMPLETE = 2  # Params checked and updated
+    PARAM_STATE_ERROR = 3  # Error in param init
 
     feedback_in_data_types = dict(online="bit", oper="bit")
     feedback_in_defaults = dict(online=False, oper=False)
@@ -107,15 +108,27 @@ class CiA301Device(Device):
         goal_reached, goal_reasons = True, list()
 
         # Param init:  download param values asynchronously after coming online
-        if self.feedback_in.changed("online"):
-            self.config.initialize_params(restart=True)
+        old_ps = fb_out.get_old("param_state")
+        p_init_err = self.config.param_init_error
+        if p_init_err:
+            try:
+                errstr = "{1}({2}, {3}): {0}".format(p_init_err)
+            except:
+                errstr = str(p_init_err)
+            fb_out.update(fault=True, fault_desc=f"param init failed: {errstr}")
+            param_state = self.PARAM_STATE_ERROR
+        elif self.config.param_init_in_progress:
             goal_reached = False
             goal_reasons.append("updating device params")
             param_state = self.PARAM_STATE_UPDATING
-        elif self.config.initialize_params():
+        elif old_ps in (self.PARAM_STATE_UPDATING, self.PARAM_STATE_COMPLETE):
+            # Previously complete, or previously updating but currently not
             param_state = self.PARAM_STATE_COMPLETE
         else:
-            param_state = self.PARAM_STATE_UPDATING
+            # Catch all, esp. after entering online state
+            param_state = self.PARAM_STATE_UNKNOWN
+            goal_reached = False
+            goal_reasons.append("device params unset")
 
         # Update operational status
         if not self.feedback_in.get("oper"):
@@ -144,6 +157,17 @@ class CiA301Device(Device):
         if not goal_reached and fb_out.changed("goal_reason"):
             self.logger.info(f"Goal not reached: {goal_reason}")
         return fb_out
+
+    def set_command(self, **kwargs):
+        cmd_out = super().set_command(**kwargs)
+        cmd_in = self._interfaces["command_in"]
+        if self.feedback_in.rising_edge("online"):
+            self.logger.info("Initializing params after coming online")
+            self.config.initialize_params()
+        elif cmd_in.rising_edge("reset_fault") and self.config.param_init_error:
+            self.logger.info("Re-initializing params after fault")
+            self.config.initialize_params()
+        return cmd_out
 
     @classmethod
     def munge_sdo_data(cls, sdo_data):

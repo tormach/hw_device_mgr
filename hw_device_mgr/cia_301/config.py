@@ -1,7 +1,7 @@
 from .data_types import CiA301DataType
 from .command import CiA301Command, CiA301SimCommand, CiA301CommandException
 from .sdo import CiA301SDO
-from .async_params import AsyncParamsQueue
+from ..async_task_queue import AsyncTaskQueue
 from ..logging import LoggingMixin
 from functools import cached_property
 
@@ -50,7 +50,7 @@ class CiA301Config(LoggingMixin):
         self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
         self.name = name or str(self.model_id)
-        self.params_queue = AsyncParamsQueue()
+        self.params_queue = AsyncTaskQueue(self.name)
         self.skip_optional_config_values = skip_optional_config_values
 
     @classmethod
@@ -348,33 +348,45 @@ class CiA301Config(LoggingMixin):
         """
         pass
 
-    def initialize_params(self, restart=False, dry_run=False):
+    def flush_command_queue(self):
+        """Flush the param init queue and clear any errors."""
+        self.params_queue.flush_queue_and_clear_error()
+
+    def enqueue_command(self, method, *args, **kwargs):
+        """Enqueue a command onto the param init queue."""
+        self.params_queue.enqueue(method, *args, **kwargs)
+
+    def initialize_params(self, dry_run=False):
         """
         Asynchronously initialize device params.
 
-        The first time this method is called, or if the `restart` arg is set, it
-        will enqueue device params to be downloaded to the device in a worker
-        thread.  This and following calls (without `restart` set) will return
-        `False` until device params have finished downloading, and then will
-        return `True`.
+        Clear any previous errors and flush any existing queue, then
+        enqueue device params to be downloaded to the device in a worker thread.
 
-        When an offline device comes online, this function should be run (with
-        `restart=True` the first time if device was previously offline) in a
-        cycle until it returns `True` to ensure the device parameters are
-        completely configured.
+        When an offline device comes online, or to clear param init errors, run
+        this function, then watch `param_init_in_progress` until it finishes,
+        and finally assert `param_init_error()` return `None` to ensure all
+        device parameters are completely configured.
         """
-        if restart:
-            # Params haven't been queued up, or need requeuing
-            num_params = len(self.config["param_values"])
-            self.logger.info(f"Queueing {num_params} param updates")
-            self.params_queue.download(
-                self, self.config["param_values"], dry_run=dry_run
-            )
-            return False
-        else:
-            # Params enqueued; waiting on param processing complete
-            complete = self.params_queue.all_cmds_complete()
-            return complete
+        params = self.config["param_values"]
+        self.logger.info(f"Queueing {len(params)} param updates")
+        self.flush_command_queue()
+        for sdo, val in params.items():
+            self.enqueue_command(self.download, sdo, val, dry_run=dry_run)
+
+    @property
+    def param_init_in_progress(self):
+        """Return `False` if params still queued for init."""
+        return not self.params_queue.empty
+
+    @property
+    def param_init_error(self):
+        """Return param init error status.
+
+        If no error, returns `None`.
+        Otherwise, returns a tuple of `(exception, method, args, kwargs)`
+        """
+        return self.params_queue.error
 
     #
     # Scan bus device config factory

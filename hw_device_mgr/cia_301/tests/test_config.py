@@ -72,7 +72,7 @@ class TestCiA301Config(BaseCiA301TestClass):
 
         # Sanity checks
         pq = obj.params_queue
-        assert pq.all_cmds_complete()
+        assert pq.empty
 
         # Start param init
         print("Starting param init")
@@ -88,7 +88,7 @@ class TestCiA301Config(BaseCiA301TestClass):
             print("initialize_params() never returned True!")
         print(f"Spun {i} cycles to init params")
         assert obj.initialize_params()
-        assert pq.all_cmds_complete()
+        assert pq.empty
 
         for sdo_ix, val in obj.config["param_values"].items():
             assert obj.upload(sdo_ix) == val
