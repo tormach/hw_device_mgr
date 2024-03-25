@@ -175,34 +175,21 @@ class CiA301Config(LoggingMixin):
             **kwargs,
         )
         res = sdo.data_type(res_raw)
-        self.logger.debug(f"upload SDO {sdo} = {res}")
+        self.logger.debug(f"Param upload SDO {sdo} = {res}")
         return res
 
-    def download(
-        self, sdo, val, dry_run=False, force=False, old=None, **kwargs
-    ):
+    def download(self, sdo, val, dry_run=False, force=False, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
         val = sdo.data_type(val)
-        msg = f"(was {old})" if old is not None else ""
-        if val == old:
-            return  # SDO value already correct
         if not force:
             # Check before setting value to avoid unnecessary NVRAM writes
-            res_raw = self.command().upload(
-                address=self.address,
-                index=sdo.index,
-                subindex=sdo.subindex,
-                datatype=sdo.data_type,
-                **kwargs,
-            )
-            if sdo.data_type(res_raw) == val:
+            if self.upload(sdo, **kwargs) == val:
                 return  # SDO value already correct
-            msg = f"(was {sdo.data_type(res_raw)})"
         if dry_run:
-            self.logger.info(f"Dry run:  download {val} to {sdo} {msg}")
+            self.logger.info(f"Dry run:  Param download {val} = {sdo}")
             return
-        self.logger.info(f"Param download {sdo} = {val} {msg}")
+        self.logger.info(f"Param download {sdo} = {val}")
         self.command().download(
             address=self.address,
             index=sdo.index,
@@ -406,6 +393,7 @@ class CiA301Config(LoggingMixin):
                 **kwargs,
             )
             res.append(config)
+            config.logger.info("Drive config created from bus scan")
         return res
 
 

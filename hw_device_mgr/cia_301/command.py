@@ -69,7 +69,6 @@ class CiA301SimCommand(CiA301Command):
     sim_sdo_values = dict()
 
     def sim_sleep(self):
-        self.logger.debug("(command running)")
         if self.cmd_exec_time:
             time.sleep(self.cmd_exec_time)
 
@@ -108,9 +107,9 @@ class CiA301SimCommand(CiA301Command):
         return (idx, subidx)
 
     def scan_bus(self, bus=0):
+        self.sim_sleep()
         res = list()
         for dd in self.sim_device_data.values():
-            self.sim_sleep()
             if dd["address"][0] != bus:
                 continue
             res.append([dd["address"], dd["model_id"]])
@@ -118,10 +117,10 @@ class CiA301SimCommand(CiA301Command):
 
     def upload(self, address=None, index=None, subindex=0, datatype=None):
         sdo = self.sim_sdo_data[address][index, subindex]
-        val = self.sim_sdo_values[address][index, subindex]
+        val = self.sim_sdo_values[address][index, subindex] or datatype(0)
         assert datatype is sdo.data_type
         self.sim_sleep()
-        return val or 0
+        return val
 
     def download(
         self,
