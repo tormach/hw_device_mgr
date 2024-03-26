@@ -235,16 +235,17 @@ class CiA402Device(CiA301Device, ErrorDevice):
         fb_out = super().get_feedback()
         fb_in = self.feedback_in
 
-        # If device not operational, set default "START" state
+        # Set default "START" state in these cases:
         if not fb_out.get("oper"):
-            fb_out.update(**self.feedback_out_defaults)
+            # Device not yet operational
             return fb_out
 
-        # Goal reached, fault var defaults
-        goal_reached = True
-        goal_reasons = list()
-        fault = False
-        fault_desc = ""
+        # Don't clobber lower layer's feedback, but continue managing CiA 402
+        # states even while param init continues
+        goal_reached = fb_out.get("goal_reached")
+        goal_reasons = list() if goal_reached else [fb_out.get("goal_reason")]
+        fault = fb_out.get("fault")
+        fault_desc = fb_out.get("fault_desc")
 
         # Status word, control mode from fb in
         sw = fb_in.get("status_word")
@@ -500,8 +501,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     def set_command(self, **kwargs):
         cmd_out = super().set_command(**kwargs)
-        if not self.feedback_in.get("oper"):
-            cmd_out.update(**self.command_out_defaults)
+        if not self.feedback_out.get("oper"):
             return cmd_out
         self._get_next_control_mode(cmd_out)
         self._get_next_control_word(cmd_out)
