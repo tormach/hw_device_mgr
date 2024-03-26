@@ -134,15 +134,6 @@ class Device(LoggingMixin, abc.ABC):
             raise AttributeError(f"'{cname}' object has no attribute '{name}'")
         return self._interfaces[name]
 
-    def set_interface(self, what, **kwargs):
-        self._interfaces[what].set(**kwargs)
-
-    def update_interface(self, what, **kwargs):
-        self._interfaces[what].update(**kwargs)
-
-    def interface_changed(self, what, key, return_vals=False):
-        return self._interfaces[what].changed(key, return_vals=return_vals)
-
     def read(self):
         """Read `feedback_in` from hardware interface."""
         self._interfaces["feedback_in"].set()

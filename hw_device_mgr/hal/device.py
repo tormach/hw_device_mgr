@@ -76,15 +76,6 @@ class HALPinDevice(Device, HALMixin):
         pins = self.pins["feedback_in"]
         vals = {p: pins[p].get() for p in pins.keys()}
         self.interface("feedback_in").update(**vals)
-        if not getattr(self, "read_once", False):
-            self.read_once = True
-            self.logger.debug(
-                f"HAL pins read for feedback_in:  {list(pins.keys())}"
-            )
-            self.logger.debug(
-                "   Interface keys:  "
-                f"{list(self.interface('feedback_in').keys())}"
-            )
 
     def write(self):
         # Write to output pins
