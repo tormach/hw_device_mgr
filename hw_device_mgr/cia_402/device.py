@@ -359,8 +359,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
             self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
 
         if not goal_reached:
+            goal_reached = fault  # If fault active, nothing to do, goal reached
             goal_reason = "; ".join(goal_reasons)
-            fb_out.update(goal_reached=False, goal_reason=goal_reason)
+            fb_out.update(goal_reached=goal_reached, goal_reason=goal_reason)
         return fb_out
 
     @classmethod
@@ -725,6 +726,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if cmd_out.changed("control_mode"):
             cm_str = self.control_mode_str(next_cm)
             self.logger.info(f"control_mode:  {cm_str}")
+            old_cm_str = cmd_out.get_old("control_mode")
+            self.logger.info(f"control_mode was:  {old_cm_str}")
 
 
 class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):

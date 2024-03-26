@@ -182,16 +182,28 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.logger.info("Waiting for devices to come online before init")
 
     def on_before_init_complete(self, e):
-        return not self.fsm_check_devices_offline(e, "INIT")
+        if self.fsm_check_devices_offline(e, "INIT"):
+            return False  # All devices must be online to complete init
+        elif self.query_devices(goal_reached=False):
+            return False  # Some devices still initializing
+        else:
+            return True  # All devices initialized
 
     def on_enter_init_complete(self, e):
         self.fsm_finalize_command(e)
-        # Automatically return to SWITCH ON DISABLED after init
-        self.logger.info("Devices all online; commanding stop state")
-        self.command_out.update(
-            state=self.STATE_STOP,
-            state_log="Automatic 'stop' command at init complete",
-        )
+        # If any devices in fault state, command fault state
+        if self.query_devices(fault=True):
+            self.logger.warning("Commanding fault state")
+            self.command_out.update(
+                state=self.STATE_FAULT,
+                state_log="Automatic 'fault' command at init complete",
+            )
+        else: # Automatically return to SWITCH ON DISABLED after init
+            self.logger.info("Devices all online; commanding stop state")
+            self.command_out.update(
+                state=self.STATE_STOP,
+                state_log="Automatic 'stop' command at init complete",
+            )
 
     #
     # Fault command
@@ -302,7 +314,16 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def fsm_check_command(self, e):
         state_cmd_str = self.fsm_command_from_event(e)
         state_cmd = self.cmd_name_to_int_map[state_cmd_str]
-        if e.src != f"{state_cmd_str}_command" and e.src.startswith(
+        if (
+            e.src.startswith("init") and e.src != "init_complete"
+        ) and state_cmd != self.STATE_INIT:
+            # Don't preempt init (fault)
+            msg = f"Ignoring {state_cmd_str} command in init state {e.src}"
+            self.command_out.update(state=self.STATE_INIT, state_log=msg)
+            if self.command_out.changed("state"):
+                self.logger.warning(msg)
+            return False
+        elif e.src != f"{state_cmd_str}_command" and e.src.startswith(
             state_cmd_str
         ):
             # Already running
@@ -596,15 +617,15 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             event = f"{cmd_str}_command"
             try:
                 self.trigger(event, msg=cmd_out.get("state_log"))
+                self.logger.debug(f"Triggered event {event} from state cmd")
             except Canceled as e:
                 self.logger.warning(f"Unable to honor {event} command: {e}")
         elif self.automatic_next_event() is not None:
             # Attempt automatic transition to next state
             try:
-                self.trigger(
-                    self.automatic_next_event(),
-                    msg=f"Automatic transition from {self.state} state",
-                )
+                event = self.automatic_next_event()
+                msg = f"Automatic transition to {event} from {self.state} state"
+                self.trigger(event, msg=msg)
             except Canceled:
                 # `on_before_{event}()` method returned `False`,
                 # causing `fysom.Canceled` exception
