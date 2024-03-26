@@ -44,6 +44,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         command_complete=False,
         reset=0,
         drive_state="SWITCH ON DISABLED",
+        reset_fault_cmd=False,
     )
     command_out_data_types = dict(
         state="uint8",
@@ -51,6 +52,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         command_complete="bit",
         reset="bit",
         drive_state="str",
+        reset_fault_cmd="bit",
     )
 
     ####################################################
@@ -131,8 +133,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             "position_cmd",
             "position_fb",
         },
-        # - Don't expose device `state` cmd, controlled by manager
-        command_in={"state"},
+        # - Don't expose device `state` or `reset_fault`, controlled by manager
+        command_in={"state", "reset_fault"},
     )
 
     @lru_cache
@@ -215,6 +217,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_command(e)
 
     def on_enter_start_1(self, e):
+        self.fsm_reset_faults(e)
         self.fsm_set_drive_state_cmd(e, "SWITCHED ON")
 
     def on_before_start_2(self, e):
@@ -240,7 +243,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_command(e)
 
     def on_enter_stop_1(self, e):
-        return self.fsm_set_drive_state_cmd(e, "SWITCH ON DISABLED")
+        self.fsm_reset_faults(e)
+        self.fsm_set_drive_state_cmd(e, "SWITCH ON DISABLED")
 
     def on_before_stop_complete(self, e):
         return self.fsm_check_drive_goal_state(e)
@@ -319,6 +323,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             return True
         # Otherwise, cancel event
         return False
+
+    def fsm_reset_faults(self, e):
+        cmd_name = self.fsm_command_from_event(e)
+        self.logger.info(f"{cmd_name} command:  Commanding drives reset faults")
+        self.command_out.update(reset_fault_cmd=True)
 
     def fsm_set_drive_state_cmd(self, e, state):
         cmd_name = self.fsm_command_from_event(e)
@@ -643,6 +652,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def set_drive_command(self):
         mgr_vals = self.command_in.get()
         skip = self.device_translated_interfaces.get("command_in", set())
+        reset = self.command_out.get("reset_fault_cmd")
         for dev in self.devices:
             if "command_in" in self.device_translated_interfaces:
                 # Copy mgr command_out to matching device command_in
@@ -650,6 +660,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
                 dev.set_command(
                     state=self.command_out.get("drive_state"),
+                    reset_fault=reset,
                     **{
                         k: mgr_vals[f"{prefix}{k}"]
                         for k in dev_command_in.keys()
@@ -659,6 +670,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             else:
                 dev.set_command(
                     state=self.command_out.get("drive_state"),
+                    reset_fault=reset,
                 )
             if dev.command_out.get("fasttrack"):
                 self.fast_track = True

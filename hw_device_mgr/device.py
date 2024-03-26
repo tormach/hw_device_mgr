@@ -23,7 +23,9 @@ class Device(LoggingMixin, abc.ABC):
         fault="bit",
         fault_desc="str",
     )
-    command_in_data_types = dict()
+    command_in_data_types = dict(
+        reset_fault="bit",
+    )
     command_out_data_types = dict(
         fasttrack="bit",
     )
@@ -35,7 +37,9 @@ class Device(LoggingMixin, abc.ABC):
         fault=False,
         fault_desc="",
     )
-    command_in_defaults = dict()
+    command_in_defaults = dict(
+        reset_fault=False,
+    )
     command_out_defaults = dict(
         fasttrack=False,
     )
@@ -186,9 +190,14 @@ class Device(LoggingMixin, abc.ABC):
 
     def set_command(self, **kwargs) -> Interface:
         """Process `command_in` and return `command_out` interface."""
-        self._interfaces["command_in"].set(**kwargs)
-        self._interfaces["command_out"].set(fasttrack=False)  # Set defaults
-        return self._interfaces["command_out"]
+        cmd_in = self._interfaces["command_in"]
+        cmd_out = self._interfaces["command_out"]
+        cmd_in.set(**kwargs)
+        cmd_out.set()
+        if cmd_in.get("reset_fault"):
+            if cmd_in.rising_edge("reset_fault"):
+                self.logger.info("Reset fault command")
+        return cmd_out
 
     def write(self):
         """Write `command_out` to hardware interface."""

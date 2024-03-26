@@ -46,6 +46,7 @@
   command_in:
     state:  OPERATION ENABLED
     control_mode:  8
+    reset_fault: False
     home_request:  True
     move_request:  False
     relative_target:  False

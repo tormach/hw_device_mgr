@@ -51,6 +51,7 @@
     home_request:  False
     move_request:  False
     relative_target:  False
+    reset_fault: False
   command_out:
     # CiA 402
     control_word:  0x0000
