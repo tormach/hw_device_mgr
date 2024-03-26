@@ -2,6 +2,7 @@ from ..ethercat.device import EtherCATDevice, EtherCATSimDevice
 from ..ethercat.config import EtherCATConfig
 from ..cia_402.device import CiA402Device, CiA402SimDevice
 from ..errors.device import ErrorDevice
+import time
 
 
 class InovanceSV660Config(EtherCATConfig):
@@ -30,6 +31,26 @@ class InovanceSV660Config(EtherCATConfig):
                 f"Params already {'non' if nv else ''}volatile mode"
             )
 
+    def clear_fault(self):
+        err_code = self.upload("203Fh")
+        self.logger.info(f"Resetting device fault; code: {err_code}")
+        time.sleep(0.5)  # This may or may not be needed
+        self.download("200D-02h", 1)
+        time.sleep(0.5)  # This may or may not be needed
+        err_code = self.upload("203Fh")
+        self.logger.info(f"  After fault reset, code: {err_code}")
+
+    def soft_reset(self):
+        self.logger.info("Performing soft reset on drive")
+        time.sleep(0.5)  # This may or may not be needed
+        self.download("200D-01h", 1)
+        time.sleep(2.0)  # Give the drive time to react
+
+    def reset_error_and_restart(self):
+        self.logger.info(f"Queueing fault reset and rebooting drive")
+        self.enqueue_command(self.clear_fault)
+        self.enqueue_command(self.soft_reset)
+
 
 class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
     """Inovance SV660 servo drives."""
@@ -57,6 +78,15 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
         if self.test_sw_bit(sw, "MANUFACTURER_SPECIFIC_3"):  # "Home found"
             fb_out.update(home_found=True)
         return fb_out
+
+    def set_command(self, **kwargs):
+        cmd_out = super().set_command(**kwargs)
+        cmd_in = self._interfaces["command_in"]
+        fb_in = self._interfaces["feedback_in"]
+        if cmd_in.rising_edge("reset_fault"):
+            if fb_in.get("error_code") == 0x07310731:
+                self.config.reset_error_and_restart()
+        return cmd_out
 
 
 class SimInovanceSV660(InovanceSV660, EtherCATSimDevice, CiA402SimDevice):
