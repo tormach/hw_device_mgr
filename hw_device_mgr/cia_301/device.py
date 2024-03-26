@@ -41,7 +41,11 @@ class CiA301Device(Device):
     @property
     def goal_reached_timeout(self):
         """Increase goal_reached timeout before reaching oper state."""
-        return 10 if self.feedback_in.get("oper") else 30
+        if not self.feedback_in.get("oper"):
+            return 30
+        if self.feedback_out.get("param_state") != self.PARAM_STATE_COMPLETE:
+            return 30
+        return 10
 
     def __init__(
         self, address=None, skip_optional_config_values=True, **kwargs
