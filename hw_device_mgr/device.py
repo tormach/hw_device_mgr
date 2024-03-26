@@ -157,6 +157,17 @@ class Device(LoggingMixin, abc.ABC):
             fb_out.update(fault=True, fault_desc=timeout)
         return fb_out
 
+    def log_goal_reached(self):
+        """Log whether goal is reached and if not, why; don't spam."""
+        fb_out = self._interfaces["feedback_out"]
+        if not fb_out.changed("goal_reason"):
+            return
+        reason = fb_out.get("goal_reason")
+        if fb_out.get("goal_reached"):
+            self.logger.info(f"Goal reached:  {reason}")
+        else:
+            self.logger.info(f"Goal not reached:  {reason}")
+
     def check_and_set_timeout(self):
         """Set fault if feedback_out goal_reached is False for too long."""
         # This is still data from previous cycle

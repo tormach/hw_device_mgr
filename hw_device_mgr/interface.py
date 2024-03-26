@@ -53,8 +53,8 @@ class Interface:
         val_old = self.values_old[key]
         return (val, val_old) if return_vals else val != val_old
 
-    def rising_edge(self, key):
-        return self.values[key] and not self.values_old[key]
+    def rising_edge(self, key, val=True):
+        return self.values[key] == val and self.values_old[key] != val
 
     def __str__(self):
         res = f"Interface {self.name} ("

@@ -152,10 +152,8 @@ class CiA301Device(Device):
             goal_reason=goal_reason,
             param_state=param_state,
         )
-        if goal_reached and fb_out.changed("param_state"):
+        if fb_out.rising_edge("param_state", self.PARAM_STATE_COMPLETE):
             self.logger.info("Device param init complete")
-        if not goal_reached and fb_out.changed("goal_reason"):
-            self.logger.info(f"Goal not reached: {goal_reason}")
         return fb_out
 
     def set_command(self, **kwargs):

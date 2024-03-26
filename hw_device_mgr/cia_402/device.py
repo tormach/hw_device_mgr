@@ -361,10 +361,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if not goal_reached:
             goal_reason = "; ".join(goal_reasons)
             fb_out.update(goal_reached=False, goal_reason=goal_reason)
-            if fb_out.changed("goal_reason"):
-                self.logger.info(f"Goal not reached: {goal_reason}")
-        elif fb_out.changed("goal_reached"):  # Goal just now reached
-            self.logger.info("Goal reached")
         return fb_out
 
     @classmethod

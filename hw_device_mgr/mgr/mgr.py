@@ -399,6 +399,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         try:
             self.read()
             self.get_feedback()
+            self.log_goal_reached()
             self.set_command()
             self.write()
         except KeyboardInterrupt as e:
@@ -460,7 +461,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         fault = mgr_fb_out.get("fault")
         fault_desc = mgr_fb_out.get("fault_desc")
         goal_reached = True
-        goal_reason = ""
+        goal_reason = "Reached"
         cmd_out = self.interface("command_out")
 
         # Get device feedback
@@ -519,7 +520,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             and not fault
         )
 
-        # Update feedback out, log, return
+        # Update feedback out, return
         mgr_fb_out.update(
             fault=fault,
             fault_desc=fault_desc,
@@ -527,12 +528,12 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             goal_reason=goal_reason,
             enabled=enabled,
         )
-        if mgr_fb_out.changed("goal_reason"):
-            if mgr_fb_out.get("goal_reached"):
-                self.logger.debug("Manager reached goal state")
-            else:
-                self.logger.debug(f"Waiting:  {mgr_fb_out.get('goal_reason')}")
         return mgr_fb_out
+
+    def log_goal_reached(self):
+        for dev in self.devices:
+            dev.log_goal_reached()
+        super().log_goal_reached()
 
     def set_command(self, **cmd_in_kwargs):
         """Set command for top-level manager and for drives."""
