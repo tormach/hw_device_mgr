@@ -14,11 +14,7 @@ class TestHWDeviceMgrRUW(BaseMgrTestClass, _TestDeviceRUW):
         self, mgr_config, device_config, all_device_data, extra_obj_fixtures
     ):
         self.obj = self.device_class()
-        self.obj.init(
-            mgr_config=mgr_config,
-            device_config=device_config,
-            sim_device_data=all_device_data.values(),
-        )
+        self.obj.init(mgr_config=mgr_config, device_config=device_config)
         yield self.obj
 
     test_case_key_re = re.compile(r"^d\.([x0-9])\.(.*)$")

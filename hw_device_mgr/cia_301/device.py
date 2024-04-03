@@ -235,6 +235,12 @@ class CiA301Device(Device):
             devices.append(dev)
         return devices
 
+    @classmethod
+    def init_class(cls, *, sdo_data, dcs_data, **kwargs):
+        super().init_class(**kwargs)
+        cls.add_device_sdos(sdo_data)
+        cls.add_device_dcs(dcs_data)
+
 
 class CiA301SimDevice(CiA301Device, SimDevice):
     """Simulated CAN device."""
@@ -281,12 +287,13 @@ class CiA301SimDevice(CiA301Device, SimDevice):
         return model
 
     @classmethod
-    def init_sim(cls, *, sim_device_data, sdo_data, dcs_data):
-        super().init_sim(sim_device_data=sim_device_data)
-        sim_device_data = cls._sim_device_data[cls.category]
-        cls.add_device_sdos(sdo_data)
-        cls.add_device_dcs(dcs_data)
-        cls.config_class.init_sim(sim_device_data=sim_device_data)
+    def init_class(cls, **kwargs):
+        super().init_class(**kwargs)
+        config_kwargs = dict()
+        if issubclass(cls.config_class, CiA301SimConfig):
+            sim_device_data = cls._sim_device_data[cls.category]
+            config_kwargs = dict(sim_device_data=sim_device_data)
+        cls.config_class.init_class(**config_kwargs)
 
     def set_sim_feedback(self, **kwargs):
         # Automatically step through to online/oper

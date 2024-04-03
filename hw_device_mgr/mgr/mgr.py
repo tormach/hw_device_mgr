@@ -78,13 +78,15 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.logger.info("Device manager initialization complete")
 
     @classmethod
-    def init_sim(cls, **kwargs):
-        cls.device_base_class.init_sim(**kwargs)
+    def init_class(cls, sim_device_data=None, kwargs=dict()):
+        # Initialize device classes, incl. any sim discovery data
+        if sim_device_data:
+            kwargs.update(sim_device_data=sim_device_data)
+        cls.device_base_class.init_class(**kwargs)
 
     def init_devices(
         self,
         /,
-        sim_device_data=None,
         device_init_kwargs=dict(),
         device_scan_kwargs=dict(),
     ):
@@ -96,9 +98,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         configuration.
         """
         self.logger.info("Initializing devices")
-
-        # Initialize sim device discovery data, if any
-        self.init_sim_devices(sim_device_data=sim_device_data)
 
         # Scan and init devices
         self.devices = self.scan_devices(**device_scan_kwargs)
@@ -656,20 +655,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     ####################################################
     # Drive helpers
-
-    @classmethod
-    def init_sim_devices(cls, /, sim_device_data=None, **kwargs):
-        """
-        Run `init_sim()` on devices.
-
-        For configurations that include sim devices (even when the
-        device manager itself isn't running in sim mode).
-        """
-        if sim_device_data is None:
-            return  # No sim devices to configure
-        cls.device_base_class.init_sim(
-            sim_device_data=sim_device_data, **kwargs
-        )
 
     def set_drive_command(self):
         mgr_vals = self.command_in.get()

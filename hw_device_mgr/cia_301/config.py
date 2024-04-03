@@ -408,6 +408,11 @@ class CiA301Config(LoggingMixin):
             config.logger.info("Drive config created from bus scan")
         return res
 
+    @classmethod
+    def init_class(cls):
+        """Initialize the config class"""
+        pass
+
 
 class CiA301SimConfig(CiA301Config):
     """Configuration for simulated devices with simulated command."""
@@ -415,7 +420,8 @@ class CiA301SimConfig(CiA301Config):
     command_class = CiA301SimCommand
 
     @classmethod
-    def init_sim(cls, *, sim_device_data):
+    def init_class(cls, *, sim_device_data, **kwargs):
+        super().init_class(**kwargs)
         assert sim_device_data
         sdo_data = dict()
         for address, data in sim_device_data.items():

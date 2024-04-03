@@ -37,7 +37,7 @@ class BaseTestClass(ConfigIO):
     def init_sim(cls, **kwargs):
         kwargs["sim_device_data"] = cls.init_sim_device_data()
         cls.device_class.clear_devices()
-        cls.device_class.init_sim(**kwargs)
+        cls.device_class.init_class(**kwargs)
 
     @classmethod
     def init_sim_device_data(cls):

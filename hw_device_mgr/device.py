@@ -307,6 +307,11 @@ class Device(LoggingMixin, abc.ABC):
         assert name in model_registry, f"{name} not in {model_registry}"
         return model_registry[name]
 
+    @classmethod
+    def init_class(cls):
+        """Initialize device classes"""
+        pass
+
     ########################################
     # Device identifier registry and instance factory
 
@@ -419,7 +424,7 @@ class SimDevice(Device):
         return cls.canon_address(sim_device_data["address"])
 
     @classmethod
-    def init_sim(cls, /, sim_device_data):
+    def init_class(cls, *, sim_device_data, **kwargs):
         """
         Create sim device objects for tests.
 
@@ -441,6 +446,7 @@ class SimDevice(Device):
             cls_sim_data[address] = {**dev, **updates}
 
         assert cls_sim_data
+        super().init_class(**kwargs)
 
     @classmethod
     def scan_devices(cls, **kwargs):
