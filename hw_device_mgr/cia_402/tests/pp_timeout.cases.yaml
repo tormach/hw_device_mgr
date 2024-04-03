@@ -108,6 +108,7 @@
     # Timeout treated as fault
     fault:  True
     fault_desc:  "Timeout (15s):  move not complete"
+    goal_reached:  True
   command_in:
     state:  FAULT
     home_request:  False

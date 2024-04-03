@@ -43,7 +43,8 @@ class CiA301Device(Device):
         """Increase goal_reached timeout before reaching oper state."""
         if not self.feedback_in.get("oper"):
             return 30
-        if self.feedback_out.get("param_state") != self.PARAM_STATE_COMPLETE:
+        p_state = self.feedback_out.get("param_state")
+        if self.config.init_params and p_state != self.PARAM_STATE_COMPLETE:
             return 30
         return 10
 
@@ -114,7 +115,9 @@ class CiA301Device(Device):
         # Param init:  download param values asynchronously after coming online
         old_ps = fb_out.get_old("param_state")
         p_init_err = self.config.param_init_error
-        if p_init_err:
+        if not self.config.init_params:
+            param_state = self.PARAM_STATE_COMPLETE
+        elif p_init_err:
             try:
                 errstr = "{1}({2}, {3}): {0}".format(p_init_err)
             except:

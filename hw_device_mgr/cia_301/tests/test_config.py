@@ -75,19 +75,25 @@ class TestCiA301Config(BaseCiA301TestClass):
         assert pq.empty
 
         # Start param init
+        obj.command().cmd_exec_time = 0.05  # Simulate up/download time
         print("Starting param init")
-        assert obj.initialize_params(restart=True) is False
+        obj.initialize_params()
+        if obj.config["param_values"]:
+            assert obj.param_init_in_progress
+        obj.command().cmd_exec_time = None  # Speed up test
 
         # Spin while we wait on the worker
         timeout, incr = 1, 0.01
         for i in range(int(timeout / incr)):
-            if obj.initialize_params():
+            assert not obj.param_init_error
+            if not obj.param_init_in_progress:
                 break
             time.sleep(incr)
         else:
-            print("initialize_params() never returned True!")
+            print("param_init_in_progress never returned True!")
         print(f"Spun {i} cycles to init params")
-        assert obj.initialize_params()
+        assert not obj.param_init_in_progress
+        assert not obj.param_init_error
         assert pq.empty
 
         for sdo_ix, val in obj.config["param_values"].items():

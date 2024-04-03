@@ -13,6 +13,7 @@ class TestCiA301DeviceRUW(BaseCiA301TestClass, _TestDeviceRUW):
     @pytest.fixture
     def obj(self, device_cls, sim_device_data):
         self.obj = self.device_model_cls(address=sim_device_data["address"])
+        self.obj.config.init_params = False
         self.obj.init()
         yield self.obj
 

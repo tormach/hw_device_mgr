@@ -15,6 +15,8 @@ class TestHWDeviceMgrRUW(BaseMgrTestClass, _TestDeviceRUW):
     ):
         self.obj = self.device_class()
         self.obj.init(mgr_config=mgr_config, device_config=device_config)
+        for d in self.obj.devices:
+            d.config.init_params = False
         yield self.obj
 
     test_case_key_re = re.compile(r"^d\.([x0-9])\.(.*)$")

@@ -33,6 +33,7 @@ class CiA301Config(LoggingMixin):
     command_class = CiA301Command
     sdo_class = CiA301SDO
 
+    init_params = True  # If False, don't update params
     init_params_nv = True
 
     # Mapping of model_id to a dict of (index, subindex) to SDO object
@@ -369,6 +370,9 @@ class CiA301Config(LoggingMixin):
         device parameters are completely configured.
         """
         params = self.config["param_values"]
+        if not self.init_params:
+            self.logger.info(f"*NOT* queueing {len(params)} param updates")
+            return
         self.logger.info(f"Queueing {len(params)} param updates")
         self.flush_command_queue()
         for sdo, val in params.items():
