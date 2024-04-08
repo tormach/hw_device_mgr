@@ -128,6 +128,10 @@ class CiA301Device(Device):
             goal_reached = False
             goal_reasons.append("updating device params")
             param_state = self.PARAM_STATE_UPDATING
+        elif self.command_out.get("init_params"):
+            goal_reached = False
+            goal_reasons.append("updating device params")
+            param_state = self.PARAM_STATE_UPDATING
         elif old_ps in (self.PARAM_STATE_UPDATING, self.PARAM_STATE_COMPLETE):
             # Previously complete, or previously updating but currently not
             param_state = self.PARAM_STATE_COMPLETE
@@ -163,15 +167,27 @@ class CiA301Device(Device):
             self.logger.info("Device param init complete")
         return fb_out
 
+    command_out_data_types = dict(
+        init_params="bit",
+    )
+
+    command_out_defaults = dict(
+        init_params=False,
+    )
+
     def set_command(self, **kwargs):
         cmd_out = super().set_command(**kwargs)
         cmd_in = self._interfaces["command_in"]
+        init_params_cmd = False
         if self.feedback_in.rising_edge("online"):
             self.logger.info("Initializing params after coming online")
-            self.config.initialize_params()
+            init_params_cmd = True
         elif cmd_in.rising_edge("reset_fault") and self.config.param_init_error:
             self.logger.info("Re-initializing params after fault")
+            init_params_cmd = True
+        if init_params_cmd:
             self.config.initialize_params()
+            cmd_out.update(init_params=True)
         return cmd_out
 
     @classmethod

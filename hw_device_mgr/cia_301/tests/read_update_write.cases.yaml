@@ -17,6 +17,7 @@
   command_in:
     reset_fault:  False
   command_out:
+    init_params:  False
     fasttrack:  False
   sim_feedback:
     online:  True
@@ -28,6 +29,8 @@
     online:  True
     goal_reason:  Not operational
     param_state:  0x02  # PARAM_STATE_COMPLETE
+  command_out:
+    init_params:  True
   sim_feedback:
     oper:  True
 - desc:  "NMT Pre-operational -> Operational"
@@ -37,6 +40,8 @@
     oper:  True
     goal_reached:  True
     goal_reason:  Reached
+  command_out:
+    init_params:  False
 - desc:  "NMT Operational; hold state x1"
 - desc:  "NMT Operational; hold state x2"
 #
@@ -101,6 +106,8 @@
     goal_reason:  Not operational
     fault:  True
     fault_desc:  Drive went offline/non-operational
+  command_out:
+    init_params:  True
   sim_feedback:
     oper:  True
 - desc:  "NMC offline after online; resume operational"
@@ -112,4 +119,6 @@
     goal_reason:  Reached
     fault:  False
     fault_desc:  ""
+  command_out:
+    init_params:  False
 - desc:  "NMC offline after online; hold state"

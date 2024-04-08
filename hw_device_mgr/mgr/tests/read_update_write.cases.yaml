@@ -74,6 +74,7 @@
     # - CiA 402
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
     d.x.control_mode:  8  # MODE_CSP
+    d.x.init_params: False
     d.x.fasttrack: False
   sim_feedback:
     # Drives
@@ -107,6 +108,8 @@
     d.x.param_state:  0x02  # PARAM_STATE_COMPLETE
     # - CiA 402
     d.x.status_word:  0x0000  # START
+  command_out:
+    d.x.init_params:  True
   sim_feedback:
     # Drives
     # - CiA 301
@@ -132,6 +135,8 @@
     d.x.status_word:  0x0010  # VOLTAGE_ENABLED
     d.x.transition:  0
     d.x.goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON != SWITCH ON DISABLED
+  command_out:
+    d.x.init_params:  False
   sim_feedback:
     # - CiA 402
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED

@@ -56,6 +56,7 @@
     # CiA 402
     control_word:  0x0000
     control_mode:  8  # MODE_CSP
+    init_params:  False
     fasttrack:  False
   sim_feedback:
     # CiA 301
@@ -79,6 +80,8 @@
     online:  True
     param_state:  0x02  # PARAM_STATE_COMPLETE
     goal_reason:  Not operational
+  command_out:
+    init_params:  True
   sim_feedback:
     # CiA 301
     oper:  True
@@ -99,6 +102,8 @@
     state:  'NOT READY TO SWITCH ON'
     transition:  0
     goal_reason:  control_mode MODE_NA != MODE_CSP; state NOT READY TO SWITCH ON != SWITCH ON DISABLED
+  command_out:
+    init_params:  False
   sim_feedback:
     # CiA 402
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED

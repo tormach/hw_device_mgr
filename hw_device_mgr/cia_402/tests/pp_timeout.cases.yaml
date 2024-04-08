@@ -55,6 +55,7 @@
   command_out:
     control_word:  0x001F  # Bit 4 NEW_SETPOINT set
     control_mode:  1  # MODE_PP
+    init_params:  False
     fasttrack:  True
   sim_feedback:
     online:  True
