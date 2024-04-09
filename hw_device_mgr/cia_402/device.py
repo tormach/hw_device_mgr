@@ -25,6 +25,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
     Feedback parameters:
     - `home_success`:  Drive completed homing successfully
     - `home_error`:  Drive reports homing error
+    - `move_setpoint_ack`: Drive acknowledges PP-mode `move_request`
+    - `move_success`: Drive reports PP-mode move succeeded
+    - `following_error`: Drive reports following error in various modes
     """
 
     data_types = CiA301DataType
@@ -81,7 +84,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         TARGET_REACHED=10,
         INTERNAL_LIMIT_ACTIVE=11,
         OPERATION_MODE_SPECIFIC_1=12,  # HM=HOMING_ATTAINED, PP=SETPOINT_ACK
-        OPERATION_MODE_SPECIFIC_2=13,  # HM=HOMING_ERROR; others=FOLLOWING_ERROR
+        OPERATION_MODE_SPECIFIC_2=13,  # HM=HOMING_ERROR; PP/CSP=FOLLOWING_ERROR
         MANUFACTURER_SPECIFIC_2=14,
         MANUFACTURER_SPECIFIC_3=15,
     )
@@ -109,7 +112,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_error="bit",
         move_setpoint_ack="bit",
         move_success="bit",
-        move_error="bit",
+        following_error="bit",
     )
     feedback_out_defaults = dict(
         **feedback_in_defaults,
@@ -119,7 +122,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_error=False,
         move_setpoint_ack=False,
         move_success=False,
-        move_error=False,
+        following_error=False,
     )
 
     log_status_word_changes = True
@@ -169,7 +172,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         # Control mode is PP
         if not self.command_in.get("move_request"):
             self.feedback_out.update(
-                move_setpoint_ack=False, move_success=False, move_error=False
+                move_setpoint_ack=False, move_success=False
             )
             return True, None
         if self.feedback_out.get("state") != "OPERATION ENABLED":
@@ -177,7 +180,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
             self.feedback_out.update(
                 move_setpoint_ack=False,
                 move_success=False,
-                move_error=True,
                 fault=True,
                 fault_desc=reason,
             )
@@ -191,9 +193,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         else:
             reason = "move not complete"
 
-        self.feedback_out.update(
-            move_success=success, move_error=False, move_setpoint_ack=sp_ack
-        )
+        self.feedback_out.update(move_success=success, move_setpoint_ack=sp_ack)
         return success, reason
 
     def get_feedback_sto(self):
@@ -283,6 +283,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 fault = True
                 fault_desc = "Enable command while no voltage at motor"
                 goal_reasons.append(fault_desc)
+
+        # Handle `FOLLOWING_ERROR` active
+        ferror = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_2")
+        fb_out.update(following_error=ferror)
 
         # Raise fault if device unexpectedly goes offline
         if self.command_in.get(

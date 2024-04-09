@@ -34,7 +34,7 @@
     goal_reached:  False
     goal_reason:  Offline
     move_success:  False
-    move_error:  False
+    following_error:  False
     move_setpoint_ack:  False
     position_cmd:  0
     position_fb:  0
@@ -799,7 +799,6 @@
     transition:  13  # (Any)->FAULT REACTION ACTIVE
     goal_reached:  True
     goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED; Move request while drive not enabled; Fault (no error code)
-    move_error:  True
     fault:  True
     fault_desc:  Fault (no error code)
   command_out:
@@ -816,7 +815,6 @@
     state:  FAULT
     transition:  14  # FAULT REACTION ACTIVE->FAULT
     goal_reason:  state FAULT != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled; Fault (no error code)
-    move_error:  True
   command_out:
     control_word:  0x0080  # Clear fault
   sim_feedback:
@@ -850,7 +848,6 @@
     transition:  2  # SWITCH ON DISABLED->READY TO SWITCH ON
     goal_reached:  False
     goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
-    move_error:  False
     fault:  False
     fault_desc:  ""
   command_in:
