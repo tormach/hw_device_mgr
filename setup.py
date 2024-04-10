@@ -45,7 +45,7 @@ packages = (
 class CustomInstall(install):
     def run(self):
         """Run halcompile on `multilatency.comp`."""
-        if os.environ.get("ROS_VERSION", None) != "1":
+        if os.environ.get("ROS_VERSION", None) == "2":
             # ROS1 builds comp from CMakeFile
             comp_src = "hw_device_mgr/latency/multilatency.comp"
             subprocess.check_call(
