@@ -478,9 +478,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
             # Drives in FAULT state remain in that state
             "FAULT REACTION ACTIVE": ["FAULT", 14],
             "FAULT": ["FAULT", -1],  # End state
-            # Drives in OPERATION ENABLED quick stop & disable
+            # Drives in OPERATION ENABLED quick stop & stay there
             "OPERATION ENABLED": ["QUICK STOP ACTIVE", 11],
-            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
+            "QUICK STOP ACTIVE": ["QUICK STOP ACTIVE", -1],
             # Drives in all other states transition to SWITCH ON DISABLED
             "START": ["NOT READY TO SWITCH ON", 0],
             "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", 1],
