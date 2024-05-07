@@ -602,7 +602,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         "READY TO SWITCH ON": 0x0006,
         "SWITCHED ON": 0x0007,
         "OPERATION ENABLED": 0x000F,
-        "QUICK STOP ACTIVE": None,
+        "QUICK STOP ACTIVE": 0x0002,
         "FAULT REACTION ACTIVE": None,
         "FAULT": 0x0000,  # Anything but 0x0080 will hold state
     }

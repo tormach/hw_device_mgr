@@ -429,11 +429,8 @@
     status_word:  0x0017
     state:  QUICK STOP ACTIVE
     transition:  11
-    goal_reason:  state QUICK STOP ACTIVE != FAULT; FAULT command from controller (was OPERATION ENABLED)
     fault:  True
     fault_desc:  FAULT command from controller (was OPERATION ENABLED)
-  command_out:
-    control_word:  0x0000
   sim_feedback:
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
 - desc:  "Disable enabled:  Command disable;  402 state machine transition 12"
@@ -442,11 +439,11 @@
   feedback_out:
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
     state:  SWITCH ON DISABLED
-    transition:  12
-    goal_reason:  Reached
-- desc:  "Disable disabled:  Hold SWITCH ON DISABLED x1"
-  feedback_out:
     transition:  -1
+    goal_reason:  Reached
+  command_out:
+    control_word:  0x0000
+- desc:  "Disable disabled:  Hold SWITCH ON DISABLED x1"
 - desc:  "Disable disabled:  Hold SWITCH ON DISABLED x2"
 
 #
