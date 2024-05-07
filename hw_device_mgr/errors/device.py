@@ -51,13 +51,16 @@ class ErrorDevice(Device, ConfigIO):
                 errs[int(err_code_str, 0)] = err_data
         return errs
 
+    def get_error_code(self):
+        return self.feedback_in.get("error_code")
+
     def get_feedback(self):
         fb_out = super().get_feedback()
-        error_code = self.feedback_in.get("error_code")
+        error_code = self.get_error_code()
         if not error_code:
-            if self.feedback_in.changed("error_code"):
+            fb_out.update(**self.no_error)
+            if fb_out.changed("error_code"):
                 self.logger.info(f"{str(self)}:  error code cleared")
-            self.feedback_out.update(**self.no_error)
             return fb_out
 
         error_info = self.error_descriptions().get(error_code, None)

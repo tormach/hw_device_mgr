@@ -175,9 +175,9 @@ class TestDeviceRUW(BaseTestClass):
                 d = "null"
             print(f"{' ' * indent}{prefix}{name}:  {d}")
 
-    def check_interface_values(self, interface, indent=4):
+    def check_interface_values(self, interface, indent=4, expected=None):
         # Prepare expected data
-        expected = self.test_data[interface]
+        expected = expected or self.test_data[interface]
         # self.print_dict(expected, f"Expected {interface}", indent=2)
 
         # Prepare actual data

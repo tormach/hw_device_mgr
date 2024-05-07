@@ -2,6 +2,7 @@ from ..ethercat.device import EtherCATDevice, EtherCATSimDevice
 from ..ethercat.config import EtherCATConfig
 from ..cia_402.device import CiA402Device, CiA402SimDevice
 from ..errors.device import ErrorDevice
+from functools import lru_cache
 import time
 
 
@@ -66,11 +67,24 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
 
     feedback_out_data_types = dict(
         home_found="bit",
+        error_code="uint16",  # Override uint32
     )
+    feedback_out_overlap = {"error_code"}  # Override uint32
 
     feedback_out_defaults = dict(
         home_found=False,
     )
+
+    @classmethod
+    @lru_cache
+    def to_error_code_data_type(cls, value):
+        # Ignore least significant word, "manufacturer external fault code"
+        dt = cls.data_type_class.by_shared_name("uint16")
+        return dt(value >> 16)
+
+    def get_error_code(self):
+        error_code = self.interface("feedback_in").get("error_code")
+        return self.to_error_code_data_type(error_code)
 
     def get_feedback(self):
         fb_out = super().get_feedback()
