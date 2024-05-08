@@ -44,6 +44,11 @@ class Device(LoggingMixin, abc.ABC):
         fasttrack=False,
     )
 
+    feedback_in_overlap = set()
+    feedback_out_overlap = set()
+    command_in_overlap = set()
+    command_out_overlap = set()
+
     interface_names = {
         "feedback_in",
         "feedback_out",
@@ -82,18 +87,21 @@ class Device(LoggingMixin, abc.ABC):
         pass
 
     @classmethod
-    def merge_dict_attrs(cls, attr):
+    def merge_dict_attrs(cls, name, attr_suff):
         """
         Merge `dict` attributes across class hierarchy.
 
         Scan through class and parent classes for `attr`, a `dict`, and
         return merged `dict`.
         """
+        attr = f"{name}_{attr_suff}"
+        overlap_allowed = getattr(cls, f"{name}_overlap")
         res = dict()
-        for c in cls.__mro__:
+        for c in reversed(cls.__mro__):
             c_attr = c.__dict__.get(attr, dict())
-            # Overlap not allowed
-            assert not (set(res.keys()) & set(c_attr.keys()))
+            # Overlap strictly controlled
+            overlap = set(res.keys()) & set(c_attr.keys())
+            assert not (overlap - overlap_allowed)
             res.update(c_attr)
         return res
 
@@ -116,11 +124,11 @@ class Device(LoggingMixin, abc.ABC):
         intfs = self._interfaces = dict()
         dt_name2cls = self.data_type_class.by_shared_name
         for name in self.interface_names:
-            defaults = self.merge_dict_attrs(f"{name}_defaults")
+            defaults = self.merge_dict_attrs(name, "defaults")
             for k, v in defaults.items():
                 if isinstance(v, dict):
                     defaults[k] = v.copy()
-            dt_names = self.merge_dict_attrs(f"{name}_data_types")
+            dt_names = self.merge_dict_attrs(name, "data_types")
             data_types = {k: dt_name2cls(v) for k, v in dt_names.items()}
             intfs[name] = self.interface_class(name, defaults, data_types)
 
@@ -404,6 +412,7 @@ class Device(LoggingMixin, abc.ABC):
 class SimDevice(Device):
     sim_feedback_data_types = dict()
     sim_feedback_defaults = dict()
+    sim_feedback_overlap = set()
 
     interface_names = {
         "feedback_in",

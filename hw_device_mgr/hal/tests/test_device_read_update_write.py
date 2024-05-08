@@ -26,7 +26,7 @@ class TestHALDeviceRUW(BaseHALTestClass, _TestCiA402DeviceRUW):
             intf.set(**intf.values)
         if interface not in self.obj.pin_interfaces:
             return
-        dt_names = self.obj.merge_dict_attrs(f"{interface}_data_types")
+        dt_names = self.obj.merge_dict_attrs(interface, "data_types")
         for key, val in ovr_data.items():
             dt = dt_names.get(key, None)
             if dt is not None:
