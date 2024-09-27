@@ -13630,12 +13630,14 @@
 											<DefaultValue>68</DefaultValue>
 										</Info>
 									</SubItem>
+									<!-- disable duplicate caught by EtherCATXMLReader
 									<SubItem>
 										<Name>SubIndex 000</Name>
 										<Info>
 											<DefaultValue>65</DefaultValue>
 										</Info>
 									</SubItem>
+									end disable duplicate (jvandekieft) -->
 									<SubItem>
 										<Name>VDI1 Terminal Function Selection</Name>
 										<Info>
