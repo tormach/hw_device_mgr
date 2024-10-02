@@ -3054,6 +3054,16 @@
 									</Flags>
 								</SubItem>
 								<SubItem>
+									<SubIdx>8</SubIdx>
+									<Name>Maximum speed limit</Name>
+									<Type>UINT</Type>
+									<BitSize>16</BitSize>
+									<BitOffs>128</BitOffs>
+									<Flags>
+										<Access>rw</Access>
+									</Flags>
+								</SubItem>
+								<SubItem>
 									<SubIdx>9</SubIdx>
 									<Name>Forward speed threshold</Name>
 									<Type>UINT</Type>
@@ -11148,6 +11158,14 @@
 											<MinValue>0</MinValue>
 											<MaxValue>65535</MaxValue>
 											<DefaultValue>0</DefaultValue>
+										</Info>
+									</SubItem>
+									<SubItem>
+										<Name>Maximum speed limit</Name>
+										<Info>
+										<MinValue>0</MinValue>
+										<MaxValue>10000</MaxValue>
+										<DefaultValue>7000</DefaultValue>
 										</Info>
 									</SubItem>
 									<SubItem>
