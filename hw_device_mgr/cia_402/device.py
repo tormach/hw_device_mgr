@@ -327,11 +327,11 @@ class CiA402Device(CiA301Device, ErrorDevice):
         cm = fb_in.get("control_mode_fb")
         fb_out.update(status_word=sw, control_mode_fb=cm)
         cm_cmd = self.command_in.get("control_mode")
-        if cm != self.MODE_HM and cm != cm_cmd:
-            goal_reached = False
-            cm_str = self.control_mode_str(cm)
-            cm_cmd_str = self.control_mode_str(cm_cmd)
-            goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
+        #if cm != self.MODE_HM and cm != cm_cmd:
+            #goal_reached = False
+            #cm_str = self.control_mode_str(cm)
+            #cm_cmd_str = self.control_mode_str(cm_cmd)
+            #goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
 
         # Calculate 'state' feedback
         for state, bits in self.state_bits.items():
