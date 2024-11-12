@@ -908,6 +908,8 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
 
     # diff. btw. pos. cmd + fb to signal target reached
     position_goal_tolerance = 0.01
+    velocity_goal_tolerance = 0.01 # TBD
+    torque_goal_tolerance = 0.01 # TBD
 
     # ------- Sim feedback -------
 
@@ -920,14 +922,24 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
             return dict()
 
     def target_reached(self, sw, cw):
+        control_mode = self.command_out.get("control_mode")
         fb_in = self.interface("feedback_in")
-        setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
-        new_setpoint = self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1")
-        if new_setpoint or setpoint_ack:
-            # Pretend we haven't reached new target before it's even set
-            return False
-        dtg = abs(fb_in.get("position_cmd") - fb_in.get("position_fb"))
-        return dtg < self.position_goal_tolerance
+        if control_mode == self.MODE_PP:
+            setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+            new_setpoint = self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1")
+            if new_setpoint or setpoint_ack:
+                # Pretend we haven't reached new target before it's even set
+                return False
+            dtg = abs(fb_in.get("position_cmd") - fb_in.get("position_fb"))
+            return dtg < self.position_goal_tolerance
+        elif control_mode == self.MODE_PV:
+            #zero_speed = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+            #if zero_speed: ??
+            dtg = abs(fb_in.get("velocity_cmd") - fb_in.get("velocity_fb"))
+            return dtg < self.velocity_goal_tolerance
+        elif control_mode == self.MODE_PT:
+            dtg = abs(fb_in.get("torque_cmd") - fb_in.get("torque_fb"))
+            return dtg < self.torque_goal_tolerance
 
     def set_sim_feedback_pp(self, cw, sw):
         # In MODE_PP, cw OPERATION_MODE_SPECIFIC_1 is NEW_SETPOINT cmd, sw
