@@ -109,6 +109,9 @@ class CiA301Device(Device):
             # Stop param init
             return fb_out  # Nothing more to do
 
+        if self.feedback_in.changed("online"):
+            self.logger.info("Drive came online")
+
         # Device online; update CiA301 feedback
         goal_reached, goal_reasons = True, list()
 
@@ -155,6 +158,9 @@ class CiA301Device(Device):
                 fb_out.update(
                     fault=True, fault_desc=fb_out.get_old("fault_desc")
                 )
+        else:  # operational
+            if self.feedback_in.changed("oper"):
+                self.logger.info("Drive came online/operational")
 
         # Update feedback and return
         goal_reason = "Reached" if goal_reached else ", ".join(goal_reasons)
