@@ -617,6 +617,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
             self.logger.info(f"CiA 402 state command:  {state_cmd}")
         if not self.feedback_out.get("oper"):
             return cmd_out
+        complete = CiA301Device.PARAM_STATE_COMPLETE
+        if self.feedback_out.get("param_state") != complete:
+            return cmd_out
         self._get_next_control_mode(cmd_out)
         self._get_next_control_word(cmd_out)
         return cmd_out
