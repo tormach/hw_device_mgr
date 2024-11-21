@@ -327,11 +327,21 @@ class CiA402Device(CiA301Device, ErrorDevice):
         cm = fb_in.get("control_mode_fb")
         fb_out.update(status_word=sw, control_mode_fb=cm)
         cm_cmd = self.command_in.get("control_mode")
-        #if cm != self.MODE_HM and cm != cm_cmd:
-            #goal_reached = False
-            #cm_str = self.control_mode_str(cm)
-            #cm_cmd_str = self.control_mode_str(cm_cmd)
-            #goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
+        if cm != cm_cmd:
+            unexpected_mode = True
+            if self.MODE_HM == cm:
+                unexpected_mode = False
+            elif self.command_in.get("move_request"):
+                unexpected_mode = (self.MODE_PP != cm)
+            elif self.command_in.get("velocity_request"):
+                unexpected_mode = (self.MODE_PV != cm)
+            elif self.command_in.get("torque_request"):
+                unexpected_mode = (self.MODE_PT != cm)
+            if unexpected_mode:
+                goal_reached = False
+                cm_str = self.control_mode_str(cm)
+                cm_cmd_str = self.control_mode_str(cm_cmd)
+                goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
 
         # Calculate 'state' feedback
         for state, bits in self.state_bits.items():
