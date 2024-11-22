@@ -112,8 +112,6 @@ class CiA301SimCommand(CiA301Command):
         for dd in self.sim_device_data.values():
             if dd["address"][0] != bus:
                 continue
-            if dd["address"][2] == 9999:
-                continue
             res.append([dd["address"], dd["model_id"]])
         return res
 

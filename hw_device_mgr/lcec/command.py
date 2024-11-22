@@ -62,8 +62,6 @@ class LCECCommand(EtherCATCommand):
                 alias = int(line.split(":", 1)[1].strip())
                 addr = device[-1][0:2] + (alias,)
                 device[0] = addr
-                if alias == 9999:
-                    del devices[-1]
             elif line.startswith("Vendor Id:"):
                 #  Vendor Id:       0x00100000
                 vi = line.split(":", 1)[1].strip()
