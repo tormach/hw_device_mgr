@@ -43,6 +43,7 @@
     error_code:  0x00000000
     description:  No error
     fault_desc: ""
+    shutdown_complete:  False
   command_in:
     state:  OPERATION ENABLED
     control_mode:  8
@@ -50,11 +51,13 @@
     home_request:  True
     move_request:  False
     relative_target:  False
+    shutdown:  False
   command_out:
     control_word:  0x000F
     control_mode:  6
     init_params:  False
     fasttrack:  False
+    shutdown_latch:  False
   sim_feedback:
     online:  True
     oper:  True

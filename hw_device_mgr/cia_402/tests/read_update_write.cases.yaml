@@ -18,6 +18,7 @@
     # errors
     error_code:  0x00000000
   feedback_out:
+    shutdown_complete:  False
     # CiA 301
     online:  False
     oper:  False
@@ -45,6 +46,7 @@
     description: No error
     fault_desc: ""
   command_in:
+    shutdown:  False
     # CiA 402
     state:  SWITCH ON DISABLED
     control_mode:  8  # MODE_CSP
@@ -53,6 +55,7 @@
     relative_target:  False
     reset_fault: False
   command_out:
+    shutdown_latch:  False
     # CiA 402
     control_word:  0x0000
     control_mode:  8  # MODE_CSP
