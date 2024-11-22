@@ -7387,7 +7387,7 @@
                       <MaxValue>7</MaxValue>
                       <DefaultValue>1</DefaultValue>
                     </Info>
-                </SubItem>
+                  </SubItem>
                 </Info>
                 <Flags>
                   <Access>ro</Access>
