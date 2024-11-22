@@ -61,7 +61,7 @@ class InovanceSV670(EtherCATDevice, CiA402Device, ErrorDevice):
     xml_description_package = "hw_device_mgr.devices.device_xml"
     xml_description_fname = "SV670_EOE_1Axis_05003_220801.xml"
     device_error_package = "hw_device_mgr.devices.device_err"
-    device_error_yaml = "inovance_sv670n.yaml"
+    device_error_yaml = "inovance_sv660n.yaml"
     config_class = InovanceSV670Config
     have_sto = True
 
