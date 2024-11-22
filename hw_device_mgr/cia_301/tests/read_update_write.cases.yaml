@@ -14,11 +14,14 @@
     fault:  False
     fault_desc: ""
     param_state:  0x00  # PARAM_STATE_UNKNOWN
+    shutdown_complete:  False
   command_in:
     reset_fault:  False
+    shutdown:  False
   command_out:
     init_params:  False
     fasttrack:  False
+    shutdown_latch:  False
   sim_feedback:
     online:  True
     oper:  False

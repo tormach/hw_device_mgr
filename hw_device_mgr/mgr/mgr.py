@@ -22,6 +22,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     STATE_STOP = 1
     STATE_START = 2
     STATE_FAULT = 4
+    STATE_SHUTDOWN = 5
 
     feedback_out_defaults = dict(
         enabled=False,
@@ -132,8 +133,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             "position_cmd",
             "position_fb",
         },
-        # - Don't expose device `state` or `reset_fault`, controlled by manager
-        command_in={"state", "reset_fault"},
+        # - Don't expose device `state`, `reset_fault`, `shutdown`,
+        #   controlled by manager
+        command_in={"state", "reset_fault", "shutdown"},
     )
 
     @lru_cache
@@ -167,6 +169,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # - stop_complete:  Done
             dict(name="stop_command", src="*", dst="stop_1"),
             dict(name="stop_complete", src="stop_1", dst="stop_complete"),
+            # Shutdown state:  From any state
+            dict(name="shutdown_command", src="*", dst="shutdown_1"),
+            dict(name="shutdown_complete", src="shutdown_1", dst="shutdown_complete"),
         ],
         state_field="state",
     )
@@ -261,6 +266,21 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_drive_goal_state(e)
 
     def on_enter_stop_complete(self, e):
+        self.fsm_finalize_command(e)
+
+    #
+    # Shutdown command
+    #
+    def on_before_shutdown_command(self, e):
+        return True  # Always can shutdown
+
+    def on_enter_shutdown_1(self, e):
+        self.fsm_set_drive_state_cmd(e, "SHUTDOWN")
+
+    def on_before_shutdown_complete(self, e):
+        return self.fsm_check_drive_goal_state(e)
+
+    def on_enter_shutdown_complete(self, e):
         self.fsm_finalize_command(e)
 
     #
@@ -446,6 +466,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             fault_1="fault_complete",
             fault_complete=None,
         ),
+        shutdown=dict(
+            shutdown_1="shutdown_complete",
+            shutdown_complete=None,
+        ),
     )
 
     def read(self):
@@ -561,9 +585,16 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         # clobber parent class updates for regular device classes, but this
         # isn't a regular device and it inherits directly from `Device`
         old_cmd_out = self.command_out.get().copy()
+        cmd_in_shutdown = cmd_in_kwargs.get("shutdown", False)
+        if cmd_in_shutdown or old_cmd_out.get("shutdown_latch"):
+            # Incoming shutdown command latches
+            old_cmd_out.update(shutdown_latch=True)
         cmd_out = super().set_command(**cmd_in_kwargs)
         cmd_out.update(**old_cmd_out)
         cmd_in = self.command_in
+
+        if cmd_in.rising_edge("shutdown"):
+            self.logger.info("Commanding drive shutdown")
 
         # Check for new command
         if self.command_in.rising_edge("state_set"):
@@ -660,22 +691,26 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         mgr_vals = self.command_in.get()
         skip = self.device_translated_interfaces.get("command_in", set())
         reset = self.command_out.get("reset_fault_cmd")
+        shutdown=self.command_in.get("shutdown")
         for dev in self.devices:
             if "command_in" in self.device_translated_interfaces:
                 # Copy mgr command_out to matching device command_in
                 dev_command_in = dev.interface("command_in")
                 prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
-                dev.set_command(
-                    state=self.command_out.get("drive_state"),
-                    reset_fault=reset,
-                    **{
-                        k: mgr_vals[f"{prefix}{k}"]
+                kwargs = {
+                    k: mgr_vals[f"{prefix}{k}"]
                         for k in dev_command_in.keys()
                         if k not in skip
-                    },
+                }
+                kwargs.update(
+                    shutdown=shutdown,
+                    state=self.command_out.get("drive_state"),
+                    reset_fault=reset,
                 )
+                dev.set_command(**kwargs)
             else:
                 dev.set_command(
+                    shutdown=shutdown,
                     state=self.command_out.get("drive_state"),
                     reset_fault=reset,
                 )

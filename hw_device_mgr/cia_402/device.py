@@ -241,6 +241,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         fb_out = super().get_feedback()
         fb_in = self.feedback_in
 
+        # If shutting down, there's nothing to do here
+        if self.command_out.get("shutdown_latch"):
+            return fb_out
+
         # Don't clobber lower layer's feedback, but continue managing CiA 402
         # states even while param init continues
         goal_reached = fb_out.get("goal_reached")
@@ -281,9 +285,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 f"Unknown status word 0x{sw:X}; "
                 f"state {fb_out.get('state')} unchanged"
             )
+        state_cmd = self.command_in.get("state")
         if self._get_next_transition() >= 0:
             goal_reached = False
-            state_cmd = self.command_in.get("state")
             sw = fb_in.get("status_word")
             goal_reasons.append(f"state {state} != {state_cmd}")
             if state_cmd in (
@@ -298,13 +302,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         fb_out.update(following_error=ferror)
 
         # Raise fault if device unexpectedly disabled
-        if self.command_in.get(
-            "state"
-        ) == "OPERATION ENABLED" and not self.test_sw_bit(
-            sw, "READY_TO_SWITCH_ON"
-        ):
-            fault = True
-            fault_desc = "Enabled drive unexpectedly disabled"
+        if state_cmd == "OPERATION ENABLED":
+            if not self.test_sw_bit(sw, "READY_TO_SWITCH_ON"):
+                fault = True
+                fault_desc = "Enabled drive unexpectedly disabled"
 
         # Calculate 'transition' feedback
         new_st, old_st = fb_out.changed("state", return_vals=True)
@@ -353,7 +354,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 goal_reasons.append(pp_reason)
 
         # If in CiA402 FAULT state, set device fault
-        if self.command_in.get("state") == "FAULT":
+        if state_cmd == "FAULT":
             fault = True
             if not fault_desc:
                 # Recycle previous description if possible
@@ -514,6 +515,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if self.command_in.changed("state"):
             state_cmd = self.command_in.get("state")
             self.logger.info(f"CiA 402 state command:  {state_cmd}")
+        if self.command_out.get("shutdown_latch"):
+            return cmd_out
         if not self.feedback_out.get("oper"):
             return cmd_out
         complete = CiA301Device.PARAM_STATE_COMPLETE
@@ -715,6 +718,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         return cw
 
     def _get_next_transition(self, curr_state=None):
+        if not self.feedback_in.get("oper"):
+            return -1
         return self._get_next_state(curr_state=curr_state, transition=True)
 
     def _get_next_state(self, curr_state=None, transition=False):

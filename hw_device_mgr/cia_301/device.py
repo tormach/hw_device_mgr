@@ -146,6 +146,11 @@ class CiA301Device(Device):
 
         # Update operational status
         if not self.feedback_in.get("oper"):
+            if self.command_in.get("shutdown"):
+                if self.feedback_in.changed("oper"):
+                    self.logger.info("Drive non-operational, shutdown complete")
+                fb_out.update(shutdown_complete=True)
+                return fb_out  # goal reached
             goal_reached = False
             goal_reasons.insert(0, "Not operational")
 
@@ -161,6 +166,10 @@ class CiA301Device(Device):
         else:  # operational
             if self.feedback_in.changed("oper"):
                 self.logger.info("Drive came online/operational")
+            if self.command_out.get("shutdown_latch"):
+                goal_reached = False
+                goal_reasons.insert(0, "Drive operational during shutdown")
+                fb_out.update(shutdown_complete=False)
 
         # Update feedback and return
         goal_reason = "Reached" if goal_reached else ", ".join(goal_reasons)
@@ -323,7 +332,9 @@ class CiA301SimDevice(CiA301Device, SimDevice):
     def set_sim_feedback(self, **kwargs):
         # Automatically step through to online/oper
         sfb = super().set_sim_feedback(**kwargs)
-        if self.feedback_in.get("online"):
+        if self.command_in.get("shutdown"):
+            sfb.update(online=True, oper=False)
+        elif self.feedback_in.get("online"):
             sfb.update(online=True, oper=True)
         else:
             sfb.update(online=True, oper=False)

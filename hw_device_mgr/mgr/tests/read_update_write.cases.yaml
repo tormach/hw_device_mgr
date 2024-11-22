@@ -25,7 +25,9 @@
     goal_reason:  Offline ({all_drives})
     fault:  False
     fault_desc:  ""
+    shutdown_complete:  False
     # Drives
+    d.x.shutdown_complete:  False
     # - CiA 301
     d.x.online:  False
     d.x.oper:  False
@@ -51,6 +53,7 @@
     d.x.error_code:  0x00000000
     d.x.description:  No error
   command_in:
+    shutdown:  False
     # Mgr
     state_cmd:  0  # init
     state_set:  0  # don't latch in state_cmd
@@ -62,6 +65,7 @@
     d.x.move_request: False
     d.x.relative_target: False
   command_out:
+    shutdown_latch:  False
     # Mgr
     state:  0  # init
     state_log:  Automatic transition to init_command from init_command state
@@ -71,6 +75,7 @@
     reset_fault_cmd: False
     fasttrack: False
     # Drives
+    d.x.shutdown_latch: False
     # - CiA 402
     d.x.control_word:  0x0000  # SWITCH ON DISABLED
     d.x.control_mode:  8  # MODE_CSP

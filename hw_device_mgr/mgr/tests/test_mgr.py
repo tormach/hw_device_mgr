@@ -34,7 +34,7 @@ class TestHWDeviceMgr(BaseMgrTestClass, _TestDevice):
             assert val in obj.cmd_int_to_name_map
             assert obj.cmd_int_to_name_map[val] == key
             values[key] = val
-        assert len(values) == 4
+        assert len(values) == 5
 
     def test_init(self, obj):
         super().test_init(obj)
