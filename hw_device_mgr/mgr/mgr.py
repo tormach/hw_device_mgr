@@ -597,9 +597,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         cmd_out.update(**old_cmd_out)
         cmd_in = self.command_in
 
-        if cmd_in.rising_edge("shutdown"):
-            self.logger.info("Commanding drive shutdown")
-
         # Check for new command
         if self.command_in.rising_edge("state_set"):
             # state_set went high; log it
