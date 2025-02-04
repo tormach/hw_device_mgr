@@ -410,7 +410,7 @@ class CiA301Config(LoggingMixin):
                 **kwargs,
             )
             res.append(config)
-            config.logger.info("Drive config created from bus scan")
+            config.logger.info(f"{config} created from bus scan")
         return res
 
     @classmethod
