@@ -139,6 +139,24 @@ class LCECCommand(EtherCATCommand):
             **kwargs,
         )
 
+    def alias(
+        self,
+        address=None,
+        alias=None,
+        **kwargs,
+    ):
+        master, position, old_alias = self.decode_address(address)
+        self._ethercat(
+            "alias",
+            f"--master={master}",
+            f"--position={position}",
+            f"--alias={old_alias}",
+            "--",
+            str(alias),
+            log_lev="info",
+            **kwargs,
+        )
+
 
 class LCECSimCommand(LCECCommand, EtherCATSimCommand):
     """Simulated LCEC device."""
