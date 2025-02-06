@@ -51,6 +51,10 @@ class LoggingMixin:
     def logging_name(self):
         return str(self)
 
+    @classmethod
+    def get_logger(cls, name):
+        return cls.logging_class.getLogger(name)
+
     @cached_property
     def logger(self):
         return self.logging_class.getLogger(self.logging_name)
