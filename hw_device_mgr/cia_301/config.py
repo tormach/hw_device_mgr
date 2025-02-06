@@ -6,6 +6,10 @@ from ..logging import LoggingMixin
 from functools import cached_property
 
 
+class CiA301ConfigException(RuntimeError):
+    pass
+
+
 class CiA301Config(LoggingMixin):
     """
     CiA 301 device configuration interface.
