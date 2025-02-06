@@ -53,6 +53,10 @@ class CiA301Command(abc.ABC):
             position = 0
         return master, position, alias
 
+    @classmethod
+    def format_address(cls, address):
+        return str(address).replace(" ", "")
+
 
 class CiA301SimCommand(CiA301Command):
     """Simulated CiA 301 device."""
