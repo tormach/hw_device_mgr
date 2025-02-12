@@ -65,6 +65,10 @@ class CiA301Device(Device):
         self.config = config
         super().__init__(address=address, **kwargs)
 
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties(*args)
+        self.config.clear_cached_properties()
+
     @classmethod
     @lru_cache
     def device_model_id(cls):

@@ -38,6 +38,9 @@ class EtherCATConfig(CiA301Config):
     def alias(self):
         return self.address[2]
 
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("alias", *args)
+
     @classmethod
     def address_variants(cls, address):
         address = cls.canon_address(address)

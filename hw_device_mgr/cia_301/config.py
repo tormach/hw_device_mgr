@@ -89,8 +89,7 @@ class CiA301Config(LoggingMixin):
 
     def set_name(self, name):
         self.name = name
-        if "logging_name" in self.__dict__:
-            del self.logging_name  # clear cached property
+        self.clear_cached_properties()  # reset logging_name etc.
 
     def __str__(self):
         cname = self.__class__.__name__
@@ -98,6 +97,9 @@ class CiA301Config(LoggingMixin):
 
     def __repr__(self):
         return f"<{self}>"
+
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("sdos", "config", *args)
 
     #
     # Object dictionary
