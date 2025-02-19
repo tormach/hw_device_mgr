@@ -242,7 +242,7 @@ class CiA301Device(Device):
         return device_obj
 
     @classmethod
-    def scan_devices(cls, bus=0, **kwargs):
+    def scan_devices(cls, bus=0, get_device_kwargs=dict(), **kwargs):
         """Scan bus and return a list of device objects."""
         devices = list()
         config_cls = cls.config_class
@@ -254,7 +254,7 @@ class CiA301Device(Device):
                 raise NotImplementedError(
                     f"Unknown model {config.model_id} at {config.address}"
                 )
-            dev = device_cls.get_device(config, **kwargs)
+            dev = device_cls.get_device(config, **get_device_kwargs)
             devices.append(dev)
         return devices
 
