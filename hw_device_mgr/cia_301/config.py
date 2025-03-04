@@ -385,7 +385,8 @@ class CiA301Config(LoggingMixin):
 
     @property
     def param_init_error(self):
-        """Return param init error status.
+        """
+        Return param init error status.
 
         If no error, returns `None`.
         Otherwise, returns a tuple of `(exception, method, args, kwargs)`
@@ -414,7 +415,7 @@ class CiA301Config(LoggingMixin):
 
     @classmethod
     def init_class(cls):
-        """Initialize the config class"""
+        """Initialize the config class."""
         pass
 
 

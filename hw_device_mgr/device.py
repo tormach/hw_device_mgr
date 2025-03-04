@@ -317,7 +317,7 @@ class Device(LoggingMixin, abc.ABC):
 
     @classmethod
     def init_class(cls):
-        """Initialize device classes"""
+        """Initialize device classes."""
         pass
 
     ########################################

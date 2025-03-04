@@ -197,7 +197,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 state=self.STATE_FAULT,
                 state_log="Automatic 'fault' command at init complete",
             )
-        else: # Automatically return to SWITCH ON DISABLED after init
+        else:  # Automatically return to SWITCH ON DISABLED after init
             self.logger.info("Devices all online; commanding stop state")
             self.command_out.update(
                 state=self.STATE_STOP,

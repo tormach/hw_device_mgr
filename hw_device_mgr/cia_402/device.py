@@ -577,7 +577,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
         # Add flags and return
         next_cm = cmd_out.get("control_mode")
         cw_flags = dict(OPERATION_MODE_SPECIFIC_3=False)
-        operation_mode_specific_3 = False
         # operation mode specific 3 sets the target to relative position
         # when in PP mode
         if next_cm == self.MODE_HM:

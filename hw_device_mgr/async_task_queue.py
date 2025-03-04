@@ -1,6 +1,6 @@
 import threading
 import queue
-from functools import cached_property, lru_cache
+from functools import lru_cache
 
 
 class AsyncTaskQueue:
@@ -12,7 +12,7 @@ class AsyncTaskQueue:
     """
 
     # Idle wait time
-    idle_wait = 0.1 # s
+    idle_wait = 0.1  # s
 
     # Class-level singleton queue data
     _queue_names = list()
@@ -113,7 +113,7 @@ class AsyncTaskQueue:
         return self.queue.empty()
 
     def join_queue(self):
-        """Flush and stop queue"""
+        """Flush and stop queue."""
         self.flush_queue_and_clear_error()
         self.queue.join()
 

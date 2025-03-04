@@ -119,8 +119,8 @@ class CiA301Device(Device):
             param_state = self.PARAM_STATE_COMPLETE
         elif p_init_err:
             try:
-                errstr = "{1}({2}, {3}): {0}".format(p_init_err)
-            except:
+                errstr = "{1}({2}, {3}): {0}".format(*p_init_err)
+            except Exception:
                 errstr = str(p_init_err)
             fb_out.update(fault=True, fault_desc=f"param init failed: {errstr}")
             param_state = self.PARAM_STATE_ERROR
