@@ -22,12 +22,15 @@ class Device(LoggingMixin, abc.ABC):
         goal_reason="str",
         fault="bit",
         fault_desc="str",
+        shutdown_complete="bit",
     )
     command_in_data_types = dict(
         reset_fault="bit",
+        shutdown="bit",
     )
     command_out_data_types = dict(
         fasttrack="bit",
+        shutdown_latch="bit",
     )
 
     feedback_in_defaults = dict()
@@ -36,12 +39,15 @@ class Device(LoggingMixin, abc.ABC):
         goal_reason="Reached",
         fault=False,
         fault_desc="",
+        shutdown_complete=False,
     )
     command_in_defaults = dict(
         reset_fault=False,
+        shutdown=False,
     )
     command_out_defaults = dict(
         fasttrack=False,
+        shutdown_latch=False,
     )
 
     feedback_in_overlap = set()
@@ -157,6 +163,8 @@ class Device(LoggingMixin, abc.ABC):
         fb_out.set(**fb_in)
         if timeout:
             fb_out.update(fault=True, fault_desc=timeout)
+        if self.command_out.get("shutdown_latch"):
+            fb_out.update(shutdown_complete=True)  # Higher levels may correct
         return fb_out
 
     def log_goal_reached(self):
@@ -207,7 +215,12 @@ class Device(LoggingMixin, abc.ABC):
         cmd_out = self._interfaces["command_out"]
         cmd_in.set(**kwargs)
         cmd_out.set()
-        if cmd_in.get("reset_fault"):
+        if cmd_in.get("shutdown") or cmd_out.get("shutdown_latch"):
+            # Incoming shutdown command latches
+            cmd_out.update(shutdown_latch=True)
+            if cmd_out.rising_edge("shutdown_latch"):
+                self.logger.info("Commanding drive shutdown")
+        elif cmd_in.get("reset_fault"):
             if cmd_in.rising_edge("reset_fault"):
                 self.logger.info("Reset fault command")
         return cmd_out

@@ -203,6 +203,12 @@ class CiA402Device(CiA301Device, ErrorDevice):
             if self.feedback_in.changed("sto"):  # Log once
                 self.logger.info("STO input inactive")
             return True, None
+        else:
+            if self.feedback_in.changed("sto"):  # Log once
+                self.logger.info("STO input active")
+
+        if not self.feedback_in.get("oper"):
+            return True, None
 
         # STO active (high)
         state_cmd = self.command_in.get("state")
@@ -235,9 +241,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         fb_out = super().get_feedback()
         fb_in = self.feedback_in
 
-        # Set default "START" state in these cases:
-        if not fb_out.get("oper"):
-            # Device not yet operational
+        # If shutting down, there's nothing to do here
+        if self.command_out.get("shutdown_latch"):
             return fb_out
 
         # Don't clobber lower layer's feedback, but continue managing CiA 402
@@ -258,6 +263,15 @@ class CiA402Device(CiA301Device, ErrorDevice):
             cm_cmd_str = self.control_mode_str(cm_cmd)
             goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
 
+        # Log status word changes
+        if self.log_status_word_changes and fb_out.changed("status_word"):
+            self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
+
+        # If device not yet operational, don't do any more, incl. log faults,
+        # etc.
+        if not fb_out.get("oper"):
+            return fb_out
+
         # Calculate 'state' feedback
         for state, bits in self.state_bits.items():
             # Compare masked status word with pattern to determine current state
@@ -271,9 +285,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 f"Unknown status word 0x{sw:X}; "
                 f"state {fb_out.get('state')} unchanged"
             )
+        state_cmd = self.command_in.get("state")
         if self._get_next_transition() >= 0:
             goal_reached = False
-            state_cmd = self.command_in.get("state")
             sw = fb_in.get("status_word")
             goal_reasons.append(f"state {state} != {state_cmd}")
             if state_cmd in (
@@ -282,21 +296,16 @@ class CiA402Device(CiA301Device, ErrorDevice):
             ) and not self.test_sw_bit(sw, "VOLTAGE_ENABLED"):
                 fault = True
                 fault_desc = "Enable command while no voltage at motor"
-                goal_reasons.append(fault_desc)
 
         # Handle `FOLLOWING_ERROR` active
         ferror = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_2")
         fb_out.update(following_error=ferror)
 
-        # Raise fault if device unexpectedly goes offline
-        if self.command_in.get(
-            "state"
-        ) == "OPERATION ENABLED" and not self.test_sw_bit(
-            sw, "READY_TO_SWITCH_ON"
-        ):
-            fault = True
-            fault_desc = "Enabled drive unexpectedly disabled"
-            goal_reasons.append(fault_desc)
+        # Raise fault if device unexpectedly disabled
+        if state_cmd == "OPERATION ENABLED":
+            if not self.test_sw_bit(sw, "READY_TO_SWITCH_ON"):
+                fault = True
+                fault_desc = "Enabled drive unexpectedly disabled"
 
         # Calculate 'transition' feedback
         new_st, old_st = fb_out.changed("state", return_vals=True)
@@ -310,6 +319,25 @@ class CiA402Device(CiA301Device, ErrorDevice):
             fb_out.update(transition=next_trans)
         else:
             fb_out.update(transition=-1)
+
+        # Handle STO
+        if self.have_sto:
+            sto_success, sto_reason = self.get_feedback_sto()
+            if not sto_success:
+                goal_reached = False
+                goal_reasons.append(sto_reason)
+
+        # Fault reported by drive
+        if self.test_sw_bit(sw, "FAULT"):
+            fault = True
+            fault_desc = "Drive status word FAULT bit set"
+            if fb_out.get("error_code"):
+                error_code = fb_out.get("error_code")
+                fault_desc += f", code {error_code}"
+                if (error_desc := fb_out.get("description")):
+                    fault_desc += f" '{error_desc}'"
+            else:
+                fault_desc += " (no error code)"
 
         # Mode-specific functions
         if cm == self.MODE_HM:
@@ -325,26 +353,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 goal_reached = False
                 goal_reasons.append(pp_reason)
 
-        # Handle STO
-        if self.have_sto:
-            sto_success, sto_reason = self.get_feedback_sto()
-            if not sto_success:
-                goal_reached = False
-                goal_reasons.append(sto_reason)
-
-        # Fault reported by drive
-        if self.test_sw_bit(sw, "FAULT"):
-            fault = True
-            if fb_out.get("error_code"):
-                error_code = fb_out.get("error_code")
-                error_desc = fb_out.get("description")
-                fault_desc = f"{error_code} {error_desc}"
-            else:
-                fault_desc = "Fault (no error code)"
-            goal_reasons.append(fault_desc)
-
         # If in CiA402 FAULT state, set device fault
-        if self.command_in.get("state") == "FAULT":
+        if state_cmd == "FAULT":
             fault = True
             if not fault_desc:
                 # Recycle previous description if possible
@@ -352,18 +362,18 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 # If FAULT is commanded & no device fault, this will be an empty
                 # string
                 if not fault_desc:
-                    fault_desc = f"FAULT command from controller (was {old_st})"
-                goal_reasons.append(fault_desc)
+                    fault_desc = "FAULT command from controller"
+                    fault_desc += f" (from state {old_st})"
 
         # Update feedback to controller
         if fault:
             fb_out.update(fault=True, fault_desc=fault_desc)
 
-        if self.log_status_word_changes and fb_out.changed("status_word"):
-            self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
-
         if not goal_reached:
-            goal_reached = fault  # If fault active, nothing to do, goal reached
+            if fault:
+                # If fault active, nothing to do, goal reached
+                goal_reasons.insert(0, "Fault state reached")
+                goal_reached = True
             goal_reason = "; ".join(goal_reasons)
             fb_out.update(goal_reached=goal_reached, goal_reason=goal_reason)
         return fb_out
@@ -502,7 +512,15 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     def set_command(self, **kwargs):
         cmd_out = super().set_command(**kwargs)
+        if self.command_in.changed("state"):
+            state_cmd = self.command_in.get("state")
+            self.logger.info(f"CiA 402 state command:  {state_cmd}")
+        if self.command_out.get("shutdown_latch"):
+            return cmd_out
         if not self.feedback_out.get("oper"):
+            return cmd_out
+        complete = CiA301Device.PARAM_STATE_COMPLETE
+        if self.feedback_out.get("param_state") != complete:
             return cmd_out
         self._get_next_control_mode(cmd_out)
         self._get_next_control_word(cmd_out)
@@ -699,6 +717,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         return cw
 
     def _get_next_transition(self, curr_state=None):
+        if not self.feedback_in.get("oper"):
+            return -1
         return self._get_next_state(curr_state=curr_state, transition=True)
 
     def _get_next_state(self, curr_state=None, transition=False):
