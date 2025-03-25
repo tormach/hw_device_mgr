@@ -389,6 +389,12 @@ class CiA301Config(LoggingMixin):
         """Return `False` if params still queued for init."""
         return not self.params_queue.empty
 
+    def param_init_stop(self):
+        """Stop any ongoing param initialization."""
+        if self.param_init_in_progress:
+            self.logger.info("Stopping param updates")
+            self.params_queue.join()
+
     @property
     def param_init_error(self):
         """
