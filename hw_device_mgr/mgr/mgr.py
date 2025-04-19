@@ -132,6 +132,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # These are sim only, not needed in debug output
             "position_cmd",
             "position_fb",
+            "velocity_cmd",
+            "velocity_fb",
+            "torque_cmd",
+            "torque_fb"
         },
         # - Don't expose device `state`, `reset_fault`, `shutdown`,
         #   controlled by manager
