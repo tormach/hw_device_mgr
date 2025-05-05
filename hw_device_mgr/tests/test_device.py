@@ -11,6 +11,7 @@ class TestDevice(BaseTestClass):
         "SimDevice",
         "Device",
         "LoggingMixin",
+        "CachedAttrMixin",
         "ABC",
     ]
 

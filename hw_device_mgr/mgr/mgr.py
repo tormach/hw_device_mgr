@@ -206,7 +206,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 state=self.STATE_FAULT,
                 state_log="Automatic 'fault' command at init complete",
             )
-        else: # Automatically return to SWITCH ON DISABLED after init
+        else:  # Automatically return to SWITCH ON DISABLED after init
             self.logger.info("Devices all online; commanding stop state")
             self.command_out.update(
                 state=self.STATE_STOP,
@@ -596,6 +596,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         cmd_out = super().set_command(**cmd_in_kwargs)
         cmd_out.update(**old_cmd_out)
         cmd_in = self.command_in
+
+        if cmd_in.rising_edge("shutdown"):
+            self.logger.info("Commanding drive shutdown")
 
         # Check for new command
         if self.command_in.rising_edge("state_set"):

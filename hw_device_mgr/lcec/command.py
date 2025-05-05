@@ -17,6 +17,19 @@ class LCECCommand(EtherCATCommand):
     def _parse_output(cls, resp, kwargs):
         return resp
 
+    @classmethod
+    def address_to_args(cls, address):
+        """Convert address to `ethercat` utility arguments."""
+        # IgH `ethercat slaves --position=5 --alias=0` doesn't match slave at
+        # pos. 5 if slave at pos. 4 has alias 4; `--alias=-` does the expected
+        master, position, alias = cls.decode_address(address)
+        return (
+            f"--master={master}",
+            f"--position={position}",
+            f"--alias={alias or '-'}",
+        )
+
+
     def _ethercat(
         self, *args, log_lev="debug", dry_run=False, stderr_to_devnull=False
     ):
@@ -97,12 +110,9 @@ class LCECCommand(EtherCATCommand):
     def upload(
         self, address=None, index=None, subindex=0, datatype=None, **kwargs
     ):
-        master, position, alias = self.decode_address(address)
         output = self._ethercat(
             "upload",
-            f"--master={master}",
-            f"--position={position}",
-            f"--alias={alias}",
+            *self.address_to_args(address),
             f"0x{index:04X}",
             f"0x{subindex:02X}",
             f"--type={datatype.igh_type}",
@@ -124,17 +134,29 @@ class LCECCommand(EtherCATCommand):
         datatype=None,
         **kwargs,
     ):
-        master, position, alias = self.decode_address(address)
         self._ethercat(
             "download",
-            f"--master={master}",
-            f"--position={position}",
-            f"--alias={alias}",
+            *self.address_to_args(address),
             f"--type={datatype.igh_type}",
             "--",
             f"0x{index:04X}",
             f"0x{subindex:02X}",
             str(value),
+            log_lev="info",
+            **kwargs,
+        )
+
+    def alias(
+        self,
+        address=None,
+        alias=None,
+        **kwargs,
+    ):
+        self._ethercat(
+            "alias",
+            *self.address_to_args(address),
+            "--",
+            str(alias),
             log_lev="info",
             **kwargs,
         )

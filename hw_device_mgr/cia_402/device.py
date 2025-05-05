@@ -348,6 +348,15 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 cm_cmd_str = self.control_mode_str(cm_cmd)
                 goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
 
+        # Log status word changes
+        if self.log_status_word_changes and fb_out.changed("status_word"):
+            self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
+
+        # If device not yet operational, don't do any more, incl. log faults,
+        # etc.
+        if not fb_out.get("oper"):
+            return fb_out
+
         # Calculate 'state' feedback
         for state, bits in self.state_bits.items():
             # Compare masked status word with pattern to determine current state
@@ -402,6 +411,19 @@ class CiA402Device(CiA301Device, ErrorDevice):
             if not sto_success:
                 goal_reached = False
                 goal_reasons.append(sto_reason)
+        # Mode-specific functions
+        if cm == self.MODE_HM:
+            # Calculate homing status
+            hm_success, hm_reason = self.get_feedback_hm(sw)
+            if not hm_success:
+                goal_reached = False
+                goal_reasons.append(hm_reason)
+        elif cm == self.MODE_PP:
+            # Calculate move status
+            pp_success, pp_reason = self.get_feedback_pp(sw)
+            if not pp_success:
+                goal_reached = False
+                goal_reasons.append(pp_reason)
 
         # Log status word changes
         if self.log_status_word_changes and fb_out.changed("status_word"):
@@ -730,7 +752,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
         # Add flags and return
         next_cm = cmd_out.get("control_mode")
         cw_flags = dict(OPERATION_MODE_SPECIFIC_3=False)
-        operation_mode_specific_3 = False
         # operation mode specific 3 sets the target to relative position
         # when in PP mode
         if next_cm == self.MODE_HM:

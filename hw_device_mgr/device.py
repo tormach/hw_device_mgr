@@ -64,6 +64,9 @@ class Device(LoggingMixin, abc.ABC):
 
     goal_reached_timeout = 10  # seconds
 
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("addr_slug", *args)
+
     @classmethod
     def canon_address(cls, address):
         """Canonicalize a device address."""
@@ -330,7 +333,7 @@ class Device(LoggingMixin, abc.ABC):
 
     @classmethod
     def init_class(cls):
-        """Initialize device classes"""
+        """Initialize device classes."""
         pass
 
     ########################################

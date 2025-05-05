@@ -1,5 +1,6 @@
 import logging
 from functools import cached_property, lru_cache
+from ..cached_attr_mgr import CachedAttrMixin
 
 
 class Logging:
@@ -42,7 +43,7 @@ class Logging:
         return cls(name)
 
 
-class LoggingMixin:
+class LoggingMixin(CachedAttrMixin):
     """Mixin class that provides a `logger` attribute."""
 
     logging_class = Logging
@@ -51,6 +52,13 @@ class LoggingMixin:
     def logging_name(self):
         return str(self)
 
+    @classmethod
+    def get_logger(cls, name):
+        return cls.logging_class.getLogger(name)
+
     @cached_property
     def logger(self):
         return self.logging_class.getLogger(self.logging_name)
+
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("logging_name", "logger", *args)

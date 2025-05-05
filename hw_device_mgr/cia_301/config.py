@@ -6,6 +6,10 @@ from ..logging import LoggingMixin
 from functools import cached_property
 
 
+class CiA301ConfigException(RuntimeError):
+    pass
+
+
 class CiA301Config(LoggingMixin):
     """
     CiA 301 device configuration interface.
@@ -85,8 +89,7 @@ class CiA301Config(LoggingMixin):
 
     def set_name(self, name):
         self.name = name
-        if "logging_name" in self.__dict__:
-            del self.logging_name  # clear cached property
+        self.clear_cached_properties()  # reset logging_name etc.
 
     def __str__(self):
         cname = self.__class__.__name__
@@ -94,6 +97,9 @@ class CiA301Config(LoggingMixin):
 
     def __repr__(self):
         return f"<{self}>"
+
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("sdos", "config", *args)
 
     #
     # Object dictionary
@@ -383,9 +389,16 @@ class CiA301Config(LoggingMixin):
         """Return `False` if params still queued for init."""
         return not self.params_queue.empty
 
+    def param_init_stop(self):
+        """Stop any ongoing param initialization."""
+        if self.param_init_in_progress:
+            self.logger.info("Stopping param updates")
+            self.params_queue.join()
+
     @property
     def param_init_error(self):
-        """Return param init error status.
+        """
+        Return param init error status.
 
         If no error, returns `None`.
         Otherwise, returns a tuple of `(exception, method, args, kwargs)`
@@ -409,12 +422,12 @@ class CiA301Config(LoggingMixin):
                 **kwargs,
             )
             res.append(config)
-            config.logger.info("Drive config created from bus scan")
+            config.logger.info(f"{config} created from bus scan")
         return res
 
     @classmethod
     def init_class(cls):
-        """Initialize the config class"""
+        """Initialize the config class."""
         pass
 
 
