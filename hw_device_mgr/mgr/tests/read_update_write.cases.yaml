@@ -276,15 +276,15 @@
   feedback_out:
     enabled:  False
     fault:  True
-    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[1]})
+    fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF' ({drives[1]})
     d.1.status_word:  0x001F  # FAULT REACTION ACTIVE + VOLTAGE_ENABLED
     d.1.state:  FAULT REACTION ACTIVE
     d.1.transition:  13
     d.1.fault:  True
-    d.1.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
+    d.1.fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF'
     d.1.error_code:  0xDEADBEEF
     d.1.description:  Unknown error code 0xDEADBEEF
-    d.1.goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    d.1.goal_reason:  Fault state reached; state FAULT REACTION ACTIVE != OPERATION ENABLED
   command_in:
     state_cmd:  4  # fault
   command_out:
@@ -306,16 +306,16 @@
   feedback_out:
     goal_reached:  False
     goal_reason:  Waiting on device manager internal transitions
-    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[1]})
+    fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF' ({drives[1]})
     # drive_1 holds state
-    d.1.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
+    d.1.fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF'
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.1.state:  FAULT
     d.1.transition:  14
     d.1.goal_reason:  Reached
     # ...while other drives enter QUICK STOP ACTIVE
     d.x.fault:  True
-    d.x.fault_desc:  FAULT command from controller (was OPERATION ENABLED)
+    d.x.fault_desc:  FAULT command from controller (from state OPERATION ENABLED)
     d.x.status_word:  0x0017  # QUICK STOP + VOLTAGE_ENABLED
     d.x.state:  QUICK STOP ACTIVE
     d.x.transition:  11
@@ -444,16 +444,16 @@
     d.1.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
   feedback_out:
     fault:  True
-    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[2]})
+    fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF' ({drives[2]})
     goal_reason:  Waiting on device manager internal transitions
     d.2.status_word:  0x001F  # FAULT REACTION ACTIVE + VOLTAGE_ENABLED
     d.2.state:  FAULT REACTION ACTIVE
     d.2.transition:  13
     d.2.fault:  True
-    d.2.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
+    d.2.fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF'
     d.2.error_code:  0xDEADBEEF
     d.2.description:  Unknown error code 0xDEADBEEF
-    d.2.goal_reason:  state FAULT REACTION ACTIVE != SWITCHED ON; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    d.2.goal_reason:  Fault state reached; state FAULT REACTION ACTIVE != SWITCHED ON
     d.1.status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
     d.1.state:  SWITCHED ON
     d.1.transition:  3
@@ -478,13 +478,13 @@
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
     goal_reason:  Waiting on device manager internal transitions
-    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF ({drives[2]})
+    fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF' ({drives[2]})
     d.x.fault:  True
-    d.x.fault_desc:  FAULT command from controller (was SWITCHED ON)
+    d.x.fault_desc:  FAULT command from controller (from state SWITCHED ON)
     d.x.status_word:  0x0050
     d.x.state:  SWITCH ON DISABLED
     d.x.transition:  10
-    d.2.fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
+    d.2.fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF'
     d.2.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.2.state:  FAULT
     d.2.transition:  14
@@ -808,7 +808,7 @@
     d.x.goal_reached:  False
     d.2.goal_reached:  True
     d.x.goal_reason:  state READY TO SWITCH ON != SWITCHED ON
-    d.2.goal_reason:  state SWITCH ON DISABLED != SWITCHED ON; Enable command while no voltage at motor
+    d.2.goal_reason:  Fault state reached; state SWITCH ON DISABLED != SWITCHED ON
   command_in:
     state_set:  0  # clear command latch
   command_out:
@@ -832,7 +832,7 @@
     d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.2.status_word:  0x0040  # SWITCH ON DISABLED - VOLTAGE_ENABLED
     d.x.fault:  True
-    d.x.fault_desc:  FAULT command from controller (was READY TO SWITCH ON)
+    d.x.fault_desc:  FAULT command from controller (from state READY TO SWITCH ON)
     d.2.fault_desc:  Enable command while no voltage at motor
     d.x.goal_reached:  True
     d.x.goal_reason:  Reached

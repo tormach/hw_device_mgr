@@ -9,9 +9,7 @@ from functools import lru_cache
 class TestDevicesRUW(BaseDevicesTestClass, _TestEtherCATDeviceRUW):
 
     error_code_re = re.compile(r"0x([0-9A-F]{4})[0-9A-F]{4}")
-    expected_error_code_attrs = (
-        'fault_desc', 'description', 'goal_reason'
-    )
+    expected_error_code_attrs = ("fault_desc", "description", "goal_reason")
 
     @classmethod
     @lru_cache

@@ -65,6 +65,10 @@ class CiA301Device(Device):
         self.config = config
         super().__init__(address=address, **kwargs)
 
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties(*args)
+        self.config.clear_cached_properties()
+
     @classmethod
     @lru_cache
     def device_model_id(cls):
@@ -122,8 +126,8 @@ class CiA301Device(Device):
             param_state = self.PARAM_STATE_COMPLETE
         elif p_init_err:
             try:
-                errstr = "{1}({2}, {3}): {0}".format(p_init_err)
-            except:
+                errstr = "{1}({2}, {3}): {0}".format(*p_init_err)
+            except Exception:
                 errstr = str(p_init_err)
             fb_out.update(fault=True, fault_desc=f"param init failed: {errstr}")
             param_state = self.PARAM_STATE_ERROR
@@ -194,7 +198,9 @@ class CiA301Device(Device):
         cmd_out = super().set_command(**kwargs)
         cmd_in = self._interfaces["command_in"]
         init_params_cmd = False
-        if self.feedback_in.rising_edge("online"):
+        if cmd_out.get("shutdown_latch"):
+            self.config.param_init_stop()
+        elif self.feedback_in.rising_edge("online"):
             self.logger.info("Initializing params after coming online")
             init_params_cmd = True
         elif cmd_in.rising_edge("reset_fault") and self.config.param_init_error:
@@ -253,7 +259,7 @@ class CiA301Device(Device):
         return device_obj
 
     @classmethod
-    def scan_devices(cls, bus=0, **kwargs):
+    def scan_devices(cls, bus=0, get_device_kwargs=dict(), **kwargs):
         """Scan bus and return a list of device objects."""
         devices = list()
         config_cls = cls.config_class
@@ -265,7 +271,7 @@ class CiA301Device(Device):
                 raise NotImplementedError(
                     f"Unknown model {config.model_id} at {config.address}"
                 )
-            dev = device_cls.get_device(config, **kwargs)
+            dev = device_cls.get_device(config, **get_device_kwargs)
             devices.append(dev)
         return devices
 

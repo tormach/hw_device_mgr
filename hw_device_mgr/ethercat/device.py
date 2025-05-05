@@ -62,6 +62,9 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         addr_prefix = re.sub(r"[^0-9]+", self.slug_separator, str(address))
         return addr_prefix.strip(self.slug_separator)
 
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("alias", *args)
+
     @classmethod
     def read_device_sdos_from_esi(cls, LcId="1033"):
         sdo_data = dict()
@@ -110,9 +113,9 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         """
         Configure device, config, command for EtherCAT devices.
 
-        Like parent `CiA301Device.init_class()`, but parse SDO data
-        from EtherCAT ESI description file and pass with other kwargs
-        to parent class's method.
+        Like parent `CiA301Device.init_class()`, but parse SDO data from
+        EtherCAT ESI description file and pass with other kwargs to
+        parent class's method.
         """
         sdo_data = cls.read_device_sdos_from_esi(LcId=LcId)
         dcs_data = cls.read_device_dcs_from_esi(LcId=LcId)

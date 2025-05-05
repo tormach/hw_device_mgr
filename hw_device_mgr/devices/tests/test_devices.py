@@ -16,4 +16,6 @@ class TestDevices(BaseDevicesTestClass, _TestEtherCATDevice):
             return
         print(obj.feedback_out.data_types)
         assert obj.feedback_out_data_types["error_code"] == "uint16"
-        assert obj.feedback_out.get_data_type("error_code").shared_name == "uint16"
+        assert (
+            obj.feedback_out.get_data_type("error_code").shared_name == "uint16"
+        )

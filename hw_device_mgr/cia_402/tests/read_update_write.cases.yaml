@@ -192,8 +192,8 @@
     state:  FAULT REACTION ACTIVE
     transition:  13  # (Any)->FAULT REACTION ACTIVE
     fault:  True
-    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
-    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF'
+    goal_reason:  Fault state reached; state FAULT REACTION ACTIVE != OPERATION ENABLED
     error_code:  0xDEADBEEF  # Bogus error code
     description:  Unknown error code 0xDEADBEEF
   command_out:
@@ -209,7 +209,7 @@
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     state:  FAULT
     transition:  14  # FAULT REACTION ACTIVE->FAULT
-    goal_reason:  state FAULT != OPERATION ENABLED; Enabled drive unexpectedly disabled; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    goal_reason:  Fault state reached; state FAULT != OPERATION ENABLED
   command_out:
     # Goal is still OPERATION ENABLED, so automatically clear fault
     control_word:  0x0080  # Clear fault
@@ -224,7 +224,7 @@
     state:  SWITCH ON DISABLED
     transition:  15  # FAULT->SWITCH ON DISABLED
     fault_desc:  Enabled drive unexpectedly disabled
-    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED; Enabled drive unexpectedly disabled
+    goal_reason:  Fault state reached; state SWITCH ON DISABLED != OPERATION ENABLED
     error_code:  0x00000000  # Cleared by control_word 0x0080
     description:  No error
   command_out:
@@ -263,9 +263,9 @@
     state:  FAULT REACTION ACTIVE
     transition:  13  # (Any)->FAULT REACTION ACTIVE
     fault:  True
-    fault_desc:  0xDEADBEEF Unknown error code 0xDEADBEEF
+    fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF'
     goal_reached:  True
-    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    goal_reason:  Fault state reached; state FAULT REACTION ACTIVE != OPERATION ENABLED
     error_code:  0xDEADBEEF
     description:  Unknown error code 0xDEADBEEF
   command_out:
@@ -281,7 +281,7 @@
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     state:  FAULT
     transition:  14  # FAULT REACTION ACTIVE->FAULT
-    goal_reason:  state FAULT != OPERATION ENABLED; Enabled drive unexpectedly disabled; 0xDEADBEEF Unknown error code 0xDEADBEEF
+    goal_reason:  Fault state reached; state FAULT != OPERATION ENABLED
   command_in:
     # Controller sees FAULT state and commands hold at that state
     state:  FAULT
@@ -291,6 +291,7 @@
   feedback_out:
     transition:  -1
     goal_reason:  Reached
+    fault_desc:  Drive status word FAULT bit set, code 0xDEADBEEF 'Unknown error code 0xDEADBEEF'
 - desc:  "Hold fault:  Hold state x2"
   sim_feedback_set:
     error_code:  0xDEADBEEF  # Bogus error code
@@ -340,7 +341,7 @@
 - desc:  "Ext fault noop:  Hold state x1"
   feedback_out:
     fault:  True
-    fault_desc:  FAULT command from controller (was SWITCH ON DISABLED)
+    fault_desc:  FAULT command from controller (from state SWITCH ON DISABLED)
 - desc:  "Ext fault noop:  Hold state x2"
 
 #
@@ -433,7 +434,7 @@
     state:  QUICK STOP ACTIVE
     transition:  11
     fault:  True
-    fault_desc:  FAULT command from controller (was OPERATION ENABLED)
+    fault_desc:  FAULT command from controller (from state OPERATION ENABLED)
   sim_feedback:
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
 - desc:  "Disable enabled:  Command disable;  402 state machine transition 12"
@@ -476,7 +477,7 @@
     # With no voltage, drive refuses to leave SWITCH ON DISABLED
     # state:  SWITCH ON DISABLED
     transition:  -1
-    goal_reason:  state SWITCH ON DISABLED != SWITCHED ON; Enable command while no voltage at motor
+    goal_reason:  Fault state reached; state SWITCH ON DISABLED != SWITCHED ON
     # fault:  True  # (Already was True)
     fault_desc:  Enable command while no voltage at motor
   # command_out:
@@ -798,9 +799,9 @@
     state:  FAULT REACTION ACTIVE
     transition:  13  # (Any)->FAULT REACTION ACTIVE
     goal_reached:  True
-    goal_reason:  state FAULT REACTION ACTIVE != OPERATION ENABLED; Move request while drive not enabled; Fault (no error code)
+    goal_reason:  Fault state reached; state FAULT REACTION ACTIVE != OPERATION ENABLED; Move request while drive not enabled
     fault:  True
-    fault_desc:  Fault (no error code)
+    fault_desc:  Drive status word FAULT bit set (no error code)
   command_out:
     control_word:  0x0000
   sim_feedback:
@@ -814,7 +815,7 @@
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     state:  FAULT
     transition:  14  # FAULT REACTION ACTIVE->FAULT
-    goal_reason:  state FAULT != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled; Fault (no error code)
+    goal_reason:  Fault state reached; state FAULT != OPERATION ENABLED; Move request while drive not enabled
   command_out:
     control_word:  0x0080  # Clear fault
   sim_feedback:
@@ -828,7 +829,7 @@
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
     state:  SWITCH ON DISABLED
     transition:  15  # FAULT->SWITCH ON DISABLED
-    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED; Enabled drive unexpectedly disabled; Move request while drive not enabled
+    goal_reason:  Fault state reached; state SWITCH ON DISABLED != OPERATION ENABLED; Move request while drive not enabled
     # fault:  True  # Already True
     fault_desc:  Enabled drive unexpectedly disabled
   command_in:
