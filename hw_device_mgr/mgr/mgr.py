@@ -135,7 +135,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             "velocity_cmd",
             "velocity_fb",
             "torque_cmd",
-            "torque_fb"
+            "torque_fb",
         },
         # - Don't expose device `state`, `reset_fault`, `shutdown`,
         #   controlled by manager
@@ -175,7 +175,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             dict(name="stop_complete", src="stop_1", dst="stop_complete"),
             # Shutdown state:  From any state
             dict(name="shutdown_command", src="*", dst="shutdown_1"),
-            dict(name="shutdown_complete", src="shutdown_1", dst="shutdown_complete"),
+            dict(
+                name="shutdown_complete",
+                src="shutdown_1",
+                dst="shutdown_complete",
+            ),
         ],
         state_field="state",
     )
@@ -695,7 +699,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         mgr_vals = self.command_in.get()
         skip = self.device_translated_interfaces.get("command_in", set())
         reset = self.command_out.get("reset_fault_cmd")
-        shutdown=self.command_in.get("shutdown")
+        shutdown = self.command_in.get("shutdown")
         for dev in self.devices:
             if "command_in" in self.device_translated_interfaces:
                 # Copy mgr command_out to matching device command_in
@@ -703,8 +707,8 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
                 kwargs = {
                     k: mgr_vals[f"{prefix}{k}"]
-                        for k in dev_command_in.keys()
-                        if k not in skip
+                    for k in dev_command_in.keys()
+                    if k not in skip
                 }
                 kwargs.update(
                     shutdown=shutdown,

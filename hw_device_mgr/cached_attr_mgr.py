@@ -1,5 +1,4 @@
 class CachedAttrMixin:
-
     def clear_cached_properties(self, *args):
         """
         Clear `cached_property` and `lru_func` values.

@@ -23,15 +23,24 @@ class TestCiA402DeviceRUW(_TestCiA301DeviceRUW, BaseCiA402TestClass):
         mno_home_found = mno.setdefault("home_found", set())
         mno_home_found.add((0x00100000, 0x000C010D))
 
-    def test_read_update_write(self, obj):
+    def read_update_write_helper(self, obj, ruw_yaml):
         if hasattr(obj, "MODE_CSP"):
             # CiA 402 device
             self.read_update_write_package = self.read_update_write_402_package
-            self.read_update_write_yaml = self.read_update_write_402_yaml
+            self.read_update_write_yaml = ruw_yaml
             self.is_402_device = True
         else:
             self.is_402_device = False
         super().test_read_update_write(obj)
+
+    def test_read_update_write(self, obj):
+        self.read_update_write_helper(obj, self.read_update_write_402_yaml)
+
+    def test_read_update_write_pv(self, obj):
+        self.read_update_write_helper(obj, "pv.cases.yaml")
+
+    def test_read_update_write_pt(self, obj):
+        self.read_update_write_helper(obj, "pt.cases.yaml")
 
 
 class TestCiA402DeviceRUWHMTimeout(TestCiA402DeviceRUW):

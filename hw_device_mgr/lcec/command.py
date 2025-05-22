@@ -29,7 +29,6 @@ class LCECCommand(EtherCATCommand):
             f"--alias={alias or '-'}",
         )
 
-
     def _ethercat(
         self, *args, log_lev="debug", dry_run=False, stderr_to_devnull=False
     ):

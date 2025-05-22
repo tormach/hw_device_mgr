@@ -20,6 +20,10 @@
     control_mode_fb:  1  # MODE_PP
     position_cmd:  0.0
     position_fb:  15.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     sto:  False
     error_code:  0x00000000
   feedback_out:
@@ -37,6 +41,11 @@
     goal_reached:  True
     goal_reason:  Reached
     move_success:  False
+    velocity_zero:  False
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     following_error:  False
     move_setpoint_ack: False
     position_cmd:  0.0
@@ -67,6 +76,10 @@
     control_mode_fb:  1  # MODE_PP
     position_cmd:  0.0
     position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     sto:  False
     error_code:  0x00000000
 

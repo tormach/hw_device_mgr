@@ -13,6 +13,10 @@
     control_mode_fb:  0  # Undefined
     position_cmd:  0
     position_fb:  0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     # STO
     sto:  False
     # errors
@@ -35,6 +39,11 @@
     goal_reached:  False
     goal_reason:  Offline
     move_success:  False
+    velocity_zero:  False
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     following_error:  False
     move_setpoint_ack:  False
     position_cmd:  0
@@ -70,6 +79,10 @@
     control_mode_fb:  0  # Undefined
     position_cmd:  0.0
     position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     # STO
     sto:  False
     # errors

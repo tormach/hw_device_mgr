@@ -11,7 +11,6 @@ class EtherCATCommandException(CiA301CommandException):
 
 
 class EtherCATCommand(CiA301Command):
-
     @abc.abstractmethod
     def alias(
         self,
@@ -23,7 +22,6 @@ class EtherCATCommand(CiA301Command):
 
 
 class EtherCATSimCommand(EtherCATCommand, CiA301SimCommand):
-
     def alias(
         self,
         address=None,

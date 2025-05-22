@@ -48,7 +48,7 @@ class InovanceSTD60Config(EtherCATConfig):
         time.sleep(2.0)  # Give the drive time to react
 
     def reset_error_and_restart(self):
-        self.logger.info(f"Queueing fault reset and rebooting drive")
+        self.logger.info("Queueing fault reset and rebooting drive")
         self.enqueue_command(self.clear_fault)
         self.enqueue_command(self.soft_reset)
 

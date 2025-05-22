@@ -3755,7 +3755,7 @@
 									<Flags>
 										<Access>rw</Access>
 									</Flags>
-								</SubItem>								
+								</SubItem>
 							</DataType>
 							<DataType>
 								<Name>DT2006</Name>
@@ -3843,7 +3843,7 @@
 									<Flags>
 										<Access>rw</Access>
 									</Flags>
-								</SubItem>								
+								</SubItem>
 								<SubItem>
 									<SubIdx>20</SubIdx>
 									<Name>Touch Probe 1 filter time constant</Name>
@@ -3933,7 +3933,7 @@
 									<Name>Actual motor rotational speed</Name>
 									<Type>INT</Type>
 									<BitSize>16</BitSize>
-									<BitOffs>16</BitOffs> 
+									<BitOffs>16</BitOffs>
 									<Flags>
 										<Access>ro</Access>
 										<PdoMapping>T</PdoMapping>
@@ -6837,7 +6837,7 @@
 										<Info>
 											<DefaultValue>#x607A0020</DefaultValue>
 										</Info>
-									</SubItem>	
+									</SubItem>
 									<SubItem>
 										<Name>4th Output Object to be mapped</Name>
 										<Info>
@@ -8079,7 +8079,7 @@
 											<MaxValue>51200</MaxValue>
 											<DefaultValue>50000</DefaultValue>
 										</Info>
-									</SubItem>									
+									</SubItem>
 									<SubItem>
 										<Name>Time of home searching</Name>
 										<Info>
@@ -8112,7 +8112,7 @@
 											<MaxValue>10000</MaxValue>
 											<DefaultValue>0</DefaultValue>
 										</Info>
-									</SubItem>											
+									</SubItem>
 								</Info>
 								<Flags>
 									<Access>ro</Access>
@@ -8196,7 +8196,7 @@
 											<MaxValue>4294967295</MaxValue>
 											<DefaultValue>27486951</DefaultValue>
 										</Info>
-									</SubItem>									
+									</SubItem>
 									<SubItem>
 										<Name>Touch Probe 1 filter time constant</Name>
 										<Info>
@@ -10231,7 +10231,7 @@
 									<Access>rw</Access>
 								</Flags>
 							</Object>
-<!-- 
+<!--
 							<Object>
 								<Index>#x6071</Index>
 								<Name LcId="1033">Target torque</Name>
@@ -10461,7 +10461,7 @@
 									<PdoMapping>R</PdoMapping>
 								</Flags>
 							</Object>
-<!-- 
+<!--
 							<Object>
 								<Index>#x6087</Index>
 								<Name LcId="1033">Torque slope</Name>
@@ -10834,7 +10834,7 @@
 									<PdoMapping>T</PdoMapping>
 								</Flags>
 							</Object>
-<!--							
+<!--
 							<Object>
 								<Index>#x60E0</Index>
 								<Name LcId="1033">Positive torque limit value</Name>
