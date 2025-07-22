@@ -483,7 +483,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
             "READY TO SWITCH ON": ["SWITCHED ON", 3],
             "FAULT": ["SWITCH ON DISABLED", 15],
             "FAULT REACTION ACTIVE": ["FAULT", 14],
-            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
+            "QUICK STOP ACTIVE": ["OPERATION ENABLED", 16],
         },
         # These tr'ns take longer from OPERATION ENABLED -> SWITCH ON DISABLED
         # 'OPERATION ENABLED':        ['SWITCHED ON', 5],
