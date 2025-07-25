@@ -63,6 +63,7 @@
     move_request:  True
     relative_target:  False
     shutdown:  False
+    quick_stop: False
   command_out:
     control_word:  0x001F  # Bit 4 NEW_SETPOINT set
     control_mode:  1  # MODE_PP

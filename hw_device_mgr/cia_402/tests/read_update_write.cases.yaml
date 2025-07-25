@@ -63,6 +63,7 @@
     move_request:  False
     relative_target:  False
     reset_fault: False
+    quick_stop: False
   command_out:
     shutdown_latch:  False
     # CiA 402

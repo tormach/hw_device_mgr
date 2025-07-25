@@ -436,6 +436,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_request=False,
         move_request=False,
         relative_target=False,
+        quick_stop=False,
     )
     command_in_data_types = dict(
         state="str",
@@ -443,6 +444,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_request="bit",
         move_request="bit",
         relative_target="bit",
+        quick_stop="bit",
     )
 
     # ------- Command out -------
@@ -484,6 +486,19 @@ class CiA402Device(CiA301Device, ErrorDevice):
             "FAULT": ["SWITCH ON DISABLED", 15],
             "FAULT REACTION ACTIVE": ["FAULT", 14],
             "QUICK STOP ACTIVE": ["OPERATION ENABLED", 16],
+        },
+        "QUICK STOP ACTIVE": {
+            # OPERATION ENABLED transition to QUICK STOP ACTIVE & stay there;
+            "OPERATION ENABLED": ["QUICK STOP ACTIVE", 11],
+            "QUICK STOP ACTIVE": ["QUICK STOP ACTIVE", -1],  # End
+            # Otherwise, transition to SWITCH ON DISABLED
+            "START": ["START", 0],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", 1],
+            "READY TO SWITCH ON": ["SWITCH ON DISABLED", 7],
+            "SWITCHED ON": ["SWITCH ON DISABLED", 10],
+            "FAULT REACTION ACTIVE": ["FAULT", 14],
+            "FAULT": ["SWITCH ON DISABLED", 15],
+            "SWITCH ON DISABLED": ["SWITCH ON DISABLED", -1],  # End
         },
         # These tr'ns take longer from OPERATION ENABLED -> SWITCH ON DISABLED
         # 'OPERATION ENABLED':        ['SWITCHED ON', 5],
@@ -529,8 +544,12 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     def set_command(self, **kwargs):
         cmd_out = super().set_command(**kwargs)
+        state_cmd = self.command_in.get("state")
+        if state_cmd == "OPERATION ENABLED":
+            if self.command_in.get("quick_stop"):
+                # Override current command in
+                self.command_in.update(state="QUICK STOP ACTIVE")
         if self.command_in.changed("state"):
-            state_cmd = self.command_in.get("state")
             self.logger.info(f"CiA 402 state command:  {state_cmd}")
         if self.command_out.get("shutdown_latch"):
             return cmd_out

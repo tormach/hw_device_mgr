@@ -69,6 +69,7 @@
     d.x.home_request: False
     d.x.move_request: False
     d.x.relative_target: False
+    d.x.quick_stop: False
   command_out:
     shutdown_latch:  False
     # Mgr
