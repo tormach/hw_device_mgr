@@ -539,6 +539,11 @@
   description: Braking transistor over-temperature
   type: 3
   resettable: true
+'0x0939':
+  display: E939.0
+  description: Motor power cables disconnected
+  type: 1
+  resettable: true
 '0x0941':
   display: E941.0
   description: Parameter modifications not activated
