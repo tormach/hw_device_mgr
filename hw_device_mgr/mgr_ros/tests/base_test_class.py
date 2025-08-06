@@ -82,6 +82,14 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         self.dump_yaml_path(sim_device_data_path, sim_device_data)
         yield dev_conf
 
+    @classmethod
+    def init_sim(cls, **kwargs):
+        # Don't add sim_device_data like parent method does
+        print(f"init_sim({cls}, **{kwargs})")
+        cls.device_class.clear_devices()
+        argv = list()
+        cls.device_class.init_class(argv, **kwargs)
+
     @pytest.fixture
     def device_config_path(self, tmp_path, device_config, mock_rclpy):
         # Clean data types from device config to dump into YAML file &

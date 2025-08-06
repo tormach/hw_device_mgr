@@ -5,14 +5,52 @@ import traceback
 
 
 class ROSHWDeviceMgr(HWDeviceMgr, ConfigIO):
-    def get_param(self, name, default=None):
-        if self.ros_node.has_parameter(name):
-            param = self.ros_node.get_parameter(name)
+    @classmethod
+    def get_param(cls, name, default=None):
+        if cls.ros_node.has_parameter(name):
+            param = cls.ros_node.get_parameter(name)
         else:
-            param = self.ros_node.declare_parameter(name, value=default)
+            param = cls.ros_node.declare_parameter(name, value=default)
         return param.value
 
-    def init(self, /, argv, **kwargs):
+    @classmethod
+    def init_ros(cls, argv):
+        """
+        Initialize manager instance.
+
+        Init ROS node, shutdown callback and rate object, and read
+        manager config and device config YAML path from ROS params, in
+        addition to base class init.
+        """
+        # Init ROS node
+        node_kwargs = dict(
+            allow_undeclared_parameters=True,
+            automatically_declare_parameters_from_overrides=True,
+        )
+
+        rclpy.init(args=argv)
+        cls.ros_node = rclpy.create_node(cls.name, **node_kwargs)
+        cls.ros_context = rclpy.utilities.get_default_context()
+
+    @classmethod
+    def init_class(cls, argv, **kwargs):
+        cls.init_ros(argv)
+
+        # Init sim device data
+        if "sim_device_data" in kwargs:
+            raise TypeError("unexpected 'sim_device_data' argument")
+        sim_device_data_path = cls.get_param("sim_device_data_path", None)
+        if sim_device_data_path:
+            cls.get_logger(cls.name).info(
+                f"Reading sim device data from '{sim_device_data_path}'"
+            )
+            sim_device_data = cls.load_yaml_path(sim_device_data_path)
+            assert sim_device_data, f"Empty YAML file '{sim_device_data_path}'"
+            kwargs["sim_device_data"] = sim_device_data
+
+        super().init_class(**kwargs)
+
+    def init(self, /, **kwargs):
         """
         Initialize manager instance.
 
@@ -26,15 +64,6 @@ class ROSHWDeviceMgr(HWDeviceMgr, ConfigIO):
         If the ROS param `sim_device_data_path` is non-empty, it must be a `str`
         containing the path to a YAML file with the sim device configuration.
         """
-        # - Init ROS node
-        node_kwargs = dict(
-            allow_undeclared_parameters=True,
-            automatically_declare_parameters_from_overrides=True,
-        )
-
-        rclpy.init(args=argv)
-        self.ros_node = rclpy.create_node(self.name, **node_kwargs)
-        self.ros_context = rclpy.utilities.get_default_context()
         self.logger.info(f"Initializing '{self.name}' ROS node")
         # - mgr_config
         if "mgr_config" in kwargs:
@@ -52,14 +81,6 @@ class ROSHWDeviceMgr(HWDeviceMgr, ConfigIO):
         self.logger.info(f"Reading device config from '{device_config_path}'")
         device_config = self.load_yaml_path(device_config_path)
         assert device_config, f"Empty YAML file '{device_config_path}'"
-        # - sim device data
-        if "sim_device_data" in kwargs:
-            raise TypeError("unexpected 'sim_device_data' argument")
-        sim_device_data_path = self.get_param("sim_device_data_path", None)
-        if sim_device_data_path is not None:
-            sim_device_data = self.load_yaml_path(sim_device_data_path)
-            assert sim_device_data, f"Empty YAML file '{sim_device_data_path}'"
-            kwargs["sim_device_data"] = sim_device_data
         #
         super().init(
             mgr_config=mgr_config, device_config=device_config, **kwargs

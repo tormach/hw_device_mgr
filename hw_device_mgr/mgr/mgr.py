@@ -79,7 +79,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.logger.info("Device manager initialization complete")
 
     @classmethod
-    def init_class(cls, sim_device_data=None, kwargs=dict()):
+    def init_class(cls, sim_device_data=None, **kwargs):
         # Initialize device classes, incl. any sim discovery data
         if sim_device_data:
             kwargs.update(sim_device_data=sim_device_data)
