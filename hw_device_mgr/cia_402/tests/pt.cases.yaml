@@ -62,6 +62,7 @@
     move_request:  False
     relative_target:  False
     shutdown:  False
+    quick_stop: False
   command_out:
     control_word:  0x000F  # OPERATION ENABLED
     control_mode:  4  # MODE_PT
