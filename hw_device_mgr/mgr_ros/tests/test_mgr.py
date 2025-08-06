@@ -20,7 +20,7 @@ class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
     def obj(self, category_cls):
         # init() signature changed, so can't use parent test class obj fixture
         self.obj = self.device_class()
-        self.obj.init(argv=list())
+        self.obj.init()
         yield self.obj
 
     def test_ros_params(self, obj):
