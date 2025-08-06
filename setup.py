@@ -3,7 +3,6 @@ from setuptools.command.install import install
 from warnings import warn
 import subprocess
 import os
-import sys
 
 package_name = "hw_device_mgr"
 
@@ -47,9 +46,9 @@ packages = (
 class CustomInstall(install):
     user_options = install.user_options + [
         (
-            'sudo-halcompile=',
+            "sudo-halcompile=",
             None,
-            'If needed to install HAL components, sudo executable (ROS 2 only).'
+            "If needed to install HAL components, sudo executable (ROS 2 only).",
         ),
     ]
 

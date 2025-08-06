@@ -90,7 +90,7 @@ class EtherCATXMLReader(ConfigIO):
         Translate an XML element into a Python object.
 
         The resulting object can be printed and won't lose information;
-        used in fall-through cases.
+        used in fallthrough cases.
         """
         return dict(
             tag=tree.tag,
@@ -207,39 +207,6 @@ class EtherCATXMLReader(ConfigIO):
         #   </Descriptions>
         # </EtherCATInfo>
         return self.tree.xpath("/EtherCATInfo/Descriptions/Devices/Device")
-
-    """Map XML data types to `ethercat -t TYPE`
-
-    http://www.dige.ai/uploadfiles/2020/01/20200109105424701.pdf
-    https://etherlab.org/download/ethercat/ethercat-1.5.2.pdf
-
-    Format: 'XML_type': 'etherlab_type' # NUMBITS Description
-    """
-
-    # Data type definitiens
-    #
-    # <DataTypes>
-    #   <DataType>
-    #     <!--Std type (see ETG.2000)-->
-    #     <Name>USINT</Name>
-    #     <BitSize>8</BitSize>
-    #   </DataType>
-    #   <DataType>
-    #     <Name>DT1018</Name>
-    #     <BitSize>144</BitSize>
-    #     <SubItem>
-    #       <SubIdx>0</SubIdx>
-    #       <Name>SubIndex 000</Name>
-    #       <Type>USINT</Type>
-    #       <BitSize>8</BitSize>
-    #       <BitOffs>0</BitOffs>
-    #       <Flags>
-    #         <Access>ro</Access>
-    #       </Flags>
-    #     </SubItem>
-    #     [...]
-    #   </DataType>
-    #   [...]
 
     def expand_subitems(self, subitems):
         """Translate `SubItem` objects within complex `DataType` objects."""
