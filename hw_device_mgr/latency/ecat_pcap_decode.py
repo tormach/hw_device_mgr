@@ -24,7 +24,7 @@ class PDO(int):
         self.length = length
 
     def __str__(self):
-        return f"0x{{:0{int(self.length)*2}X}}".format(self)
+        return f"0x{{:0{int(self.length) * 2}X}}".format(self)
 
     def __repr__(self):
         return f"<PDO {self.pdo}={str(self)}>"

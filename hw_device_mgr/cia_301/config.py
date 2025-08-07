@@ -31,7 +31,7 @@ class CiA301Config(LoggingMixin):
 
     @cached_property
     def logging_name(self):
-        return f"{self.name}@{str(self.address).replace(' ','')}"
+        return f"{self.name}@{str(self.address).replace(' ', '')}"
 
     data_type_class = CiA301DataType
     command_class = CiA301Command

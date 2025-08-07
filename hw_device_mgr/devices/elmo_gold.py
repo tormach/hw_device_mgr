@@ -18,7 +18,7 @@ class ElmoGold(EtherCATDevice, CiA402Device):
         # Params have to be explicitly saved
         if nv:
             for i, char in enumerate("save"):
-                self.config.download(f"1010-0{i+1}h", ord(char))
+                self.config.download(f"1010-0{i + 1}h", ord(char))
 
 
 # FIXME These models differ only by revision, but the CiA 301 class
