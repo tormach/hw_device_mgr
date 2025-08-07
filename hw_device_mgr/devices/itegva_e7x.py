@@ -1,4 +1,9 @@
+from ..ethercat.config import EtherCATConfig
 from ..ethercat.device import EtherCATDevice
+
+
+class ITegvaE7xConfig(EtherCATConfig):
+    init_params = False
 
 
 class ITegvaE7xDevice(EtherCATDevice):
@@ -7,6 +12,7 @@ class ITegvaE7xDevice(EtherCATDevice):
     vendor_id = 0x00000A09
     xml_description_package = "hw_device_mgr.devices.device_xml"
     xml_description_fname = "iTegva_E7x_Series.xml"
+    config_class = ITegvaE7xConfig
 
 
 # "Access_Bit":  IOs individually accessible via bit PDOs

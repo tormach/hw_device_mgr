@@ -124,6 +124,8 @@ class CiA301Device(Device):
         p_init_err = self.config.param_init_error
         if not self.config.init_params:
             param_state = self.PARAM_STATE_COMPLETE
+            if old_ps != self.PARAM_STATE_COMPLETE:  # Log once only
+                self.logger.info("Device not configured to update params")
         elif p_init_err:
             try:
                 errstr = "{1}({2}, {3}): {0}".format(*p_init_err)
@@ -246,13 +248,11 @@ class CiA301Device(Device):
     @classmethod
     def get_device(cls, address=None, **kwargs):
         registry = cls._address_registry.setdefault(cls.name, dict())
-        config = address
-        address = config.address if hasattr(address, "address") else address
         if address in registry:
             return registry[address]
         # kwargs will contain skip_optional_config_values at this point, but it
         # will be consumed by __init__ for this class
-        device_obj = cls(address=config, **kwargs)
+        device_obj = cls(address=address, **kwargs)
         registry[address] = device_obj
         return device_obj
 
@@ -269,7 +269,7 @@ class CiA301Device(Device):
                 raise NotImplementedError(
                     f"Unknown model {config.model_id} at {config.address}"
                 )
-            dev = device_cls.get_device(config, **get_device_kwargs)
+            dev = device_cls.get_device(config.address, **get_device_kwargs)
             devices.append(dev)
         return devices
 
