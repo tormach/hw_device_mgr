@@ -1,0 +1,230 @@
+# Test cases for OPERATION ENABLED to QUICK STOP ACTIVE
+#
+#
+# FIRST ROUND:  Drive immediately transitions to SWITCH ON DISABLED
+# after QUICK STOP ACTIVE.
+#
+# This behavior is determined by param settings on the drive.
+#
+- desc:  "Start with OPERATION ENABLED"
+  sim_feedback_set:
+    # Jump directly to online, mode CSP, OPERATION ENABLED
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  8  # MODE_CSP
+  command_in_set:
+    # Override command_in "state", queried by get_feedback(), to save
+    # additional setup of previous cycles
+    state:  OPERATION ENABLED
+  feedback_in:
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  8
+    position_cmd:  0.0
+    position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
+    sto:  False
+    error_code:  0x00000000
+  feedback_out:
+    online:  True
+    oper:  True
+    param_state:  0x02  # Complete
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  8
+    state:  OPERATION ENABLED
+    transition:  -1
+    home_success:  False
+    home_error:  False
+    home_found:  False
+    fault:  False
+    goal_reached:  True
+    goal_reason:  Reached
+    move_success:  False
+    velocity_zero:  False
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
+    following_error:  False
+    move_setpoint_ack: False
+    position_cmd:  0.0
+    position_fb:  0.0
+    sto:  False
+    error_code:  0x00000000
+    description:  No error
+    fault_desc: ""
+    shutdown_complete:  False
+  command_in:
+    state:  OPERATION ENABLED
+    control_mode:  8
+    reset_fault: False
+    home_request:  False
+    move_request:  False
+    relative_target:  False
+    shutdown:  False
+    quick_stop: False
+  command_out:
+    control_word:  0x000F  # OPERATION ENABLED
+    control_mode:  8
+    init_params:  True
+    fasttrack:  False
+    shutdown_latch:  False
+  sim_feedback:
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  8
+    position_cmd:  0.0
+    position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
+    sto:  False
+    error_code:  0x00000000
+
+- desc:  "Set quick_stop command"
+  command_in:
+    # Controller commands quick_stop
+    quick_stop: True
+  command_out:
+    control_word:  0x0002  # QUICK STOP ACTIVE
+    init_params:  False
+  sim_feedback:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+
+- desc:  "Drive transitions to QUICK STOP ACTIVE"
+  feedback_in:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+    state:  QUICK STOP ACTIVE
+    transition:  11
+  sim_feedback:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+
+- desc:  "Drive automatically transitions to SWITCH ON DISABLED"
+  feedback_in:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    state:  SWITCH ON DISABLED
+    transition:  -1
+  command_out:
+    control_word:  0x0000  # SWITCH ON DISABLED
+
+- desc:  "Hold SWITCH ON DISABLED x1"
+  # (No changes)
+
+- desc:  "Clear quick_stop command; command READY TO SWITCH ON"
+  command_in:
+    quick_stop: False
+  command_out:
+    control_word:  0x0006  # READY TO SWITCH ON
+  sim_feedback:
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+
+- desc:  "Drive transitions to READY TO SWITCH ON; command SWITCHED ON"
+  feedback_in:
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+    state:  READY TO SWITCH ON
+    transition:  2
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+  command_out:
+    control_word:  0x0007  # SWITCHED ON
+  sim_feedback:
+    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
+
+- desc:  "Drive transitions to SWITCHED ON; command OPERATION ENABLED"
+  feedback_in:
+    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0033  # SWITCHED ON + VOLTAGE_ENABLED
+    state:  SWITCHED ON
+    transition:  3
+    goal_reason:  state SWITCHED ON != OPERATION ENABLED
+  command_out:
+    control_word:  0x000F  # OPERATION ENABLED
+  sim_feedback:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+
+- desc:  "Drive transitions to OPERATION ENABLED; goal reached"
+  feedback_in:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    state:  OPERATION ENABLED
+    transition:  4
+    goal_reached:  True
+    goal_reason:  Reached
+
+- desc:  "Hold OPERATION ENABLED"
+  feedback_out:
+    transition:  -1
+
+#
+# SECOND ROUND:  Drive remains in QUICK STOP ACTIVE until OPERATION ENABLED
+# command.
+#
+# This behavior is determined by param settings on the drive.
+#
+
+- desc:  "Set quick_stop command"
+  command_in:
+    # Controller commands quick_stop
+    quick_stop: True
+  command_out:
+    control_word:  0x0002  # QUICK STOP ACTIVE
+    init_params:  False
+  sim_feedback:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+
+- desc:  "Drive transitions to QUICK STOP ACTIVE"
+  feedback_in:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+    state:  QUICK STOP ACTIVE
+    transition:  11
+  sim_feedback:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+
+- desc:  "Drive remains in QUICK STOP ACTIVE"
+  sim_feedback_set:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+  feedback_out:
+    transition:  -1
+
+- desc:  "Hold QUICK STOP ACTIVE"
+  sim_feedback_set:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+
+- desc:  "Clear quick_stop command; command OPERATION ENABLED"
+  sim_feedback_set:
+    status_word:  0x0017  # QUICK STOP ACTIVE + VOLTAGE_ENABLED
+  command_in:
+    quick_stop: False
+  command_out:
+    control_word:  0x000F  # OPERATION ENABLED
+  sim_feedback:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+
+- desc:  "Transition to OPERATION ENABLED"
+  feedback_in:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    state:  OPERATION ENABLED
+    transition:  16
+
+- desc:  "Hold OPERATION ENABLED"
+  feedback_out:
+    transition:  -1

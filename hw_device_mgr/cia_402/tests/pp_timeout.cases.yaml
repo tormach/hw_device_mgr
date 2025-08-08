@@ -132,8 +132,8 @@
     state:  FAULT
     home_request:  False
   command_out:
-    control_word:  0x0002  # QUICK STOP ACTIVE
+    control_word:  0x0000  # SWITCH ON DISABLED
     control_mode:  1  # MODE_PP
   sim_feedback:
-    status_word:  0x0017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED - HOMING_START
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     control_mode_fb:  1  # MODE_PP

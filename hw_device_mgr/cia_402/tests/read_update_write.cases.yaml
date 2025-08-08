@@ -237,10 +237,12 @@
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
     state:  SWITCH ON DISABLED
     transition:  15  # FAULT->SWITCH ON DISABLED
-    fault_desc:  Enabled drive unexpectedly disabled
-    goal_reason:  Fault state reached; state SWITCH ON DISABLED != OPERATION ENABLED
+    fault_desc:  ""
+    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED
     error_code:  0x00000000  # Cleared by control_word 0x0080
+    fault:  False
     description:  No error
+    goal_reached:  False
   command_out:
     control_word:  0x0006  # READY TO SWITCH ON
   sim_feedback:
@@ -254,8 +256,6 @@
     transition:  2
     goal_reached:  False
     goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
-    fault:  False
-    fault_desc:  ""
   command_out:
     control_word:  0x0007  # SWITCHED ON
   sim_feedback:
@@ -437,16 +437,16 @@
     # Controller commands FAULT in response to external event
     state:  FAULT
   command_out:
-    control_word:  0x0002
+    control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
-    status_word:  0x0017
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
 - desc:  "Disable enabled:  Command disable;  402 state machine transition 11"
   feedback_in:
-    status_word:  0x0017
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0017
-    state:  QUICK STOP ACTIVE
-    transition:  11
+    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    state:  SWITCH ON DISABLED
+    transition:  9
     fault:  True
     fault_desc:  FAULT command from controller (from state OPERATION ENABLED)
   sim_feedback:
@@ -455,8 +455,6 @@
   feedback_in:
     status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
-    status_word:  0x0050   # SWITCH ON DISABLED + VOLTAGE_ENABLED
-    state:  SWITCH ON DISABLED
     transition:  -1
     goal_reason:  Reached
   command_out:
@@ -843,9 +841,10 @@
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
     state:  SWITCH ON DISABLED
     transition:  15  # FAULT->SWITCH ON DISABLED
-    goal_reason:  Fault state reached; state SWITCH ON DISABLED != OPERATION ENABLED; Move request while drive not enabled
+    goal_reached:  False
+    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED; Move request while drive not enabled
     # fault:  True  # Already True
-    fault_desc:  Enabled drive unexpectedly disabled
+    fault_desc:  Move request while drive not enabled
   command_in:
     # Cancel PP move setpoint
     move_request:  False
@@ -861,7 +860,6 @@
     status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     state:  READY TO SWITCH ON
     transition:  2  # SWITCH ON DISABLED->READY TO SWITCH ON
-    goal_reached:  False
     goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
     fault:  False
     fault_desc:  ""

@@ -257,8 +257,6 @@
     d.x.status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
     d.x.state:  OPERATION ENABLED
     d.x.transition:  4
-    d.x.goal_reached:  True
-    d.x.goal_reason:  Reached
   command_out:
     command_complete:  True
     reset:  0
@@ -275,7 +273,7 @@
 # (In real life, upper layers would hold fault)
 # OPERATION ENABLED -> FAULT -> SWITCH ON DISABLED -> (towards) OPERATION ENABLED
 #
-- desc:  "Sim fault:  Drive 1 faults; others enter QUICK STOP ACTIVE"
+- desc:  "Sim fault:  Drive 1 faults; others commanded SWITCH ON DISABLED"
   sim_feedback_set:
     # Simulate the fault
     d.1.status_word:  0x001F  # FAULT REACTION ACTIVE + VOLTAGE_ENABLED
@@ -302,16 +300,15 @@
     state_log:  Manager fault
     command_complete:  False
     drive_state:  FAULT
-    d.x.control_word:  0x0002  # QUICK STOP ACTIVE
-    d.1.control_word:  0x0000  # SWITCH ON DISABLED
+    d.x.control_word:  0x0000  # SWITCH ON DISABLED
   sim_feedback:
-    d.x.status_word:  0x0017  # QUICK STOP + VOLTAGE_ENABLED
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
-- desc:  "Sim fault:  Non-faulted drives enter QUICK STOP ACTIVE"
+- desc:  "Sim fault:  Non-faulted drives enter SWITCH ON DISABLED"
   sim_feedback_set:
     d.1.error_code:  0xDEADBEEF  # Bogus error code
   feedback_in:
-    d.x.status_word:  0x0017  # QUICK STOP + VOLTAGE_ENABLED
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
   feedback_out:
     goal_reached:  False
@@ -326,9 +323,9 @@
     # ...while other drives enter QUICK STOP ACTIVE
     d.x.fault:  True
     d.x.fault_desc:  FAULT command from controller (from state OPERATION ENABLED)
-    d.x.status_word:  0x0017  # QUICK STOP + VOLTAGE_ENABLED
-    d.x.state:  QUICK STOP ACTIVE
-    d.x.transition:  11
+    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    d.x.state:  SWITCH ON DISABLED
+    d.x.transition:  9
   command_out:
     state_log:  Manager fault
     # Manager does NOT all drives in FAULT state, but in STATE_FAULT
@@ -336,25 +333,16 @@
     command_complete:  True
   sim_feedback:
     d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
-    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
-- desc:  "Sim fault:  Non-faulted drives enter SWITCH ON DISABLED"
+- desc:  "Sim fault:  Hold non-faulted drives enter SWITCH ON DISABLED"
   sim_feedback_set:
     d.1.error_code:  0xDEADBEEF  # Bogus error code
-  feedback_in:
-    d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
-    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
   feedback_out:
     goal_reached:  True
     goal_reason:  Reached
-    d.1.status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
     d.1.state:  FAULT
-    d.x.status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     d.x.state:  SWITCH ON DISABLED
     d.x.transition:  -1
-    d.x.goal_reached:  True
     d.x.goal_reason:  Reached
-  command_out:
-    d.x.control_word:  0x0000  # SWITCH ON DISABLED
 - desc:  "Sim fault:  Hold fault command x1"
   sim_feedback_set:
     d.1.error_code:  0xDEADBEEF  # Bogus error code

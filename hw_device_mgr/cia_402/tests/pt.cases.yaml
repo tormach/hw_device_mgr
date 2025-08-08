@@ -62,6 +62,7 @@
     move_request:  False
     relative_target:  False
     shutdown:  False
+    quick_stop:  False
   command_out:
     control_word:  0x000F  # OPERATION ENABLED
     control_mode:  4  # MODE_PT
@@ -179,9 +180,10 @@
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
     state:  SWITCH ON DISABLED
     transition:  15  # FAULT->SWITCH ON DISABLED
-    goal_reason:  Fault state reached; state SWITCH ON DISABLED != OPERATION ENABLED
-    # fault:  True  # Already True
-    fault_desc:  Enabled drive unexpectedly disabled
+    goal_reached:  False
+    goal_reason:  state SWITCH ON DISABLED != OPERATION ENABLED
+    fault:  False
+    fault_desc:  ""
   command_out:
     control_word:  0x0006  # READY TO SWITCH ON
   sim_feedback:
@@ -196,10 +198,7 @@
     status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
     state:  READY TO SWITCH ON
     transition:  2  # SWITCH ON DISABLED->READY TO SWITCH ON
-    goal_reached:  False
     goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
-    fault:  False
-    fault_desc:  ""
   command_in:
     state:  SWITCH ON DISABLED
   command_out:

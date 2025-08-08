@@ -252,6 +252,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
     def get_feedback(self):
         fb_out = super().get_feedback()
         fb_in = self.feedback_in
+        state_cmd = self.command_in.get("state")
 
         # If shutting down, there's nothing to do here
         if self.command_out.get("shutdown_latch"):
@@ -274,13 +275,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
             cm_str = self.control_mode_str(cm)
             cm_cmd_str = self.control_mode_str(cm_cmd)
             goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
-
-        # Raise fault if device unexpectedly disabled
-        state_cmd = self.command_in.get("state")
-        if state_cmd == "OPERATION ENABLED":
-            if not self.test_sw_bit(sw, "READY_TO_SWITCH_ON"):
-                fault = True
-                fault_desc = "Enabled drive unexpectedly disabled"
 
         # Log status word changes
         if self.log_status_word_changes and fb_out.changed("status_word"):
@@ -544,10 +538,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
     def set_command(self, **kwargs):
         cmd_out = super().set_command(**kwargs)
         state_cmd = self.command_in.get("state")
-        if state_cmd == "OPERATION ENABLED":
-            if self.command_in.get("quick_stop"):
-                # Override current command in
-                self.command_in.update(state="QUICK STOP ACTIVE")
         if self.command_in.changed("state"):
             self.logger.info(f"CiA 402 state command:  {state_cmd}")
         if self.command_out.get("shutdown_latch"):
@@ -758,6 +748,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     def _get_next_state(self, curr_state=None, transition=False):
         gp = self.goal_paths[self.command_in.get("state")]
+        if self.command_in.get("state") == "OPERATION ENABLED":
+            if self.command_in.get("quick_stop"):
+                # Use quick stop goals
+                gp = self.goal_paths["QUICK STOP ACTIVE"]
         return gp[curr_state or self.feedback_out.get("state")][transition]
 
     @classmethod
