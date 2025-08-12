@@ -55,6 +55,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
     velocity_timeout = 15  # seconds
     torque_timeout = 15  # seconds
 
+    pending_move_request = False
+
     @classmethod
     def control_mode_str(cls, mode):
         """
@@ -567,13 +569,20 @@ class CiA402Device(CiA301Device, ErrorDevice):
         return dict(OPERATION_MODE_SPECIFIC_1=home_request)
 
     def pp_request_cw_flags(self):
-        # Check for move request
         move_request = False
         relative_target = False
+        # Check for move request (rising edge) and/or await MODE_PP
         if self.command_in.get("move_request"):
-            if self.command_in.changed("move_request"):  # Rising edge
-                self.logger.info("Move operation requested")
-                move_request = True
+            if self.command_in.changed("move_request") or self.pending_move_request:
+                fb_in = self.interface("feedback_in")  
+                control_mode_fb = fb_in.get("control_mode_fb")
+                if control_mode_fb != self.MODE_PP:
+                    self.pending_move_request = True
+                    self.logger.info("Move operation awaiting MODE_PP")
+                else:
+                    self.pending_move_request = False
+                    self.logger.info("Move operation requested")
+                    move_request = True
             # Fast track as long as move_request in effect
             self.command_out.update(fasttrack=True)
         else:
@@ -585,6 +594,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
             setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
             move_request = prev_nsp and not setpoint_ack
             if self.command_in.changed("move_request"):  # move_request cleared
+                self.pending_move_request = False
                 self.logger.info("Move operation request cleared")
         if move_request:
             if self.command_in.get("relative_target"):
