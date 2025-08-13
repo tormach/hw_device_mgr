@@ -276,9 +276,11 @@ class CiA402Device(CiA301Device, ErrorDevice):
             cm_cmd_str = self.control_mode_str(cm_cmd)
             goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
 
-        # Log status word changes
+        # Log changes
         if self.log_status_word_changes and fb_out.changed("status_word"):
             self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
+        if fb_in.changed("control_mode_fb"):
+            self.logger.info(f"control_mode_fb:  {self.control_mode_str(cm)}")
 
         # If device not yet operational, don't do any more, incl. log faults,
         # etc.
