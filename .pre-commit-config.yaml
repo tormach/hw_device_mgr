@@ -25,13 +25,13 @@ repos:
         types: [python]
 
 - repo: https://github.com/myint/docformatter
-  rev: v1.7.7
+  rev: v1.7.6
   hooks:
     - id: docformatter
       args: [--pre-summary-newline, --in-place]
 
 -   repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
+    rev: 7.0.0
     hooks:
     -   id: flake8
 
