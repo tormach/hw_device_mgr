@@ -709,8 +709,6 @@
     transition:  -1
     goal_reached:  False
     goal_reason:  move not complete
-  command_out:
-    control_word:  0x000F  # Bit 4 NEW_SETPOINT clear
   sim_feedback:
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
 - desc:  "PP move:  Wait for move (2)"
@@ -721,26 +719,31 @@
   feedback_out:
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
     move_setpoint_ack:  True
-  sim_feedback:
-    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
+  command_out:
+    control_word:  0x000F  # Bit 4 NEW_SETPOINT clear
 - desc:  "PP move:  Wait for move (3)"
   sim_feedback_set:
+    position_fb:  15.0  # Move not complete
+  sim_feedback:
+    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
+- desc:  "PP move:  Wait for move (4)"
+  sim_feedback_set:
     position_fb:  10.0  # Move not complete
   feedback_in:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
     position_fb:  10.0  # Move not complete
   feedback_out:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE clear
-    position_fb:  10.0  # Move not complete
     move_setpoint_ack:  False
-- desc:  "PP move:  Wait for move (4)"
+    position_fb:  10.0  # Move not complete
+- desc:  "PP move:  Wait for move (5)"
   sim_feedback_set:
     position_fb:  5.0  # Move not complete
   feedback_in:
     position_fb:  5.0  # Move not complete
   feedback_out:
     position_fb:  5.0  # Move not complete
-- desc:  "PP move:  Wait for move (5)"
+- desc:  "PP move:  Wait for move (6)"
   sim_feedback_set:
     position_fb:  0.0  # Move complete
   feedback_in:
@@ -795,8 +798,6 @@
     transition:  -1
     goal_reached:  False
     goal_reason:  move not complete
-  command_out:
-    control_word:  0x000F  # Bit 4 NEW_SETPOINT clear
   sim_feedback:
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
 - desc:  "PP move FAULT:  FAULT REACTION ACTIVE"
@@ -816,6 +817,7 @@
     fault_desc:  Drive status word FAULT bit set (no error code)
   command_out:
     control_word:  0x0000
+    fasttrack:  False
   sim_feedback:
     status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
 - desc:  "PP move FAULT:  FAULT; clear fault"
@@ -850,7 +852,6 @@
     move_request:  False
   command_out:
     control_word:  0x0006  # READY TO SWITCH ON
-    fasttrack:  False
   sim_feedback:
     status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
 - desc:  "PP move FAULT:  Command SWITCH ON DISABLED"

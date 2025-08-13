@@ -55,8 +55,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
     velocity_timeout = 15  # seconds
     torque_timeout = 15  # seconds
 
-    pending_move_request = False
-
     @classmethod
     def control_mode_str(cls, mode):
         """
@@ -556,54 +554,65 @@ class CiA402Device(CiA301Device, ErrorDevice):
         return cmd_out
 
     def hm_request_cw_flags(self):
-        # Check for home request
-        home_request = False
+        # MODE_HM is active.
         if self.command_in.get("home_request"):
             if self.command_in.changed("home_request"):
                 self.logger.info("Homing operation requested")
-            if self.feedback_out.get("control_mode_fb") == self.MODE_HM:
-                # Don't actually set HOMING_START until in MODE_HM
-                home_request = True
-        elif self.command_in.changed("home_request"):  # home_request cleared
-            self.logger.info("Homing operation complete")
-        return dict(OPERATION_MODE_SPECIFIC_1=home_request)
+            return dict(OPERATION_MODE_SPECIFIC_1=True)  # set HOMING_START
+        else:  # home_request inactive
+            if self.command_in.changed("home_request"):  # home_request cleared
+                self.logger.info("Homing operation complete")
+            return dict(OPERATION_MODE_SPECIFIC_1=False)  # clear HOMING_START
 
     def pp_request_cw_flags(self):
-        move_request = False
-        relative_target = False
-        # Check for move request (rising edge) and/or await MODE_PP
-        if self.command_in.get("move_request"):
-            if self.command_in.changed("move_request") or self.pending_move_request:
-                fb_in = self.interface("feedback_in")  
-                control_mode_fb = fb_in.get("control_mode_fb")
-                if control_mode_fb != self.MODE_PP:
-                    self.pending_move_request = True
-                    self.logger.info("Move operation awaiting MODE_PP")
-                else:
-                    self.pending_move_request = False
-                    self.logger.info("Move operation requested")
-                    move_request = True
-            # Fast track as long as move_request in effect
-            self.command_out.update(fasttrack=True)
-        else:
-            # Clear move request unless setpoint ack not set after previous new
-            # set point
-            cw = self.command_out.get_old("control_word")
-            prev_nsp = self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1")
-            sw = self.feedback_in.get("status_word")
-            setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
-            move_request = prev_nsp and not setpoint_ack
-            if self.command_in.changed("move_request"):  # move_request cleared
-                self.pending_move_request = False
-                self.logger.info("Move operation request cleared")
-        if move_request:
-            if self.command_in.get("relative_target"):
-                self.logger.info("Target position is relative")
-                relative_target = True
-        return dict(
-            OPERATION_MODE_SPECIFIC_1=move_request,
+        # MODE_PP is active.
+        relative_target = self.command_in.get("relative_target")
+        move_req_inactive = dict(
+            OPERATION_MODE_SPECIFIC_1=False,  # NEW SETPOINT
             OPERATION_MODE_SPECIFIC_3=relative_target,
         )
+        move_req_active = dict(
+            OPERATION_MODE_SPECIFIC_1=True,  # NEW SETPOINT
+            OPERATION_MODE_SPECIFIC_3=relative_target,
+        )
+
+        # If move_request inactive, clear NEW SETPOINT bit and return
+        if not self.command_in.get("move_request"):
+            return move_req_inactive  # No move request active
+
+        # Fast track as long as move_request in effect
+        self.command_out.update(fasttrack=True)
+
+        # On rising edge of move request or MODE_PP, set NEW SETPOINT
+        if self.command_in.changed("move_request"):
+            self.logger.info(
+                "Move request rising edge; set NEW SETPOINT;"
+                f" RELATIVE_POS={relative_target}"
+            )
+            return move_req_active
+        elif self.feedback_in.changed("control_mode_fb"):
+            self.logger.info(
+                "Move request active; MODE_PP now active; set NEW SETPOINT;"
+                f" RELATIVE_POS={relative_target}"
+            )
+            return move_req_active
+
+        # If NEW SETPOINT was set but still waiting on SETPOINT ACK,
+        # leave NEW SETPOINT set & return
+        cw = self.command_out.get_old("control_word")
+        nsp_was_set = self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1")
+        sw = self.feedback_in.get("status_word")
+        setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+        if nsp_was_set and not setpoint_ack:
+            self.logger.info(  # FIXME
+                "NEW SETPOINT was active; SETPOINT ACK inactive;"
+                f" set NEW SETPOINT; RELATIVE_POS={relative_target}"
+            )
+            return move_req_active  # (Unchanged, no need to log)
+
+        # Otherwise, NEW SETPOINT got SETPOINT ACK; clear NEW SETPOINT
+        self.logger.info("Move operation request cleared")
+        return move_req_inactive
 
     @classmethod
     @lru_cache
@@ -631,12 +640,15 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
         # Add flags and return
         next_cm = cmd_out.get("control_mode")
+        cur_cm = self.feedback_in.get("control_mode_fb")
         cw_flags = dict(OPERATION_MODE_SPECIFIC_3=False)
         # operation mode specific 3 sets the target to relative position
         # when in PP mode
-        if next_cm == self.MODE_HM:
+        if (control_word & 0x000F) != 0x000F:  # Not OPERATION ENABLED
+            cw_flags.update(OPERATION_MODE_SPECIFIC_1=False)
+        elif next_cm == self.MODE_HM and cur_cm == self.MODE_HM:
             cw_flags.update(self.hm_request_cw_flags())
-        elif next_cm == self.MODE_PP:
+        elif next_cm == self.MODE_PP and cur_cm == self.MODE_PP:
             cw_flags.update(self.pp_request_cw_flags())
         else:
             cw_flags.update(OPERATION_MODE_SPECIFIC_1=False)

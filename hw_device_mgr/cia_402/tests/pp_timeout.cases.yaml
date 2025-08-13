@@ -90,12 +90,10 @@
   feedback_out:
     goal_reached:  False
     goal_reason:  move not complete
-  command_out:
-    control_word:  0x000F  # OPERATION ENABLED + NEW_SETPOINT
   sim_feedback:
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
 
-- desc:  "Test case 2:  SETPOINT_ACKNOWLEDGE"
+- desc:  "Test case 2:  SETPOINT_ACKNOWLEDGE; clear NEW SETPOINT"
   sim_feedback_set:
     position_fb:  15.0
   feedback_in:
@@ -103,10 +101,16 @@
   feedback_out:
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
     move_setpoint_ack:  True
-  sim_feedback:
-    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+  command_out:
+    control_word:  0x000F  # OPERATION ENABLED - NEW_SETPOINT
 
-- desc:  "Test case 3:  Move in progress"
+- desc:  "Test case 3:  SETPOINT_ACKNOWLEDGE cleared"
+  sim_feedback_set:
+    position_fb:  15.0
+  sim_feedback:
+    status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
+
+- desc:  "Test case 4:  Move in progress"
   # (Repeated once)
   sim_feedback_set:
     position_fb:  15.0
@@ -115,11 +119,9 @@
   feedback_out:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
     move_setpoint_ack:  False
-  sim_feedback:
-    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 
 
-- desc:  "Test case 4:  Move timeout exceeded; controller commands fault"
+- desc:  "Test case 5:  Move timeout exceeded; controller commands fault"
   sim_feedback_set:
     position_fb:  15.0
   feedback_out:
@@ -134,6 +136,7 @@
   command_out:
     control_word:  0x0000  # SWITCH ON DISABLED
     control_mode:  1  # MODE_PP
+    fasttrack:  False
   sim_feedback:
     status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
     control_mode_fb:  1  # MODE_PP
