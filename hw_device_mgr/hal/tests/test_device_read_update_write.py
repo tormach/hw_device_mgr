@@ -1,0 +1,71 @@
+import pytest
+from .base_test_class import BaseHALTestClass
+from ...cia_402.tests.test_device_read_update_write import (
+    TestCiA402DeviceRUW as _TestCiA402DeviceRUW,
+)
+
+
+class TestHALDeviceRUW(BaseHALTestClass, _TestCiA402DeviceRUW):
+    halcomp_name = "hal_device"
+
+    @pytest.fixture
+    def obj(self, sim_device_data, mock_halcomp, device_cls):
+        self.obj = self.device_model_cls(address=sim_device_data["address"])
+        self.obj.config.init_params = False
+        self.obj.init(comp=mock_halcomp)
+        yield self.obj
+
+    #########################################
+    # Test read()/update()/write() integration
+    #
+
+    def override_interface_param(self, interface, ovr_data, double=False):
+        intf = self.obj.interface(interface)
+        intf.update(**ovr_data)
+        if double:
+            intf.set(**intf.values)
+        if interface not in self.obj.pin_interfaces:
+            return
+        dt_names = self.obj.merge_dict_attrs(interface, "data_types")
+        for key, val in ovr_data.items():
+            dt = dt_names.get(key, None)
+            if dt is not None:
+                val = self.obj.data_type_class.by_shared_name(dt)(val)
+            pname = self.obj.pin_name(interface, key)
+            self.set_pin(pname, val)
+
+    def copy_sim_feedback(self, obj=None):
+        if obj is None:
+            obj = self.obj
+        print(f"\n*** Copy HAL pin values sim_feedback -> feedback_in {obj}")
+        for name in obj.sim_feedback.get():
+            sfbpname = obj.pin_name("sim_feedback", name)
+            fbpname = obj.pin_name("feedback_in", name)
+            sfb_val = self.get_pin(sfbpname)
+            self.set_pin(fbpname, sfb_val)
+            fb_val = self.get_pin(fbpname)
+            assert sfb_val == fb_val
+        print(f"*** Finished sim_feedback HAL pin copy {obj}")
+
+    def pre_read_actions(self):
+        self.copy_sim_feedback()
+
+    def check_halpin_values(self, iface, obj=None):
+        if obj is None:
+            obj = self.obj
+        print(f"\n*** Checking {obj} {iface} halpin values")
+        pins = obj.pins[iface]
+        for name, iface_val in obj.interface(iface).get().items():
+            if name not in pins:
+                print(f"    {name}:  no HAL pin")
+                continue
+            pname = obj.pin_name(iface, name)
+            pin_val = self.get_pin(pname)
+            print(f"    {pname}={pin_val}, {name}={iface_val}")
+            assert pin_val == iface_val
+
+    def post_write_actions(self):
+        obj = self.obj
+        for iface, pins in obj.pins.items():
+            if obj.pin_interfaces[iface][0] == obj.HAL_OUT:
+                self.check_halpin_values(iface, obj)

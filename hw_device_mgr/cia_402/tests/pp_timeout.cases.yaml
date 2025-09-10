@@ -20,6 +20,10 @@
     control_mode_fb:  1  # MODE_PP
     position_cmd:  0.0
     position_fb:  15.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     sto:  False
     error_code:  0x00000000
   feedback_out:
@@ -37,22 +41,35 @@
     goal_reached:  True
     goal_reason:  Reached
     move_success:  False
-    move_error:  False
+    velocity_zero:  False
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
+    following_error:  False
+    move_setpoint_ack: False
     position_cmd:  0.0
     position_fb:  15.0
     sto:  False
     error_code:  0x00000000
     description:  No error
     fault_desc: ""
+    shutdown_complete:  False
   command_in:
     state:  OPERATION ENABLED
     control_mode:  1  # MODE_PP
+    reset_fault: False
     home_request:  False
     move_request:  True
     relative_target:  False
+    shutdown:  False
+    quick_stop: False
   command_out:
     control_word:  0x001F  # Bit 4 NEW_SETPOINT set
     control_mode:  1  # MODE_PP
+    init_params:  False
+    fasttrack:  True
+    shutdown_latch:  False
   sim_feedback:
     online:  True
     oper:  True
@@ -60,6 +77,10 @@
     control_mode_fb:  1  # MODE_PP
     position_cmd:  0.0
     position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     sto:  False
     error_code:  0x00000000
 
@@ -81,6 +102,7 @@
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
   feedback_out:
     status_word:  0x1037  # Bit 12 SETPOINT_ACKNOWLEDGE set
+    move_setpoint_ack:  True
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 
@@ -92,6 +114,7 @@
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
   feedback_out:
     status_word:  0x0037  # Bit 12 SETPOINT_ACKNOWLEDGE cleared
+    move_setpoint_ack:  False
   sim_feedback:
     status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
 
@@ -103,12 +126,14 @@
     # Timeout treated as fault
     fault:  True
     fault_desc:  "Timeout (15s):  move not complete"
+    goal_reason:  Fault state reached; move not complete
+    goal_reached:  True
   command_in:
     state:  FAULT
     home_request:  False
   command_out:
-    control_word:  0x0002  # QUICK STOP ACTIVE
+    control_word:  0x0000  # SWITCH ON DISABLED
     control_mode:  1  # MODE_PP
   sim_feedback:
-    status_word:  0x0017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED - HOMING_START
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - HOMING_START
     control_mode_fb:  1  # MODE_PP

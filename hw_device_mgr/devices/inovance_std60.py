@@ -6,8 +6,8 @@ from functools import lru_cache
 import time
 
 
-class InovanceSV660Config(EtherCATConfig):
-    """Inovance SV660 servo drive config."""
+class InovanceSTD60Config(EtherCATConfig):
+    """Inovance STD60 servo drive config."""
 
     # Device params non-volatile setting in 200E-02h:
     # 0:  params not updated
@@ -53,16 +53,16 @@ class InovanceSV660Config(EtherCATConfig):
         self.enqueue_command(self.soft_reset)
 
 
-class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
-    """Inovance SV660 servo drives."""
+class InovanceSTD60(EtherCATDevice, CiA402Device, ErrorDevice):
+    """Inovance STD60 servo drives."""
 
     vendor_id = 0x00100000
-    product_code = 0x000C010D
+    product_code = 0x000C011A
     xml_description_package = "hw_device_mgr.devices.device_xml"
-    xml_description_fname = "SV660_EOE_1Axis_V9.12.xml"
+    xml_description_fname = "STD60_EOE_1Axis_06008_NEW_v1_0.xml"
     device_error_package = "hw_device_mgr.devices.device_err"
-    device_error_yaml = "inovance_sv660n.yaml"
-    config_class = InovanceSV660Config
+    device_error_yaml = "inovance_std60n.yaml"
+    config_class = InovanceSTD60Config
     have_sto = True
 
     feedback_out_data_types = dict(
@@ -103,7 +103,7 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
         return cmd_out
 
 
-class SimInovanceSV660(InovanceSV660, EtherCATSimDevice, CiA402SimDevice):
+class SimInovanceSTD60(InovanceSTD60, EtherCATSimDevice, CiA402SimDevice):
     def set_sim_feedback(self):
         # Simulate home_found feedback
         sfb = super().set_sim_feedback()
@@ -112,7 +112,7 @@ class SimInovanceSV660(InovanceSV660, EtherCATSimDevice, CiA402SimDevice):
         homing_attained = False
         if sfb.get("control_mode_fb") == self.MODE_HM:
             homing_attained = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
-        # SV660N:  MANUFACTURER_SPECIFIC_3 (bit 15) is "Home found"
+        # STD60:  MANUFACTURER_SPECIFIC_3 (bit 15) is "Home found"
         old_home_found = self.test_sw_bit(old_sw, "MANUFACTURER_SPECIFIC_3")
         home_found = old_home_found or homing_attained
         if home_found:

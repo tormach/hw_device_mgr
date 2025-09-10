@@ -13,7 +13,15 @@
     goal_reason:  Offline
     fault:  False
     fault_desc: ""
-    param_state:  0  # Unknown
+    param_state:  0x00  # PARAM_STATE_UNKNOWN
+    shutdown_complete:  False
+  command_in:
+    reset_fault:  False
+    shutdown:  False
+  command_out:
+    init_params:  False
+    fasttrack:  False
+    shutdown_latch:  False
   sim_feedback:
     online:  True
     oper:  False
@@ -22,8 +30,10 @@
     online:  True
   feedback_out:
     online:  True
-    goal_reason:  Not operational, updating device params
-    param_state:  1  # Updating
+    goal_reason:  Not operational
+    param_state:  0x02  # PARAM_STATE_COMPLETE
+  command_out:
+    init_params:  True
   sim_feedback:
     oper:  True
 - desc:  "NMT Pre-operational -> Operational"
@@ -33,7 +43,8 @@
     oper:  True
     goal_reached:  True
     goal_reason:  Reached
-    param_state:  2  # Complete
+  command_out:
+    init_params:  False
 - desc:  "NMT Operational; hold state x1"
 - desc:  "NMT Operational; hold state x2"
 #
@@ -75,11 +86,11 @@
   feedback_out:
     online:  False
     oper:  False
+    param_state:  0x00  # PARAM_STATE_UNKNOWN
     goal_reached:  False
     goal_reason:  Offline
     fault:  True
     fault_desc:  Drive went offline/non-operational
-    param_state:  0x00  # Unknown
   sim_feedback:
     oper:  False
 - desc:  "NMC offline after online; hold state"
@@ -93,11 +104,13 @@
   feedback_out:
     online:  True
     oper:  False
+    param_state:  0x02  # PARAM_STATE_COMPLETE
     goal_reached:  False
-    goal_reason:  Not operational, updating device params
-    param_state:  0x01  # Updating
+    goal_reason:  Not operational
     fault:  True
     fault_desc:  Drive went offline/non-operational
+  command_out:
+    init_params:  True
   sim_feedback:
     oper:  True
 - desc:  "NMC offline after online; resume operational"
@@ -107,7 +120,8 @@
     oper:  True
     goal_reached:  True
     goal_reason:  Reached
-    param_state:  0x02  # Complete
     fault:  False
     fault_desc:  ""
+  command_out:
+    init_params:  False
 - desc:  "NMC offline after online; hold state"

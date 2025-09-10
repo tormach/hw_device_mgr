@@ -81,7 +81,8 @@ class BaseLCECTestClass(BaseEtherCATTestClass, BaseHALTestClass):
                     index=ix[0], subindex=ix[1], data_type=dt.shared_name
                 )
                 address = tuple(
-                    int(kwargs[k]) for k in ("master", "position", "alias")
+                    int(kwargs[k].replace("-", "0"))
+                    for k in ("master", "position", "alias")
                 )
                 sim_sdo_values = self.command_class.sim_sdo_values
                 key = self.config_class.address_in_canon_addresses(

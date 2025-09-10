@@ -24,7 +24,7 @@ class ElmoGold520ForTest(DevicesForTest, ElmoGold520, CiA402SimDevice):
 
 class InovanceIS620NForTest(DevicesForTest, InovanceIS620N, CiA402SimDevice):
     name = "IS620N_ECAT_test"
-    test_category = "inovance_sv660n_test"
+    test_category = "inovance_is620n_test"
 
 
 class InovanceSV660NForTest(DevicesForTest, InovanceSV660, CiA402SimDevice):
@@ -32,7 +32,7 @@ class InovanceSV660NForTest(DevicesForTest, InovanceSV660, CiA402SimDevice):
     # exception in the read_update_write.cases.yaml for the simulated status
     # word bit 15 "home found"
     name = "SV660_ECAT_test"
-    test_category = "inovance_is620n_test"
+    test_category = "inovance_sv660n_test"
 
 
 class EVEXCREForTest(DevicesForTest, EVEXCRE, CiA402SimDevice):

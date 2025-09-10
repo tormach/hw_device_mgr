@@ -1,0 +1,231 @@
+# Test cases for PT mode
+#
+- desc:  "PT move:  Start OPERATION ENABLED and MODE_PT"
+  sim_feedback_set:
+    # Jump directly to online, mode CSP, OPERATION ENABLED
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  4  # MODE_PT
+  command_in_set:
+    # Override command_in "state", queried by get_feedback(), to save
+    # additional setup of previous cycles
+    state:  OPERATION ENABLED
+    control_mode:  4  # MODE_PT
+  feedback_in:
+    online:  True
+    oper:  True
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  4  # MODE_PT
+    position_cmd:  0.0
+    position_fb:  0
+    velocity_cmd:  0
+    velocity_fb:  0.0
+    torque_cmd:  0
+    torque_fb:  0
+    sto:  False
+    error_code:  0x00000000
+  feedback_out:
+    online:  True
+    oper:  True
+    param_state:  0x02  # Complete
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+    control_mode_fb:  4  # MODE_PT
+    state:  OPERATION ENABLED
+    transition:  -1
+    home_success:  False
+    home_error:  False
+    home_found:  False
+    fault:  False
+    goal_reached:  True
+    goal_reason:  Reached
+    move_success:  False
+    velocity_zero:  False
+    following_error:  False
+    move_setpoint_ack: False
+    position_cmd:  0.0
+    position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0.0
+    torque_cmd:  0
+    torque_fb:  0
+    sto:  False
+    error_code:  0x00000000
+    description:  No error
+    fault_desc: ""
+    shutdown_complete:  False
+  command_in:
+    state:  OPERATION ENABLED
+    control_mode:  4  # MODE_PT
+    reset_fault: False
+    home_request:  False
+    move_request:  False
+    relative_target:  False
+    shutdown:  False
+    quick_stop: False
+  command_out:
+    control_word:  0x000F  # OPERATION ENABLED
+    control_mode:  4  # MODE_PT
+    init_params:  True
+    fasttrack:  False
+    shutdown_latch:  False
+  sim_feedback:
+    online:  True
+    oper:  True
+    status_word:  0x0437  # OPERATION ENABLED + VOLTAGE_ENABLED + TARGET_REACHED
+    control_mode_fb:  4  # MODE_PT
+    position_cmd:  0.0
+    position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
+    sto:  False
+    error_code:  0x00000000
+
+- desc:  "PT move:  Set PT command"
+  sim_feedback_set:
+    torque_cmd:  15.0
+  feedback_in:
+    torque_cmd:  15.0
+    status_word:  0x0437  # OPERATION ENABLED + VOLTAGE_ENABLED + TARGET_REACHED
+  feedback_out:
+    status_word:  0x0437  # OPERATION ENABLED + VOLTAGE_ENABLED + TARGET_REACHED
+    torque_cmd:  15.0
+  command_out:
+    init_params:  False
+  sim_feedback:
+    status_word:  0x0037  # OPERATION ENABLED + VOLTAGE_ENABLED
+- desc:  "PT move:  Wait for torque (1)"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  10.0  # Catching up....
+  feedback_in:
+    status_word:  0x0037
+    torque_fb:  10.0
+  feedback_out:
+    status_word:  0x0037
+    torque_fb:  10.0
+- desc:  "PT move:  Wait for torque (2)"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  15.0  # At torque
+  feedback_in:
+    torque_fb:  15.0
+  feedback_out:
+    torque_fb:  15.0
+  sim_feedback:
+    status_word:  0x0437  # OPERATION ENABLED + VOLTAGE_ENABLED + TARGET_REACHED
+- desc:  "PT move:  Torque cmd complete"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  15.0  # At torque
+  feedback_in:
+    status_word:  0x0437  # OPERATION ENABLED + VOLTAGE_ENABLED + TARGET_REACHED
+  feedback_out:
+    status_word:  0x0437  # OPERATION ENABLED + VOLTAGE_ENABLED + TARGET_REACHED
+- desc:  "PT move:  Torque cmd hold"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  15.0
+
+#
+# Torque command interrupted by drive fault
+#
+- desc:  "PT move FAULT:  Command move_request"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    # Simulate the fault
+    torque_fb:  0.0
+    status_word:  0x001F  # FAULT REACTION ACTIVE
+  feedback_in:
+    status_word:  0x001F  # FAULT REACTION ACTIVE
+    torque_fb:  0.0
+  feedback_out:
+    status_word:  0x001F  # FAULT REACTION ACTIVE
+    state:  FAULT REACTION ACTIVE
+    transition:  13  # (Any)->FAULT REACTION ACTIVE
+    goal_reason:  Fault state reached; state FAULT REACTION ACTIVE != OPERATION ENABLED
+    fault:  True
+    fault_desc:  Drive status word FAULT bit set (no error code)
+    torque_fb:  0.0
+  command_out:
+    control_word:  0x0000
+  sim_feedback:
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
+- desc:  "PT move FAULT:  FAULT; clear fault"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  0.0
+  feedback_in:
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0018  # FAULT + VOLTAGE_ENABLED
+    state:  FAULT
+    transition:  14  # FAULT REACTION ACTIVE->FAULT
+    goal_reason:  Fault state reached; state FAULT != OPERATION ENABLED
+  command_out:
+    control_word:  0x0080  # Clear fault
+  sim_feedback:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
+- desc:  "PT move FAULT:  Trans 15 FAULT->SWITCH ON DISABLED; cancel move request"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  0.0
+  feedback_in:
+    position_fb:  0.0  # Move complete
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
+  feedback_out:
+    position_fb:  0.0  # Move complete
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - SETPOINT_ACK
+    state:  SWITCH ON DISABLED
+    transition:  15  # FAULT->SWITCH ON DISABLED
+    goal_reason:  Fault state reached; state SWITCH ON DISABLED != OPERATION ENABLED
+    # fault:  True  # Already True
+    fault_desc:  Enabled drive unexpectedly disabled
+  command_out:
+    control_word:  0x0006  # READY TO SWITCH ON
+  sim_feedback:
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+- desc:  "PT move FAULT:  Command SWITCH ON DISABLED"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  0.0
+  feedback_in:
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0031  # READY TO SWITCH ON + VOLTAGE_ENABLED
+    state:  READY TO SWITCH ON
+    transition:  2  # SWITCH ON DISABLED->READY TO SWITCH ON
+    goal_reached:  False
+    goal_reason:  state READY TO SWITCH ON != OPERATION ENABLED
+    fault:  False
+    fault_desc:  ""
+  command_in:
+    state:  SWITCH ON DISABLED
+  command_out:
+    control_word:  0x0000
+  sim_feedback:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+- desc:  "PT move FAULT:  Done"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  0.0
+  feedback_in:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+  feedback_out:
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED
+    state:  SWITCH ON DISABLED
+    transition:  7  # READY TO SWITCH ON->SWITCH ON DISABLED
+    goal_reached:  True
+    goal_reason:  Reached
+- desc:  "PT move FAULT:  Hold"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  0.0
+  feedback_out:
+    transition:  -1
+- desc:  "PT move FAULT:  Hold"
+  sim_feedback_set:
+    torque_cmd:  15.0
+    torque_fb:  0.0

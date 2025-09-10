@@ -1,9 +1,18 @@
+import time
 from .sdo import EtherCATSDO
-from ..cia_301.config import CiA301Config, CiA301SimConfig
+from ..cia_301.config import (
+    CiA301Config,
+    CiA301SimConfig,
+    CiA301ConfigException,
+)
 from .data_types import EtherCATDataType
 from .xml_reader import EtherCATXMLReader
 from .command import EtherCATCommand, EtherCATSimCommand
 from functools import lru_cache, cached_property
+
+
+class EtherCATConfigException(CiA301ConfigException):
+    pass
 
 
 class EtherCATConfig(CiA301Config):
@@ -13,9 +22,9 @@ class EtherCATConfig(CiA301Config):
     EtherCAT CoE shares much in common with CiA 301, and this class
     subclasses `CiA301Config`.
 
-    Each EtherCAT device comes with an ESI "EtherCAT Slave Information"
-    XML file that describes the device's object dictionary, sync
-    managers, etc.
+    Each EtherCAT device comes with an ESI "EtherCAT Slave
+    Information" XML file that describes the device's object
+    dictionary, sync managers, etc.
     """
 
     data_type_class = EtherCATDataType
@@ -37,6 +46,9 @@ class EtherCATConfig(CiA301Config):
     @cached_property
     def alias(self):
         return self.address[2]
+
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("alias", *args)
 
     @classmethod
     def address_variants(cls, address):
@@ -132,6 +144,41 @@ class EtherCATConfig(CiA301Config):
         """
         esi_reader = cls.read_esi(package, fname, LcId=LcId)
         return esi_reader.parse_dc_opmodes()
+
+    # Device commands
+
+    def set_alias(self, alias, timeout=5.0, **kwargs):
+        if self.alias == alias:
+            self.logger.info(
+                f"Set device alias={alias}:  already set; doing nothing"
+            )
+            return
+        self.command().alias(
+            address=self.address,
+            alias=alias,
+            **kwargs,
+        )
+        # Confirm alias change and update device config
+        while timeout > 0:
+            self.clear_cached_properties()
+            for dev in self.scan_bus(bus=self.bus):
+                if dev.position != self.position:
+                    continue
+                if dev.alias != alias:
+                    time.sleep(0.1)
+                    timeout -= 0.1
+                    continue
+                self.address = dev.address
+                self.logger.info(f"Updated alias for device {self}")
+                return
+            else:
+                raise EtherCATConfigException(
+                    f"Unable to see {self} in bus scan after alias change"
+                )
+        else:
+            raise EtherCATConfigException(
+                f"Failed to set {self} alias={alias} within {timeout}s timeout"
+            )
 
 
 class EtherCATSimConfig(EtherCATConfig, CiA301SimConfig):

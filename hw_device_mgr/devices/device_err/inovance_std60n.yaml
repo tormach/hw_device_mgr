@@ -1,0 +1,297 @@
+# From Inovance STD60N "STD60N Series Stepper System Manual Package" 2022-12, table 18-1, 18-2, 18-3, 18-4
+# "Communication Faults and Warning Codes"
+#
+# Parameter 603Fh shows the basic error code, but the
+# manufacturer-specific STD60N parameter 203Fh "Manufacturer fault
+# code" shows an extended error value.  The manual's table 18-1 shows
+# e.g. "fault" E101, with "display" broken down into E101.0, E101.1 and E101.2.
+#
+# key:  "Auxiliary Code" column most significant word
+# display:  "Display" column; code displayed on drive LED panel
+# description:  "Name" column
+# type:  "Type" column; indicates severity, with 1 most severe
+# resettable:  "Resettable" column; indicates whether resettable
+#   without power cycle
+
+#
+# List of fault codes
+#
+
+'0x0101':
+  display: E101.0
+  description: Abnormal parameters in groups H02 and above
+  type: 1
+  resettable: false
+'0x1101':
+  display: E101.1
+  description: Parameter error in group H00/H01
+  type: 1
+  resettable: false
+'0x2101':
+  display: E101.2
+  description: Address error in read/write operation after the number of parameters changes
+  type: 1
+  resettable: false
+'0x8102':
+  display: E102.8
+  description: FPGA and MCU version mismatch
+  type: 1
+  resettable: false
+'0x2120':
+  display: E120.2
+  description: Unknown drive model
+  type: 1
+  resettable: false
+'0x1122':
+  display: E122.1
+  description: Different DIs assigned with the same function
+  type: 2
+  resettable: true
+'0x4122':
+  display: E122.4
+  description: Different VDIs assigned with the same function
+  type: 2
+  resettable: true
+'0x5122':
+  display: E122.5
+  description: DI and VDI assigned with the same function
+  type: 2
+  resettable: true
+'0x0126':
+  display: E126.0
+  description: Process segment number error
+  type: 2
+  resettable: true
+'0x1126':
+  display: E126.1
+  description: Incorrect technology segment operation mode
+  type: 2
+  resettable: true
+'0x2126':
+  display: E126.2
+  description: Incorrect technology segment instruction type
+  type: 2
+  resettable: true
+'0x0140':
+  display: E140.0
+  description: Encrypted chip check error
+  type: 1
+  resettable: false
+'0x2140':
+  display: E140.2
+  description: Inconsistent versions of encrypted chip
+  type: 1
+  resettable: false
+'0x3140':
+  display: E140.3
+  description: Encrypted chip damaged
+  type: 1
+  resettable: false
+'0x0201':
+  display: E201.0
+  description: Hardware overcurrent
+  type: 1
+  resettable: false
+'0x0400':
+  display: E400.0
+  description: Main circuit overvoltage
+  type: 1
+  resettable: true
+'0x0650':
+  display: E650.0
+  description: Heatsink overtemperature
+  type: 1
+  resettable: true
+'0x0938':
+  display: E938.0
+  description: Wrong phase of motor power cable
+  type: 1
+  resettable: true
+'0x0939':
+  display: E939.0
+  description: Motor power cables disconnected
+  type: 1
+  resettable: true
+'0x1939':
+  display: E939.1
+  description: Phase A power cable breakage
+  type: 1
+  resettable: true
+'0x2939':
+  display: E939.2
+  description: Phase B power cable breakage
+  type: 1
+  resettable: true
+'0x1B01':
+  display: EB01.1
+  description: Individual position reference increment too large
+  type: 2
+  resettable: true
+'0x3B01':
+  display: EB01.3
+  description: Reference overflow
+  type: 2
+  resettable: true
+'0x0E08':
+  display: EE08.0
+  description: Synchronization signal loss
+  type: 2
+  resettable: true
+'0x1E08':
+  display: EE08.1
+  description: Status switchover error
+  type: 2
+  resettable: true
+'0x3E08':
+  display: EE08.3
+  description: Network cable connected improperly
+  type: 2
+  resettable: true
+'0x4E08':
+  display: EE08.4
+  description: Data frame loss protection error
+  type: 2
+  resettable: true
+'0x5E08':
+  display: EE08.5
+  description: Data frame transfer error
+  type: 2
+  resettable: true
+'0x6E08':
+  display: EE08.6
+  description: Data update timeout
+  type: 2
+  resettable: true
+'0x0E09':
+  display: EE09.0
+  description: Software position limit setting error
+  type: 2
+  resettable: true
+'0x1E09':
+  display: EE09.1
+  description: Home setting error
+  type: 2
+  resettable: true
+'0x3E09':
+  display: EE09.3
+  description: Homing method setting error
+  type: 2
+  resettable: true
+'0x5E09':
+  display: EE09.5
+  description: PDO mapping beyond the limit
+  type: 2
+  resettable: true
+'0x0E11':
+  display: EE11.0
+  description: ESI check error
+  type: 2
+  resettable: true
+'0x1E11':
+  display: EE11.1
+  description: Failed to read e2prom by bus
+  type: 2
+  resettable: true
+'0x2E11':
+  display: EE11.2
+  description: Failed to update e2prom by bus
+  type: 2
+  resettable: true
+'0x0E12':
+  display: EE12.0
+  description: EtherCAT initialization failure
+  type: 1
+  resettable: false
+'0x0E13':
+  display: EE13.0
+  description: Synchronization cycle setting error
+  type: 2
+  resettable: true
+#
+# List of warning codes
+#
+'0x0108':
+  display: E108.0
+  description: Parameter write error
+  type: 3
+  resettable: true
+'0x1108':
+  display: E108.1
+  description: Parameter read error
+  type: 3
+  resettable: true
+'0x2108':
+  display: E108.2
+  description: Check on data written in e2prom failed
+  type: 3
+  resettable: true
+'0x3108':
+  display: E108.3
+  description: Check on data read in e2prom failed
+  type: 3
+  resettable: true
+'0x0121':
+  display: E121.0
+  description: Invalid drive ON command
+  type: 3
+  resettable: true
+'0x0601':
+  display: E601.0
+  description: Homing warning
+  type: 3
+  resettable: true
+'0x1601':
+  display: E601.1
+  description: Homing switch error
+  type: 3
+  resettable: true
+'0x2601':
+  display: E601.2
+  description: Homing mode setting error
+  type: 3
+  resettable: true
+'0x0900':
+  display: E900.0
+  description: DI emergency braking
+  type: 3
+  resettable: true
+'0x0902':
+  display: E902.0
+  description: DI setting invalid
+  type: 3
+  resettable: true
+'0x1902':
+  display: E902.1
+  description: DO setting invalid
+  type: 3
+  resettable: true
+'0x0941':
+  display: E941.0
+  description: Modified parameters activated at next power-on
+  type: 3
+  resettable: true
+'0x0942':
+  display: E942.0
+  description: Parameters saved frequently
+  type: 3
+  resettable: true
+'0x0950':
+  display: E950.0
+  description: Forward overtravel warning
+  type: 3
+  resettable: true
+'0x0952':
+  display: E952.0
+  description: Reverse overtravel warning
+  type: 3
+  resettable: true
+'0x0956':
+  display: E956.0
+  description: Forward position reference overtravel in process segment position mode
+  type: 3
+  resettable: true
+'0x0958':
+  display: E958.0
+  description: Reverse position reference overtravel in process segment position mode
+  type: 3
+  resettable: true

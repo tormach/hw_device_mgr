@@ -21,6 +21,7 @@ class CiA301Device(Device):
     PARAM_STATE_UNKNOWN = 0  # Uninitialized and unchecked before init
     PARAM_STATE_UPDATING = 1  # Currently being checked & updated
     PARAM_STATE_COMPLETE = 2  # Params checked and updated
+    PARAM_STATE_ERROR = 3  # Error in param init
 
     feedback_in_data_types = dict(online="bit", oper="bit")
     feedback_in_defaults = dict(online=False, oper=False)
@@ -40,7 +41,12 @@ class CiA301Device(Device):
     @property
     def goal_reached_timeout(self):
         """Increase goal_reached timeout before reaching oper state."""
-        return 10 if self.feedback_in.get("oper") else 30
+        if not self.feedback_in.get("oper"):
+            return 30
+        p_state = self.feedback_out.get("param_state")
+        if self.config.init_params and p_state != self.PARAM_STATE_COMPLETE:
+            return 30
+        return 10
 
     def __init__(
         self, address=None, skip_optional_config_values=True, **kwargs
@@ -55,8 +61,13 @@ class CiA301Device(Device):
                 model_id=self.model_id,
                 skip_optional_config_values=skip_optional_config_values,
             )
+        config.set_name(f"{self.name}_cfg")
         self.config = config
         super().__init__(address=address, **kwargs)
+
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties(*args)
+        self.config.clear_cached_properties()
 
     @classmethod
     @lru_cache
@@ -102,22 +113,50 @@ class CiA301Device(Device):
             # Stop param init
             return fb_out  # Nothing more to do
 
+        if self.feedback_in.changed("online"):
+            self.logger.info("Drive came online")
+
         # Device online; update CiA301 feedback
         goal_reached, goal_reasons = True, list()
 
         # Param init:  download param values asynchronously after coming online
-        if self.feedback_in.changed("online"):
-            self.config.initialize_params(restart=True)
+        old_ps = fb_out.get_old("param_state")
+        p_init_err = self.config.param_init_error
+        if not self.config.init_params:
+            param_state = self.PARAM_STATE_COMPLETE
+            if old_ps != self.PARAM_STATE_COMPLETE:  # Log once only
+                self.logger.info("Device not configured to update params")
+        elif p_init_err:
+            try:
+                errstr = "{1}({2}, {3}): {0}".format(*p_init_err)
+            except Exception:
+                errstr = str(p_init_err)
+            fb_out.update(fault=True, fault_desc=f"param init failed: {errstr}")
+            param_state = self.PARAM_STATE_ERROR
+        elif self.config.param_init_in_progress:
             goal_reached = False
             goal_reasons.append("updating device params")
             param_state = self.PARAM_STATE_UPDATING
-        elif self.config.initialize_params():
+        elif self.command_out.get("init_params"):
+            goal_reached = False
+            goal_reasons.append("updating device params")
+            param_state = self.PARAM_STATE_UPDATING
+        elif old_ps in (self.PARAM_STATE_UPDATING, self.PARAM_STATE_COMPLETE):
+            # Previously complete, or previously updating but currently not
             param_state = self.PARAM_STATE_COMPLETE
         else:
-            param_state = self.PARAM_STATE_UPDATING
+            # Catch all, esp. after entering online state
+            param_state = self.PARAM_STATE_UNKNOWN
+            goal_reached = False
+            goal_reasons.append("device params unset")
 
         # Update operational status
         if not self.feedback_in.get("oper"):
+            if self.command_in.get("shutdown"):
+                if self.feedback_in.changed("oper"):
+                    self.logger.info("Drive non-operational, shutdown complete")
+                fb_out.update(shutdown_complete=True)
+                return fb_out  # goal reached
             goal_reached = False
             goal_reasons.insert(0, "Not operational")
 
@@ -130,6 +169,13 @@ class CiA301Device(Device):
                 fb_out.update(
                     fault=True, fault_desc=fb_out.get_old("fault_desc")
                 )
+        else:  # operational
+            if self.feedback_in.changed("oper"):
+                self.logger.info("Drive came online/operational")
+            if self.command_out.get("shutdown_latch"):
+                goal_reached = False
+                goal_reasons.insert(0, "Drive operational during shutdown")
+                fb_out.update(shutdown_complete=False)
 
         # Update feedback and return
         goal_reason = "Reached" if goal_reached else ", ".join(goal_reasons)
@@ -138,11 +184,34 @@ class CiA301Device(Device):
             goal_reason=goal_reason,
             param_state=param_state,
         )
-        if goal_reached and fb_out.changed("param_state"):
+        if fb_out.rising_edge("param_state", self.PARAM_STATE_COMPLETE):
             self.logger.info("Device param init complete")
-        if not goal_reached and fb_out.changed("goal_reason"):
-            self.logger.info(f"Goal not reached: {goal_reason}")
         return fb_out
+
+    command_out_data_types = dict(
+        init_params="bit",
+    )
+
+    command_out_defaults = dict(
+        init_params=False,
+    )
+
+    def set_command(self, **kwargs):
+        cmd_out = super().set_command(**kwargs)
+        cmd_in = self._interfaces["command_in"]
+        init_params_cmd = False
+        if cmd_out.get("shutdown_latch"):
+            self.config.param_init_stop()
+        elif self.feedback_in.rising_edge("online"):
+            self.logger.info("Initializing params after coming online")
+            init_params_cmd = True
+        elif cmd_in.rising_edge("reset_fault") and self.config.param_init_error:
+            self.logger.info("Re-initializing params after fault")
+            init_params_cmd = True
+        if init_params_cmd:
+            self.config.initialize_params()
+            cmd_out.update(init_params=True)
+        return cmd_out
 
     @classmethod
     def munge_sdo_data(cls, sdo_data):
@@ -179,18 +248,16 @@ class CiA301Device(Device):
     @classmethod
     def get_device(cls, address=None, **kwargs):
         registry = cls._address_registry.setdefault(cls.name, dict())
-        config = address
-        address = config.address if hasattr(address, "address") else address
         if address in registry:
             return registry[address]
         # kwargs will contain skip_optional_config_values at this point, but it
         # will be consumed by __init__ for this class
-        device_obj = cls(address=config, **kwargs)
+        device_obj = cls(address=address, **kwargs)
         registry[address] = device_obj
         return device_obj
 
     @classmethod
-    def scan_devices(cls, bus=0, **kwargs):
+    def scan_devices(cls, bus=0, get_device_kwargs=dict(), **kwargs):
         """Scan bus and return a list of device objects."""
         devices = list()
         config_cls = cls.config_class
@@ -202,9 +269,15 @@ class CiA301Device(Device):
                 raise NotImplementedError(
                     f"Unknown model {config.model_id} at {config.address}"
                 )
-            dev = device_cls.get_device(config, **kwargs)
+            dev = device_cls.get_device(config.address, **get_device_kwargs)
             devices.append(dev)
         return devices
+
+    @classmethod
+    def init_class(cls, *, sdo_data, dcs_data, **kwargs):
+        super().init_class(**kwargs)
+        cls.add_device_sdos(sdo_data)
+        cls.add_device_dcs(dcs_data)
 
 
 class CiA301SimDevice(CiA301Device, SimDevice):
@@ -253,17 +326,20 @@ class CiA301SimDevice(CiA301Device, SimDevice):
         return model
 
     @classmethod
-    def init_sim(cls, *, sim_device_data, sdo_data, dcs_data):
-        super().init_sim(sim_device_data=sim_device_data)
-        sim_device_data = cls._sim_device_data[cls.category]
-        cls.add_device_sdos(sdo_data)
-        cls.add_device_dcs(dcs_data)
-        cls.config_class.init_sim(sim_device_data=sim_device_data)
+    def init_class(cls, **kwargs):
+        super().init_class(**kwargs)
+        config_kwargs = dict()
+        if issubclass(cls.config_class, CiA301SimConfig):
+            sim_device_data = cls._sim_device_data[cls.category]
+            config_kwargs = dict(sim_device_data=sim_device_data)
+        cls.config_class.init_class(**config_kwargs)
 
     def set_sim_feedback(self, **kwargs):
         # Automatically step through to online/oper
         sfb = super().set_sim_feedback(**kwargs)
-        if self.feedback_in.get("online"):
+        if self.command_in.get("shutdown"):
+            sfb.update(online=True, oper=False)
+        elif self.feedback_in.get("online"):
             sfb.update(online=True, oper=True)
         else:
             sfb.update(online=True, oper=False)

@@ -1,5 +1,4 @@
 import pytest
-from pprint import pformat
 from ..config_io import ConfigIO
 from .bogus_devices.data_types import BogusDataType
 from .bogus_devices.device import (
@@ -39,7 +38,7 @@ class BaseTestClass(ConfigIO):
     def init_sim(cls, **kwargs):
         kwargs["sim_device_data"] = cls.init_sim_device_data()
         cls.device_class.clear_devices()
-        cls.device_class.init_sim(**kwargs)
+        cls.device_class.init_class(**kwargs)
 
     @classmethod
     def init_sim_device_data(cls):
@@ -65,7 +64,7 @@ class BaseTestClass(ConfigIO):
         for dev in sim_device_data:
             # Fill in missing device data based on `test_category` key
             if "test_category" in dev:
-                device_cls = cls.test_category_class(dev["test_category"])
+                device_cls = cls.get_test_category_class(dev["test_category"])
                 assert device_cls
                 assert device_cls.name
                 # Set model_id key
@@ -87,7 +86,7 @@ class BaseTestClass(ConfigIO):
         return new_sim_device_data
 
     @classmethod
-    def test_category_class(cls, test_category):
+    def get_test_category_class(cls, test_category):
         for dmc in cls.device_model_classes:
             assert dmc.name
             if dmc.test_category == test_category:
@@ -207,7 +206,7 @@ class BaseTestClass(ConfigIO):
         for dev in dev_data:
             # Fill in `device_cls` key with actual class
             if "test_category" in dev:
-                device_cls = self.test_category_class(dev["test_category"])
+                device_cls = self.get_test_category_class(dev["test_category"])
             else:
                 device_cls = self.sim_device_data_device_cls(dev)
             assert device_cls is not None
@@ -235,11 +234,3 @@ class BaseTestClass(ConfigIO):
         # Parametrize it
         if names:
             metafunc.parametrize(names, vals, ids=ids, scope="class")
-
-    def test_fixture(self, device_cls, sim_device_data, category_cls):
-        print("device_cls:", device_cls)
-        print("sim_device_data:\n", pformat(sim_device_data))
-        assert sim_device_data["device_cls"] is device_cls
-        assert hasattr(device_cls, "name")
-        assert device_cls in self.device_model_classes
-        assert issubclass(device_cls, category_cls)

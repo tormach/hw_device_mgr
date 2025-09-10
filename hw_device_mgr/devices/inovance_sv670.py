@@ -6,7 +6,7 @@ from functools import lru_cache
 import time
 
 
-class InovanceSV660Config(EtherCATConfig):
+class InovanceSV670Config(EtherCATConfig):
     """Inovance SV660 servo drive config."""
 
     # Device params non-volatile setting in 200E-02h:
@@ -53,16 +53,16 @@ class InovanceSV660Config(EtherCATConfig):
         self.enqueue_command(self.soft_reset)
 
 
-class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
-    """Inovance SV660 servo drives."""
+class InovanceSV670(EtherCATDevice, CiA402Device, ErrorDevice):
+    """Inovance SV670 servo drives."""
 
     vendor_id = 0x00100000
-    product_code = 0x000C010D
+    product_code = 0x000C011E
     xml_description_package = "hw_device_mgr.devices.device_xml"
-    xml_description_fname = "SV660_EOE_1Axis_V9.12.xml"
+    xml_description_fname = "SV670_EOE_1Axis_05003_220801.xml"
     device_error_package = "hw_device_mgr.devices.device_err"
     device_error_yaml = "inovance_sv660n.yaml"
-    config_class = InovanceSV660Config
+    config_class = InovanceSV670Config
     have_sto = True
 
     feedback_out_data_types = dict(
@@ -103,7 +103,7 @@ class InovanceSV660(EtherCATDevice, CiA402Device, ErrorDevice):
         return cmd_out
 
 
-class SimInovanceSV660(InovanceSV660, EtherCATSimDevice, CiA402SimDevice):
+class SimInovanceSV670(InovanceSV670, EtherCATSimDevice, CiA402SimDevice):
     def set_sim_feedback(self):
         # Simulate home_found feedback
         sfb = super().set_sim_feedback()

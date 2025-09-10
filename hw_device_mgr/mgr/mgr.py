@@ -22,6 +22,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     STATE_STOP = 1
     STATE_START = 2
     STATE_FAULT = 4
+    STATE_SHUTDOWN = 5
 
     feedback_out_defaults = dict(
         enabled=False,
@@ -44,6 +45,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         command_complete=False,
         reset=0,
         drive_state="SWITCH ON DISABLED",
+        reset_fault_cmd=False,
     )
     command_out_data_types = dict(
         state="uint8",
@@ -51,6 +53,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         command_complete="bit",
         reset="bit",
         drive_state="str",
+        reset_fault_cmd="bit",
     )
 
     ####################################################
@@ -76,13 +79,15 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.logger.info("Device manager initialization complete")
 
     @classmethod
-    def init_sim(cls, **kwargs):
-        cls.device_base_class.init_sim(**kwargs)
+    def init_class(cls, sim_device_data=None, **kwargs):
+        # Initialize device classes, incl. any sim discovery data
+        if sim_device_data:
+            kwargs.update(sim_device_data=sim_device_data)
+        cls.device_base_class.init_class(**kwargs)
 
     def init_devices(
         self,
         /,
-        sim_device_data=None,
         device_init_kwargs=dict(),
         device_scan_kwargs=dict(),
     ):
@@ -94,9 +99,6 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         configuration.
         """
         self.logger.info("Initializing devices")
-
-        # Initialize sim device discovery data, if any
-        self.init_sim_devices(sim_device_data=sim_device_data)
 
         # Scan and init devices
         self.devices = self.scan_devices(**device_scan_kwargs)
@@ -130,9 +132,14 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # These are sim only, not needed in debug output
             "position_cmd",
             "position_fb",
+            "velocity_cmd",
+            "velocity_fb",
+            "torque_cmd",
+            "torque_fb",
         },
-        # - Don't expose device `state` cmd, controlled by manager
-        command_in={"state"},
+        # - Don't expose device `state`, `reset_fault`, `shutdown`,
+        #   controlled by manager
+        command_in={"state", "reset_fault", "shutdown"},
     )
 
     @lru_cache
@@ -166,6 +173,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             # - stop_complete:  Done
             dict(name="stop_command", src="*", dst="stop_1"),
             dict(name="stop_complete", src="stop_1", dst="stop_complete"),
+            # Shutdown state:  From any state
+            dict(name="shutdown_command", src="*", dst="shutdown_1"),
+            dict(
+                name="shutdown_complete",
+                src="shutdown_1",
+                dst="shutdown_complete",
+            ),
         ],
         state_field="state",
     )
@@ -180,18 +194,28 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         self.logger.info("Waiting for devices to come online before init")
 
     def on_before_init_complete(self, e):
-        if self.fsm_check_devices_online(e, "INIT"):
-            return False
-        return self.fsm_check_drive_goal_state(e)
+        if self.fsm_check_devices_offline(e, "INIT"):
+            return False  # All devices must be online to complete init
+        elif self.query_devices(goal_reached=False):
+            return False  # Some devices still initializing
+        else:
+            return True  # All devices initialized
 
     def on_enter_init_complete(self, e):
         self.fsm_finalize_command(e)
-        # Automatically return to SWITCH ON DISABLED after init
-        self.logger.info("Devices all online; commanding stop state")
-        self.command_out.update(
-            state=self.STATE_STOP,
-            state_log="Automatic 'stop' command at init complete",
-        )
+        # If any devices in fault state, command fault state
+        if self.query_devices(fault=True):
+            self.logger.warning("Commanding fault state")
+            self.command_out.update(
+                state=self.STATE_FAULT,
+                state_log="Automatic 'fault' command at init complete",
+            )
+        else:  # Automatically return to SWITCH ON DISABLED after init
+            self.logger.info("Devices all online; commanding stop state")
+            self.command_out.update(
+                state=self.STATE_STOP,
+                state_log="Automatic 'stop' command at init complete",
+            )
 
     #
     # Fault command
@@ -217,6 +241,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_command(e)
 
     def on_enter_start_1(self, e):
+        self.fsm_reset_faults(e)
         self.fsm_set_drive_state_cmd(e, "SWITCHED ON")
 
     def on_before_start_2(self, e):
@@ -242,12 +267,28 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         return self.fsm_check_command(e)
 
     def on_enter_stop_1(self, e):
-        return self.fsm_set_drive_state_cmd(e, "SWITCH ON DISABLED")
+        self.fsm_reset_faults(e)
+        self.fsm_set_drive_state_cmd(e, "SWITCH ON DISABLED")
 
     def on_before_stop_complete(self, e):
         return self.fsm_check_drive_goal_state(e)
 
     def on_enter_stop_complete(self, e):
+        self.fsm_finalize_command(e)
+
+    #
+    # Shutdown command
+    #
+    def on_before_shutdown_command(self, e):
+        return True  # Always can shutdown
+
+    def on_enter_shutdown_1(self, e):
+        self.fsm_set_drive_state_cmd(e, "SHUTDOWN")
+
+    def on_before_shutdown_complete(self, e):
+        return self.fsm_check_drive_goal_state(e)
+
+    def on_enter_shutdown_complete(self, e):
         self.fsm_finalize_command(e)
 
     #
@@ -294,7 +335,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     def fsm_command_from_event(cls, e):
         return e.dst.split("_")[0]
 
-    def fsm_check_devices_online(self, e, state):
+    def fsm_check_devices_offline(self, e, state):
         return self.query_devices(oper=False)
 
     def fsm_check_command(self, e):
@@ -331,6 +372,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         # Otherwise, cancel event
         return False
 
+    def fsm_reset_faults(self, e):
+        cmd_name = self.fsm_command_from_event(e)
+        self.logger.info(f"{cmd_name} command:  Commanding drives reset faults")
+        self.command_out.update(reset_fault_cmd=True)
+
     def fsm_set_drive_state_cmd(self, e, state):
         cmd_name = self.fsm_command_from_event(e)
         self.logger.info(
@@ -348,7 +394,9 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
 
     def run_loop(self):
         """Program main loop."""
-        update_period = 1.0 / self.mgr_config.get("update_rate", 10.0)
+        conf = self.mgr_config
+        update_period = 1.0 / conf.get("update_rate", 10.0)
+        update_period_ft = 1.0 / conf.get("update_rate_fast_track", 100.0)
         self.fast_track = False
         self.shutdown = False
         while not self.shutdown:
@@ -364,11 +412,13 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                     state=self.STATE_FAULT, state_log="Unexpected exception"
                 )
             if self.fast_track:
-                # This update included a state transition; skip
-                # the `sleep()` before the next update
+                # This update included a state transition or device requests
+                # fast track
                 self.fast_track = False
-                continue
-            time.sleep(update_period)
+                cycle_update_period = update_period_ft
+            else:
+                cycle_update_period = update_period
+            time.sleep(cycle_update_period)
 
     def run(self):
         """Program main."""
@@ -397,6 +447,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         try:
             self.read()
             self.get_feedback()
+            self.log_goal_reached()
             self.set_command()
             self.write()
         except KeyboardInterrupt as e:
@@ -422,6 +473,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         fault=dict(
             fault_1="fault_complete",
             fault_complete=None,
+        ),
+        shutdown=dict(
+            shutdown_1="shutdown_complete",
+            shutdown_complete=None,
         ),
     )
 
@@ -458,7 +513,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         fault = mgr_fb_out.get("fault")
         fault_desc = mgr_fb_out.get("fault_desc")
         goal_reached = True
-        goal_reason = ""
+        goal_reason = "Reached"
         cmd_out = self.interface("command_out")
 
         # Get device feedback
@@ -517,7 +572,7 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             and not fault
         )
 
-        # Update feedback out, log, return
+        # Update feedback out, return
         mgr_fb_out.update(
             fault=fault,
             fault_desc=fault_desc,
@@ -525,12 +580,12 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             goal_reason=goal_reason,
             enabled=enabled,
         )
-        if mgr_fb_out.changed("goal_reason"):
-            if mgr_fb_out.get("goal_reached"):
-                self.logger.debug("Manager reached goal state")
-            else:
-                self.logger.debug(f"Waiting:  {mgr_fb_out.get('goal_reason')}")
         return mgr_fb_out
+
+    def log_goal_reached(self):
+        for dev in self.devices:
+            dev.log_goal_reached()
+        super().log_goal_reached()
 
     def set_command(self, **cmd_in_kwargs):
         """Set command for top-level manager and for drives."""
@@ -538,9 +593,16 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
         # clobber parent class updates for regular device classes, but this
         # isn't a regular device and it inherits directly from `Device`
         old_cmd_out = self.command_out.get().copy()
+        cmd_in_shutdown = cmd_in_kwargs.get("shutdown", False)
+        if cmd_in_shutdown or old_cmd_out.get("shutdown_latch"):
+            # Incoming shutdown command latches
+            old_cmd_out.update(shutdown_latch=True)
         cmd_out = super().set_command(**cmd_in_kwargs)
         cmd_out.update(**old_cmd_out)
         cmd_in = self.command_in
+
+        if cmd_in.rising_edge("shutdown"):
+            self.logger.info("Commanding drive shutdown")
 
         # Check for new command
         if self.command_in.rising_edge("state_set"):
@@ -571,7 +633,10 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 )
             if new_state_cmd:
                 self.logger.warning("Ignoring new state command")
-            cmd_out.update(state=self.STATE_FAULT, state_log="Manager fault")
+            cmd_out.update(
+                state=self.STATE_FAULT,
+                state_log="Manager fault",
+            )
         elif new_state_cmd:
             # state_set went high; latch state_cmd from kwargs
             cmd_out.update(
@@ -590,15 +655,15 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
             event = f"{cmd_str}_command"
             try:
                 self.trigger(event, msg=cmd_out.get("state_log"))
+                self.logger.debug(f"Triggered event {event} from state cmd")
             except Canceled as e:
                 self.logger.warning(f"Unable to honor {event} command: {e}")
         elif self.automatic_next_event() is not None:
             # Attempt automatic transition to next state
             try:
-                self.trigger(
-                    self.automatic_next_event(),
-                    msg=f"Automatic transition from {self.state} state",
-                )
+                event = self.automatic_next_event()
+                msg = f"Automatic transition to {event} from {self.state} state"
+                self.trigger(event, msg=msg)
             except Canceled:
                 # `on_before_{event}()` method returned `False`,
                 # causing `fysom.Canceled` exception
@@ -630,23 +695,11 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
     ####################################################
     # Drive helpers
 
-    @classmethod
-    def init_sim_devices(cls, /, sim_device_data=None, **kwargs):
-        """
-        Run `init_sim()` on devices.
-
-        For configurations that include sim devices (even when the
-        device manager itself isn't running in sim mode).
-        """
-        if sim_device_data is None:
-            return  # No sim devices to configure
-        cls.device_base_class.init_sim(
-            sim_device_data=sim_device_data, **kwargs
-        )
-
     def set_drive_command(self):
         mgr_vals = self.command_in.get()
         skip = self.device_translated_interfaces.get("command_in", set())
+        reset = self.command_out.get("reset_fault_cmd")
+        shutdown = self.command_in.get("shutdown")
         for dev in self.devices:
             if not hasattr(dev, "MODE_CSP"):
                 continue  # Not a CiA402 device
@@ -654,18 +707,25 @@ class HWDeviceMgr(FysomGlobalMixin, Device):
                 # Copy mgr command_out to matching device command_in
                 dev_command_in = dev.interface("command_in")
                 prefix = self.dev_prefix(dev, suffix=dev.slug_separator)
-                dev.set_command(
+                kwargs = {
+                    k: mgr_vals[f"{prefix}{k}"]
+                    for k in dev_command_in.keys()
+                    if k not in skip
+                }
+                kwargs.update(
+                    shutdown=shutdown,
                     state=self.command_out.get("drive_state"),
-                    **{
-                        k: mgr_vals[f"{prefix}{k}"]
-                        for k in dev_command_in.keys()
-                        if k not in skip
-                    },
+                    reset_fault=reset,
                 )
+                dev.set_command(**kwargs)
             else:
                 dev.set_command(
+                    shutdown=shutdown,
                     state=self.command_out.get("drive_state"),
+                    reset_fault=reset,
                 )
+            if dev.command_out.get("fasttrack"):
+                self.fast_track = True
 
     def query_devices(self, changed=False, **kwargs):
         res = list()

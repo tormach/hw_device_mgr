@@ -15,7 +15,7 @@ class LCECConfig(EtherCATConfig):
     command_class = LCECCommand
 
     @classmethod
-    def gen_ethercat_xml(cls, bus_configs=dict()):
+    def gen_ethercat_xml(cls, bus_configs=dict(), devs=None):
         """
         Generate the `ethercat.xml` config file for lcec.
 
@@ -25,8 +25,9 @@ class LCECConfig(EtherCATConfig):
         # Convert bus_configs keys to ints (YAML wants str type)
         for key in list(bus_configs):
             bus_configs[str(key)] = bus_configs.pop(key)
-        # Scan bus once
-        devs = cls.scan_bus()
+        if devs is None:
+            # Scan bus once
+            devs = cls.scan_bus()
         # Set up XML top level elements:  <masters><master/>[...]</masters>
         xml = etree.Element("masters")
         masters = dict()

@@ -18,10 +18,9 @@ class TestROSHWDeviceMgr(BaseROSMgrTestClass, _TestHWDeviceMgr):
 
     @pytest.fixture
     def obj(self, category_cls):
-        # init_sim() and init_devices() signatures changed, so can't
-        # use parent test class obj fixture
+        # init() signature changed, so can't use parent test class obj fixture
         self.obj = self.device_class()
-        self.obj.init(argv=list())
+        self.obj.init()
         yield self.obj
 
     def test_ros_params(self, obj):

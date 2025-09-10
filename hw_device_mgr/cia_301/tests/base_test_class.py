@@ -72,21 +72,21 @@ class BaseCiA301TestClass(BaseTestClass):
         Return a copy of `device_config` with minor processing.
 
         Optionally, to make the YAML file reusable, each configuration's
-        `vendor_id` and `product_code` keys may be replaced with a
-        `category` key matching a parent of classes listed; this fixture
-        will re-add those keys.
+        `vendor_id` and `product_code` keys may be replaced with a `category`
+        key matching a parent of classes listed; this fixture will re-add those
+        keys.
 
-        The `addresses` key contains a list of device addresses.  To be
-        reusable for EtherCAT, addresses are lists of two or three
-        integers, `[bus, position, (optional) alias]`.  Plain CiA301
-        devices don't use aliases, so the `alias` element is removed.
+        The `addresses` key contains a list of device addresses.  To be reusable
+        for EtherCAT, addresses are lists of two or three integers, `[bus,
+        position, (optional) alias]`.  Plain CiA301 devices don't use aliases,
+        so the `alias` element is removed.
         """
         new_device_config = list()
         for conf in device_config:
             if "test_category" not in conf:  # No monkey-patching needed
                 new_device_config.append(conf)
                 continue
-            device_cls = cls.test_category_class(conf["test_category"])
+            device_cls = cls.get_test_category_class(conf["test_category"])
             assert device_cls
             new_device_config.append(conf)
             model_id = device_cls.device_model_id()
@@ -130,8 +130,8 @@ class BaseCiA301TestClass(BaseTestClass):
         """
         Device configuration data fixture.
 
-        Load device configuration with `load_device_config()` and munge
-        with `munge_device_config()`.
+        Load device configuration with `load_device_config()` and munge with
+        `munge_device_config()`.
 
         Device configuration in the same format as non-test
         configuration, described in `Config` classes.
@@ -224,7 +224,7 @@ class BaseCiA301TestClass(BaseTestClass):
     def munge_sdo_data(cls, sdo_data, conv_sdos=False):
         new_sdo_data = dict()
         for test_category, old_sdos in sdo_data.items():
-            device_cls = cls.test_category_class(test_category)
+            device_cls = cls.get_test_category_class(test_category)
             assert device_cls
             sdos = new_sdo_data[device_cls.device_model_id()] = dict()
             for ix, sdo in old_sdos.items():
@@ -310,7 +310,7 @@ class BaseCiA301TestClass(BaseTestClass):
     def munge_dcs_data(cls, dcs_data):
         new_dcs_data = dict()
         for test_category, dcs in dcs_data.items():
-            device_cls = cls.test_category_class(test_category)
+            device_cls = cls.get_test_category_class(test_category)
             assert device_cls
             new_dcs_data[device_cls.device_model_id()] = dcs
         assert new_dcs_data

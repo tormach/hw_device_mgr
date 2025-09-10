@@ -65,8 +65,8 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
         """
         Device configuration data fixture.
 
-        Load device configuration with `load_device_config()` and munge
-        with `munge_device_config()`.
+        Load device configuration with `load_device_config()` and munge with
+        `munge_device_config()`.
 
         Device configuration in the same format as non-test
         configuration, described in `Config` classes.
@@ -81,6 +81,14 @@ class BaseROSMgrTestClass(BaseMgrTestClass):
             d["vendor_id"] = int(d["vendor_id"])
         self.dump_yaml_path(sim_device_data_path, sim_device_data)
         yield dev_conf
+
+    @classmethod
+    def init_sim(cls, **kwargs):
+        # Don't add sim_device_data like parent method does
+        print(f"init_sim({cls}, **{kwargs})")
+        cls.device_class.clear_devices()
+        argv = list()
+        cls.device_class.init_class(argv, **kwargs)
 
     @pytest.fixture
     def device_config_path(self, tmp_path, device_config, mock_rclpy):

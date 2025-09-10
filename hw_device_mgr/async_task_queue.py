@@ -1,65 +1,35 @@
 import threading
 import queue
-from functools import cached_property, lru_cache
+from functools import lru_cache
 
 
 class AsyncTaskQueue:
     """
     Generic class to process commands in an asynchronous queue.
 
-    Multiple instances may `enqueue` commands for a singleton worker
-    instance processing those in a thread with the `process_queue`
-    command (implemented in subclasses).
+    Multiple instances with separate queues `enqueue` commands.  A single worker
+    thread rotates among queues, pulling off the next command and executing it.
     """
 
-    # Class-level dict of singleton queues
-    queues = dict()
+    # Idle wait time
+    idle_wait = 0.1  # s
+
+    # Class-level singleton queue data
+    _queue_names = list()
+    _cmd_queues = dict()
+    _errors = dict()
+    _queue_stop = dict()
+
+    _queues = list()
+
+    #
+    # Class methods:  worker thread is managed by the class itself
+    #
 
     @classmethod
     @lru_cache
-    def _get_queue(cls, name):
-        return cls.queues.setdefault(name, queue.Queue())
-
-    @cached_property
-    def cmd_queue(self):
-        """Property returning the command queue singleton instance."""
-        return self._get_queue("cmd")
-
-    @cached_property
-    def progress_queue(self):
-        """Property returning the progress queue singleton instance."""
-        return self._get_queue("progress")
-
-    def __init__(self):
-        self.cmd_version = 0
-
-    #
-    # Worker-related methods
-    #
-    # There should only ever be a single worker thread running, even if many
-    # AsyncTaskQueue instances are enqueuing commands.
-    #
-
-    def process_cmd(self, cmd):
-        """
-        Process one command from command queue.
-
-        Main worker function to be implemented in subclasses.
-        """
-        pass
-
-    def _work(self):
-        """
-        Worker thread loop callback.
-
-        Pop commands off command queue and pass to `process_cmd` method.
-        Repeat untill `join` method is called.
-        """
-        while True:
-            cmd_version, cmd = self.cmd_queue.get()
-            self.process_cmd(cmd)
-            self.progress_queue.put(cmd_version)
-            self.cmd_queue.task_done()
+    def lock(cls):
+        return threading.Lock()
 
     @classmethod
     @lru_cache  # Only needs to run once per class
@@ -71,70 +41,101 @@ class AsyncTaskQueue:
         but will only ever create a single worker instance running a
         single thread.
         """
-        if hasattr(cls, "_worker_instance"):
-            assert type(cls._worker_instance) is cls  # Subclass sanity
-            return  # Already started
-        cls._worker_instance = cls()
-        cls._worker_instance._start()
-
-    @lru_cache  # Only needs to run once per worker instance
-    def _start(self):
-        # Start the new thread from the worker instance
-        threading.Thread(target=self._work, daemon=True).start()
-
-    #
-    # Command-side-related methods
-    #
-    # Multiple instances may exist, but must all be running in the same
-    # (probably main) thread.
+        assert not hasattr(cls, "_thread")  # Sanity
+        cls._thread = threading.Thread(target=cls._work, daemon=True)
+        cls._stop = threading.Event()
+        cls._have_data = threading.Event()
+        cls._have_error = threading.Event()
+        cls._thread.start()
 
     @classmethod
-    def _bump_cmd_version(cls):
-        # Bump the global (class-level) command version and return it
-        if not hasattr(cls, "_cmd_version"):
-            cls._cmd_version = 0
-        cls._cmd_version += 1
-        return cls._cmd_version
+    def _work(cls):
+        """
+        Worker thread loop callback.
 
-    def enqueue(self, cmd):
-        """Enqueue one command."""
-        # Automatically start thread
-        self.start()
-        # Set local command version to incremented global version
-        ver = self.cmd_version = self._bump_cmd_version()
-        self.cmd_queue.put((ver, cmd))
+        Pop commands off command queue and executes method with args.
+        Repeat untill `join` method is called.
+        """
+        while not cls._stop.is_set():
+            cls._have_data.wait()
+            for cmd_queue in cls._queues:
+                cmd_queue.churn()
+            with cls.lock():  # Synchronize queue check & have_data clear
+                if all(i.empty for i in cls._queues):
+                    cls._have_data.clear()  # All cmd queues empty
 
     @classmethod
-    def _get_progress_version(cls):
-        if not hasattr(cls, "_progress_version"):
-            cls._progress_version = 0
-        # Process the progress queue
-        progress = cls._get_queue("progress")
+    def join(cls):
+        """Block until queue processed and join worker thread."""
+        assert hasattr(cls, "_thread")
+        # Unblock worker thread & signal to stop
+        with cls.lock():  # Synchronize stop & have_data set
+            cls._stop.set()
+            cls._have_data.set()
+            for stop in cls._queue_stop.values():
+                stop.set()
+        # Join queue
+        for cmd_queue in cls._queues:
+            cmd_queue.join_queue()
+        # Join worker thread
+        cls._thread.join()
+
+    #
+    # Instance methods:  Named instances
+    #
+
+    def __init__(self, name):
+        self.name = name
+        self.queue = queue.Queue()
+        self.error = None
+        self.stop = threading.Event()
+        self._queues.append(self)
+
+    def churn(self):
+        """Pop command off queue and execute it."""
+        if self.queue.empty():
+            return
+        if self.stop.is_set():
+            return
+        method, args, kwargs = self.queue.get()
         try:
-            while True:
-                cls._progress_version = progress.get(block=False)
-                progress.task_done()
-        except queue.Empty:
-            pass
-        return cls._progress_version
+            method(*args, **kwargs)
+        except Exception as e:
+            # Put exception in errors & stop queue
+            with self.lock():
+                self.stop.set()
+                self.error = (e, method, args, kwargs)
+                self._have_error.set()
+        self.queue.task_done()
 
     @property
-    def progress_version(self):
-        """Return version of most recent processed command."""
-        return self._get_progress_version()
+    def empty(self):
+        return self.queue.empty()
 
-    def all_cmds_complete(self):
-        """
-        Return `True` if all commands enqueued by this instance were processed.
+    def join_queue(self):
+        """Flush and stop queue."""
+        self.flush_queue_and_clear_error()
+        self.queue.join()
 
-        This may return `True` for one instance while returning `False`
-        for another instance with commands still waiting to be
-        processed.
-        """
-        return self.progress_version >= self.cmd_version
+    def enqueue(self, method, *args, **kwargs):
+        """Enqueue one command."""
+        self.start()  # Automatically start class thread worker
+        with self.lock():  # Synchronize queue put and have_data set
+            assert not self.stop.is_set()
+            self.queue.put((method, args, kwargs))
+            self._have_data.set()
 
-    def join(self):
-        """Join worker thread after queue is drained; blocks."""
-        self.cmd_queue.join()  # Wait for worker to drain cmd queue & join
-        self.all_cmds_complete()  # Drain progress queue
-        self.progress_queue.join()  # & join
+    @property
+    def started(self):
+        return hasattr(self, "_thread")
+
+    def flush_queue_and_clear_error(self):
+        with self.lock():
+            self.stop.set()  # No queue processing while flushing
+            while not self.queue.empty():
+                self.queue.get()
+                self.queue.task_done()
+            self.error = None
+            if self.started and not any(i.error for i in self._queues):
+                self._have_error.clear()
+            self.stop.clear()

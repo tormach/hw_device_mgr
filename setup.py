@@ -1,5 +1,6 @@
 from setuptools import setup
 from setuptools.command.install import install
+from warnings import warn
 import subprocess
 import os
 
@@ -43,14 +44,37 @@ packages = (
 
 
 class CustomInstall(install):
+    user_options = install.user_options + [
+        (
+            "sudo-halcompile=",
+            None,
+            "If needed to install HAL components, sudo executable (ROS 2 only).",
+        ),
+    ]
+
+    def initialize_options(self):
+        super().initialize_options()
+        self.sudo_halcompile = None
+
+    def finalize_options(self):
+        super().finalize_options()
+        # You can add validation or default value logic here
+        if self.sudo_halcompile:
+            print(f"Prepending to halcompile: {self.sudo_halcompile}")
+
     def run(self):
         """Run halcompile on `multilatency.comp`."""
-        if os.environ.get("ROS_VERSION", None) != "1":
+        if os.environ.get("ROS_VERSION", None) == "2":
             # ROS1 builds comp from CMakeFile
             comp_src = "hw_device_mgr/latency/multilatency.comp"
-            subprocess.check_call(
-                ["/usr/bin/env", "halcompile", "--install", comp_src]
-            )
+            cmd = ["/usr/bin/env", "halcompile", "--install", comp_src]
+            if self.sudo_halcompile:
+                cmd.insert(0, self.sudo_halcompile)
+            res = subprocess.run(cmd, capture_output=True)
+            if res.returncode != 0:
+                warn(f"Command failed, {repr(cmd)}")
+                for line in res.stderr.decode().splitlines():
+                    warn(f"stderr:  {line}")
         super().run()
 
 

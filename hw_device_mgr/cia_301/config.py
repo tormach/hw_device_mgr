@@ -1,36 +1,43 @@
 from .data_types import CiA301DataType
 from .command import CiA301Command, CiA301SimCommand, CiA301CommandException
 from .sdo import CiA301SDO
-from .async_params import AsyncParamsQueue
+from ..async_task_queue import AsyncTaskQueue
 from ..logging import LoggingMixin
 from functools import cached_property
+
+
+class CiA301ConfigException(RuntimeError):
+    pass
 
 
 class CiA301Config(LoggingMixin):
     """
     CiA 301 device configuration interface.
 
-    This class presents a high-level configuration interface to CiA 301
-    devices.  The class can scan the bus for devices and their models &
-    positions.  Class instances correspond to a single device, and can
-    initialize device parameter values from a configuration at init, and
-    can upload and download SDO values during operation.
+    This class presents a high-level configuration interface to
+    CiA 301 devices.  The class can scan the bus for devices and
+    their models & positions.  Class instances correspond to a single
+    device, and can initialize device parameter values from a
+    configuration at init, and can upload and download SDO values
+    during operation.
 
     It uses a low-level `CiA301Command` interface to scan the bus and
-    upload/download object dictionary values, and presents a high-level
-    interface for manipulating devices.
+    upload/download object dictionary values, and presents a
+    high-level interface for manipulating devices.
 
     This abstract class must be subclassed and `command_class` defined
     in order to read/write dictionary objects from/to devices.
     """
 
+    @cached_property
     def logging_name(self):
-        return __name__
+        return f"{self.name}@{str(self.address).replace(' ', '')}"
 
     data_type_class = CiA301DataType
     command_class = CiA301Command
     sdo_class = CiA301SDO
 
+    init_params = True  # If False, don't update params
     init_params_nv = True
 
     # Mapping of model_id to a dict of (index, subindex) to SDO object
@@ -39,14 +46,19 @@ class CiA301Config(LoggingMixin):
     _model_dcs = dict()
 
     def __init__(
-        self, address=None, model_id=None, skip_optional_config_values=True
+        self,
+        address=None,
+        model_id=None,
+        name=None,
+        skip_optional_config_values=True,
     ):
         if hasattr(address, "address"):
             self.address = address.address  # Config object passed as address
         else:
             self.address = self.canon_address(address)
         self.model_id = self.format_model_id(model_id)
-        self.params_queue = AsyncParamsQueue()
+        self.name = name or str(self.model_id)
+        self.params_queue = AsyncTaskQueue(self.name)
         self.skip_optional_config_values = skip_optional_config_values
 
     @classmethod
@@ -78,12 +90,19 @@ class CiA301Config(LoggingMixin):
             cls._command_objs[cls.__name__] = cls.command_class()
         return cls._command_objs[cls.__name__]
 
+    def set_name(self, name):
+        self.name = name
+        self.clear_cached_properties()  # reset logging_name etc.
+
     def __str__(self):
         cname = self.__class__.__name__
         return f"{cname}:{self.model_id}@{self.address}".replace(" ", "")
 
     def __repr__(self):
         return f"<{self}>"
+
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("sdos", "config", *args)
 
     #
     # Object dictionary
@@ -166,33 +185,21 @@ class CiA301Config(LoggingMixin):
             **kwargs,
         )
         res = sdo.data_type(res_raw)
-        self.logger.debug(f"upload SDO {sdo} = {res}")
+        self.logger.debug(f"Param upload SDO {sdo} = {res}")
         return res
 
-    def download(
-        self, sdo, val, dry_run=False, force=False, old=None, **kwargs
-    ):
+    def download(self, sdo, val, dry_run=False, force=False, **kwargs):
         # Get SDO object
         sdo = self.sdo(sdo)
-        msg = f"(was {old})" if old is not None else ""
-        if val == old:
-            return  # SDO value already correct
+        val = sdo.data_type(val)
         if not force:
             # Check before setting value to avoid unnecessary NVRAM writes
-            res_raw = self.command().upload(
-                address=self.address,
-                index=sdo.index,
-                subindex=sdo.subindex,
-                datatype=sdo.data_type,
-                **kwargs,
-            )
-            if sdo.data_type(res_raw) == val:
+            if self.upload(sdo, **kwargs) == val:
                 return  # SDO value already correct
-            msg = f"(was {sdo.data_type(res_raw)})"
         if dry_run:
-            self.logger.info(f"Dry run:  download {val} to {sdo} {msg}")
+            self.logger.info(f"Dry run:  Param download {val} = {sdo}")
             return
-        self.logger.info(f"Param download {sdo} = {val} {msg}")
+        self.logger.info(f"Param download {sdo} = {val}")
         self.command().download(
             address=self.address,
             index=sdo.index,
@@ -370,33 +377,55 @@ class CiA301Config(LoggingMixin):
         """
         pass
 
-    def initialize_params(self, restart=False, dry_run=False):
+    def flush_command_queue(self):
+        """Flush the param init queue and clear any errors."""
+        self.params_queue.flush_queue_and_clear_error()
+
+    def enqueue_command(self, method, *args, **kwargs):
+        """Enqueue a command onto the param init queue."""
+        self.params_queue.enqueue(method, *args, **kwargs)
+
+    def initialize_params(self, dry_run=False):
         """
         Asynchronously initialize device params.
 
-        The first time this method is called, or if the `restart` arg is
-        set, it will enqueue device params to be downloaded to the
-        device in a worker thread.  This and following calls (without
-        `restart` set) will return `False` until device params have
-        finished downloading, and then will return `True`.
+        Clear any previous errors and flush any existing queue, then
+        enqueue device params to be downloaded to the device in a worker thread.
 
-        When an offline device comes online, this function should be run
-        (with `restart=True` the first time if device was previously
-        offline) in a cycle until it returns `True` to ensure the device
-        parameters are completely configured.
+        When an offline device comes online, or to clear param init errors, run
+        this function, then watch `param_init_in_progress` until it finishes,
+        and finally assert `param_init_error()` return `None` to ensure all
+        device parameters are completely configured.
         """
-        if restart:
-            # Params haven't been queued up, or need requeuing
-            num_params = len(self.config["param_values"])
-            self.logger.info(f"Queueing {num_params} param updates")
-            self.params_queue.download(
-                self, self.config["param_values"], dry_run=dry_run
-            )
-            return False
-        else:
-            # Params enqueued; waiting on param processing complete
-            complete = self.params_queue.all_cmds_complete()
-            return complete
+        params = self.config["param_values"]
+        if not self.init_params:
+            self.logger.info(f"*NOT* queueing {len(params)} param updates")
+            return
+        self.logger.info(f"Queueing {len(params)} param updates")
+        self.flush_command_queue()
+        for sdo, val in params.items():
+            self.enqueue_command(self.download, sdo, val, dry_run=dry_run)
+
+    @property
+    def param_init_in_progress(self):
+        """Return `False` if params still queued for init."""
+        return not self.params_queue.empty
+
+    def param_init_stop(self):
+        """Stop any ongoing param initialization."""
+        if self.param_init_in_progress:
+            self.logger.info("Stopping param updates")
+            self.params_queue.join()
+
+    @property
+    def param_init_error(self):
+        """
+        Return param init error status.
+
+        If no error, returns `None`.
+        Otherwise, returns a tuple of `(exception, method, args, kwargs)`
+        """
+        return self.params_queue.error
 
     #
     # Scan bus device config factory
@@ -415,7 +444,13 @@ class CiA301Config(LoggingMixin):
                 **kwargs,
             )
             res.append(config)
+            config.logger.info(f"{config} created from bus scan")
         return res
+
+    @classmethod
+    def init_class(cls):
+        """Initialize the config class."""
+        pass
 
 
 class CiA301SimConfig(CiA301Config):
@@ -424,7 +459,8 @@ class CiA301SimConfig(CiA301Config):
     command_class = CiA301SimCommand
 
     @classmethod
-    def init_sim(cls, *, sim_device_data):
+    def init_class(cls, *, sim_device_data, **kwargs):
+        super().init_class(**kwargs)
         assert sim_device_data
         sdo_data = dict()
         for address, data in sim_device_data.items():

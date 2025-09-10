@@ -60,9 +60,11 @@ class MockFixture:
                 attr,
                 # Use m as sentinel object to avoid 1 extra SLOC!
                 PropertyMock(
-                    side_effect=lambda x=m: getattr(self, attr)
-                    if x is m
-                    else setattr(self, attr, x)
+                    side_effect=lambda x=m: (
+                        getattr(self, attr)
+                        if x is m
+                        else setattr(self, attr, x)
+                    )
                 ),
             )
         return m

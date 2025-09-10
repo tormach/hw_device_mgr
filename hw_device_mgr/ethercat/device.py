@@ -62,6 +62,9 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         addr_prefix = re.sub(r"[^0-9]+", self.slug_separator, str(address))
         return addr_prefix.strip(self.slug_separator)
 
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("alias", *args)
+
     @classmethod
     def read_device_sdos_from_esi(cls, LcId="1033"):
         sdo_data = dict()
@@ -105,22 +108,19 @@ class EtherCATDevice(CiA301Device, abc.ABC):
         dcs_data = cls.read_device_dcs_from_esi(LcId=LcId)
         cls.add_device_dcs(dcs_data)
 
-
-class EtherCATSimDevice(EtherCATDevice, CiA301SimDevice):
-    config_class = EtherCATSimConfig
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     @classmethod
-    def init_sim(cls, LcId="1033", **kwargs):
+    def init_class(cls, LcId="1033", **kwargs):
         """
-        Configure device, config, command for sim EtherCAT devices.
+        Configure device, config, command for EtherCAT devices.
 
-        Like parent `CiA301SimDevice.init_sim()`, but parse SDO data
-        from EtherCAT ESI description file and pass with sim device data
-        to parent class's method.
+        Like parent `CiA301Device.init_class()`, but parse SDO data from
+        EtherCAT ESI description file and pass with other kwargs to
+        parent class's method.
         """
         sdo_data = cls.read_device_sdos_from_esi(LcId=LcId)
         dcs_data = cls.read_device_dcs_from_esi(LcId=LcId)
-        super().init_sim(sdo_data=sdo_data, dcs_data=dcs_data, **kwargs)
+        super().init_class(sdo_data=sdo_data, dcs_data=dcs_data, **kwargs)
+
+
+class EtherCATSimDevice(EtherCATDevice, CiA301SimDevice):
+    config_class = EtherCATSimConfig

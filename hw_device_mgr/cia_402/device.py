@@ -25,6 +25,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
     Feedback parameters:
     - `home_success`:  Drive completed homing successfully
     - `home_error`:  Drive reports homing error
+    - `move_setpoint_ack`: Drive acknowledges PP-mode `move_request`
+    - `move_success`: Drive reports PP-mode move succeeded
+    - `following_error`: Drive reports following error in various modes
+    - `velocity_zero`: Drive reports zero speed in PV mode
     """
 
     data_types = CiA301DataType
@@ -48,6 +52,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     home_timeout = 15  # seconds
     move_timeout = 15  # seconds
+    velocity_timeout = 15  # seconds
+    torque_timeout = 15  # seconds
 
     @classmethod
     def control_mode_str(cls, mode):
@@ -80,8 +86,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         REMOTE=9,
         TARGET_REACHED=10,
         INTERNAL_LIMIT_ACTIVE=11,
-        OPERATION_MODE_SPECIFIC_1=12,  # HM=HOMING_ATTAINED, PP=SETPOINT_ACK
-        OPERATION_MODE_SPECIFIC_2=13,  # HM=HOMING_ERROR; others=FOLLOWING_ERROR
+        OPERATION_MODE_SPECIFIC_1=12,  # HM=HOMING_ATTAINED, PP=SETPOINT_ACK, PV=STOPPED, PT=0
+        OPERATION_MODE_SPECIFIC_2=13,  # HM=HOMING_ERROR, PP/CSP=FOLLOWING_ERROR, PV=0, PT=0
         MANUFACTURER_SPECIFIC_2=14,
         MANUFACTURER_SPECIFIC_3=15,
     )
@@ -107,8 +113,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         transition="int8",
         home_success="bit",
         home_error="bit",
+        move_setpoint_ack="bit",
         move_success="bit",
-        move_error="bit",
+        following_error="bit",
+        velocity_zero="bit",
     )
     feedback_out_defaults = dict(
         **feedback_in_defaults,
@@ -116,8 +124,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
         transition=-1,
         home_success=False,
         home_error=False,
+        move_setpoint_ack=False,
         move_success=False,
-        move_error=False,
+        following_error=False,
+        velocity_zero=False,
     )
 
     log_status_word_changes = True
@@ -166,27 +176,37 @@ class CiA402Device(CiA301Device, ErrorDevice):
     def get_feedback_pp(self, sw):
         # Control mode is PP
         if not self.command_in.get("move_request"):
-            self.feedback_out.update(move_success=False, move_error=False)
+            self.feedback_out.update(
+                move_setpoint_ack=False, move_success=False
+            )
             return True, None
         if self.feedback_out.get("state") != "OPERATION ENABLED":
             reason = "Move request while drive not enabled"
             self.feedback_out.update(
+                move_setpoint_ack=False,
                 move_success=False,
-                move_error=True,
                 fault=True,
                 fault_desc=reason,
             )
             return False, reason
 
-        success, error, reason = False, False, None
+        success, reason = False, None
+        sp_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
         if self.test_sw_bit(sw, "TARGET_REACHED"):
             # done bit set
             success = True
         else:
             reason = "move not complete"
 
-        self.feedback_out.update(move_success=success, move_error=error)
+        self.feedback_out.update(move_success=success, move_setpoint_ack=sp_ack)
         return success, reason
+
+    def get_feedback_pv(self, sw):
+        # Control mode is PV
+        self.feedback_out.update(
+            velocity_zero=self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+        )
+        return True, None
 
     def get_feedback_sto(self):
         # Process active STO:  Raise fault on OPERATION ENABLED command
@@ -194,6 +214,12 @@ class CiA402Device(CiA301Device, ErrorDevice):
             # STO inactive (low)
             if self.feedback_in.changed("sto"):  # Log once
                 self.logger.info("STO input inactive")
+            return True, None
+        else:
+            if self.feedback_in.changed("sto"):  # Log once
+                self.logger.info("STO input active")
+
+        if not self.feedback_in.get("oper"):
             return True, None
 
         # STO active (high)
@@ -227,27 +253,43 @@ class CiA402Device(CiA301Device, ErrorDevice):
         fb_out = super().get_feedback()
         fb_in = self.feedback_in
 
-        # If device not operational, set default "START" state
-        if not fb_out.get("oper"):
-            fb_out.update(**self.feedback_out_defaults)
+        # If shutting down, there's nothing to do here
+        if self.command_out.get("shutdown_latch"):
             return fb_out
 
-        # Goal reached, fault var defaults
-        goal_reached = True
-        goal_reasons = list()
-        fault = False
-        fault_desc = ""
+        # Don't clobber lower layer's feedback, but continue managing CiA 402
+        # states even while param init continues
+        goal_reached = fb_out.get("goal_reached")
+        goal_reasons = list() if goal_reached else [fb_out.get("goal_reason")]
+        fault = fb_out.get("fault")
+        fault_desc = fb_out.get("fault_desc")
 
         # Status word, control mode from fb in
         sw = fb_in.get("status_word")
         cm = fb_in.get("control_mode_fb")
         fb_out.update(status_word=sw, control_mode_fb=cm)
         cm_cmd = self.command_in.get("control_mode")
-        if cm != self.MODE_HM and cm != cm_cmd:
+        if cm != cm_cmd and cm != self.MODE_HM:
             goal_reached = False
             cm_str = self.control_mode_str(cm)
             cm_cmd_str = self.control_mode_str(cm_cmd)
             goal_reasons.append(f"control_mode {cm_str} != {cm_cmd_str}")
+
+        # Raise fault if device unexpectedly disabled
+        state_cmd = self.command_in.get("state")
+        if state_cmd == "OPERATION ENABLED":
+            if not self.test_sw_bit(sw, "READY_TO_SWITCH_ON"):
+                fault = True
+                fault_desc = "Enabled drive unexpectedly disabled"
+
+        # Log status word changes
+        if self.log_status_word_changes and fb_out.changed("status_word"):
+            self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
+
+        # If device not yet operational, don't do any more, incl. log faults,
+        # etc.
+        if not fb_out.get("oper"):
+            return fb_out
 
         # Calculate 'state' feedback
         for state, bits in self.state_bits.items():
@@ -264,7 +306,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
             )
         if self._get_next_transition() >= 0:
             goal_reached = False
-            state_cmd = self.command_in.get("state")
             sw = fb_in.get("status_word")
             goal_reasons.append(f"state {state} != {state_cmd}")
             if state_cmd in (
@@ -273,17 +314,10 @@ class CiA402Device(CiA301Device, ErrorDevice):
             ) and not self.test_sw_bit(sw, "VOLTAGE_ENABLED"):
                 fault = True
                 fault_desc = "Enable command while no voltage at motor"
-                goal_reasons.append(fault_desc)
 
-        # Raise fault if device unexpectedly goes offline
-        if self.command_in.get(
-            "state"
-        ) == "OPERATION ENABLED" and not self.test_sw_bit(
-            sw, "READY_TO_SWITCH_ON"
-        ):
-            fault = True
-            fault_desc = "Enabled drive unexpectedly disabled"
-            goal_reasons.append(fault_desc)
+        # Handle `FOLLOWING_ERROR` active
+        ferror = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_2")
+        fb_out.update(following_error=ferror)
 
         # Calculate 'transition' feedback
         new_st, old_st = fb_out.changed("state", return_vals=True)
@@ -298,6 +332,25 @@ class CiA402Device(CiA301Device, ErrorDevice):
         else:
             fb_out.update(transition=-1)
 
+        # Handle STO
+        if self.have_sto:
+            sto_success, sto_reason = self.get_feedback_sto()
+            if not sto_success:
+                goal_reached = False
+                goal_reasons.append(sto_reason)
+
+        # Fault reported by drive
+        if self.test_sw_bit(sw, "FAULT"):
+            fault = True
+            fault_desc = "Drive status word FAULT bit set"
+            if fb_out.get("error_code"):
+                error_code = fb_out.get("error_code")
+                fault_desc += f", code {error_code}"
+                if error_desc := fb_out.get("description"):
+                    fault_desc += f" '{error_desc}'"
+            else:
+                fault_desc += " (no error code)"
+
         # Mode-specific functions
         if cm == self.MODE_HM:
             # Calculate homing status
@@ -311,27 +364,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
             if not pp_success:
                 goal_reached = False
                 goal_reasons.append(pp_reason)
-
-        # Handle STO
-        if self.have_sto:
-            sto_success, sto_reason = self.get_feedback_sto()
-            if not sto_success:
+        elif cm == self.MODE_PV:
+            pv_success, pv_reason = self.get_feedback_pv(sw)
+            if not pv_success:
                 goal_reached = False
-                goal_reasons.append(sto_reason)
-
-        # Fault reported by drive
-        if self.test_sw_bit(sw, "FAULT"):
-            fault = True
-            if fb_out.get("error_code"):
-                error_code = fb_out.get("error_code")
-                error_desc = fb_out.get("description")
-                fault_desc = f"{error_code} {error_desc}"
-            else:
-                fault_desc = "Fault (no error code)"
-            goal_reasons.append(fault_desc)
+                goal_reasons.append(pv_reason)
 
         # If in CiA402 FAULT state, set device fault
-        if self.command_in.get("state") == "FAULT":
+        if state_cmd == "FAULT":
             fault = True
             if not fault_desc:
                 # Recycle previous description if possible
@@ -339,27 +379,20 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 # If FAULT is commanded & no device fault, this will be an empty
                 # string
                 if not fault_desc:
-                    fault_desc = f"FAULT command from controller (was {old_st})"
-                goal_reasons.append(fault_desc)
+                    fault_desc = "FAULT command from controller"
+                    fault_desc += f" (from state {old_st})"
 
         # Update feedback to controller
         if fault:
             fb_out.update(fault=True, fault_desc=fault_desc)
 
-        if self.log_status_word_changes and fb_out.changed("status_word"):
-            sw_old, sw_new = fb_out.changed("status_word", return_vals=True)
-            sw_old &= 0x3FFF
-            sw_new &= 0x3FFF
-            if sw_old != sw_new:
-                self.logger.info(f"status_word:  {self.sw_to_str(sw)}")
-
         if not goal_reached:
+            if fault:
+                # If fault active, nothing to do, goal reached
+                goal_reasons.insert(0, "Fault state reached")
+                goal_reached = True
             goal_reason = "; ".join(goal_reasons)
-            fb_out.update(goal_reached=False, goal_reason=goal_reason)
-            if fb_out.changed("goal_reason"):
-                self.logger.info(f"Goal not reached: {goal_reason}")
-        elif fb_out.changed("goal_reached"):  # Goal just now reached
-            self.logger.info("Goal reached")
+            fb_out.update(goal_reached=goal_reached, goal_reason=goal_reason)
         return fb_out
 
     @classmethod
@@ -403,6 +436,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_request=False,
         move_request=False,
         relative_target=False,
+        quick_stop=False,
     )
     command_in_data_types = dict(
         state="str",
@@ -410,6 +444,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         home_request="bit",
         move_request="bit",
         relative_target="bit",
+        quick_stop="bit",
     )
 
     # ------- Command out -------
@@ -450,7 +485,20 @@ class CiA402Device(CiA301Device, ErrorDevice):
             "READY TO SWITCH ON": ["SWITCHED ON", 3],
             "FAULT": ["SWITCH ON DISABLED", 15],
             "FAULT REACTION ACTIVE": ["FAULT", 14],
-            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
+            "QUICK STOP ACTIVE": ["OPERATION ENABLED", 16],
+        },
+        "QUICK STOP ACTIVE": {
+            # OPERATION ENABLED transition to QUICK STOP ACTIVE & stay there;
+            "OPERATION ENABLED": ["QUICK STOP ACTIVE", 11],
+            "QUICK STOP ACTIVE": ["QUICK STOP ACTIVE", -1],  # End
+            # Otherwise, transition to SWITCH ON DISABLED
+            "START": ["START", 0],
+            "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", 1],
+            "READY TO SWITCH ON": ["SWITCH ON DISABLED", 7],
+            "SWITCHED ON": ["SWITCH ON DISABLED", 10],
+            "FAULT REACTION ACTIVE": ["FAULT", 14],
+            "FAULT": ["SWITCH ON DISABLED", 15],
+            "SWITCH ON DISABLED": ["SWITCH ON DISABLED", -1],  # End
         },
         # These tr'ns take longer from OPERATION ENABLED -> SWITCH ON DISABLED
         # 'OPERATION ENABLED':        ['SWITCHED ON', 5],
@@ -472,10 +520,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
             # Drives in FAULT state remain in that state
             "FAULT REACTION ACTIVE": ["FAULT", 14],
             "FAULT": ["FAULT", -1],  # End state
-            # Drives in OPERATION ENABLED quick stop & disable
-            "OPERATION ENABLED": ["QUICK STOP ACTIVE", 11],
-            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
             # Drives in all other states transition to SWITCH ON DISABLED
+            "OPERATION ENABLED": ["SWITCH ON DISABLED", 9],
+            "QUICK STOP ACTIVE": ["SWITCH ON DISABLED", 12],
             "START": ["NOT READY TO SWITCH ON", 0],
             "NOT READY TO SWITCH ON": ["SWITCH ON DISABLED", 1],
             "SWITCH ON DISABLED": ["SWITCH ON DISABLED", -1],  # End state
@@ -496,14 +543,25 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     def set_command(self, **kwargs):
         cmd_out = super().set_command(**kwargs)
-        if not self.feedback_in.get("oper"):
-            cmd_out.update(**self.command_out_defaults)
+        state_cmd = self.command_in.get("state")
+        if state_cmd == "OPERATION ENABLED":
+            if self.command_in.get("quick_stop"):
+                # Override current command in
+                self.command_in.update(state="QUICK STOP ACTIVE")
+        if self.command_in.changed("state"):
+            self.logger.info(f"CiA 402 state command:  {state_cmd}")
+        if self.command_out.get("shutdown_latch"):
+            return cmd_out
+        if not self.feedback_out.get("oper"):
+            return cmd_out
+        complete = CiA301Device.PARAM_STATE_COMPLETE
+        if self.feedback_out.get("param_state") != complete:
             return cmd_out
         self._get_next_control_mode(cmd_out)
         self._get_next_control_word(cmd_out)
         return cmd_out
 
-    def _check_hm_request(self):
+    def hm_request_cw_flags(self):
         # Check for home request
         home_request = False
         if self.command_in.get("home_request"):
@@ -514,19 +572,18 @@ class CiA402Device(CiA301Device, ErrorDevice):
                 home_request = True
         elif self.command_in.changed("home_request"):  # home_request cleared
             self.logger.info("Homing operation complete")
-        return home_request
+        return dict(OPERATION_MODE_SPECIFIC_1=home_request)
 
-    def _check_pp_request(self):
+    def pp_request_cw_flags(self):
         # Check for move request
         move_request = False
         relative_target = False
         if self.command_in.get("move_request"):
-            if self.command_in.changed("move_request"):
+            if self.command_in.changed("move_request"):  # Rising edge
                 self.logger.info("Move operation requested")
                 move_request = True
-                if self.command_in.get("relative_target"):
-                    self.logger.info("Target position is relative")
-                    relative_target = True
+            # Fast track as long as move_request in effect
+            self.command_out.update(fasttrack=True)
         else:
             # Clear move request unless setpoint ack not set after previous new
             # set point
@@ -537,7 +594,14 @@ class CiA402Device(CiA301Device, ErrorDevice):
             move_request = prev_nsp and not setpoint_ack
             if self.command_in.changed("move_request"):  # move_request cleared
                 self.logger.info("Move operation request cleared")
-        return move_request, relative_target
+        if move_request:
+            if self.command_in.get("relative_target"):
+                self.logger.info("Target position is relative")
+                relative_target = True
+        return dict(
+            OPERATION_MODE_SPECIFIC_1=move_request,
+            OPERATION_MODE_SPECIFIC_3=relative_target,
+        )
 
     @classmethod
     @lru_cache
@@ -565,23 +629,16 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
         # Add flags and return
         next_cm = cmd_out.get("control_mode")
-        operation_mode_specific_3 = False
+        cw_flags = dict(OPERATION_MODE_SPECIFIC_3=False)
         # operation mode specific 3 sets the target to relative position
         # when in PP mode
         if next_cm == self.MODE_HM:
-            operation_mode_specific_1 = self._check_hm_request()
+            cw_flags.update(self.hm_request_cw_flags())
         elif next_cm == self.MODE_PP:
-            (
-                operation_mode_specific_1,
-                operation_mode_specific_3,
-            ) = self._check_pp_request()
+            cw_flags.update(self.pp_request_cw_flags())
         else:
-            operation_mode_specific_1 = False
-        next_cw = self._add_control_word_flags(
-            control_word,
-            OPERATION_MODE_SPECIFIC_1=operation_mode_specific_1,
-            OPERATION_MODE_SPECIFIC_3=operation_mode_specific_3,
-        )
+            cw_flags.update(OPERATION_MODE_SPECIFIC_1=False)
+        next_cw = self._add_control_word_flags(control_word, **cw_flags)
         cmd_out.update(control_word=next_cw)
         if cmd_out.changed("control_word"):
             cw_str = self.cw_to_str(next_cw)
@@ -597,7 +654,7 @@ class CiA402Device(CiA301Device, ErrorDevice):
         "READY TO SWITCH ON": 0x0006,
         "SWITCHED ON": 0x0007,
         "OPERATION ENABLED": 0x000F,
-        "QUICK STOP ACTIVE": None,
+        "QUICK STOP ACTIVE": 0x0002,
         "FAULT REACTION ACTIVE": None,
         "FAULT": 0x0000,  # Anything but 0x0080 will hold state
     }
@@ -657,9 +714,9 @@ class CiA402Device(CiA301Device, ErrorDevice):
         ENABLE_VOLTAGE=1,  # (state machine)
         QUICK_STOP=2,  # (state machine)
         ENABLE_OPERATION=3,  # (state machine) AKA S-ON
-        OPERATION_MODE_SPECIFIC_1=4,  # HM=HOMING_START; PP=NEW_SETPOINT
-        OPERATION_MODE_SPECIFIC_2=5,  # PP=CHANGE_SET_IMMEDIATE
-        OPERATION_MODE_SPECIFIC_3=6,
+        OPERATION_MODE_SPECIFIC_1=4,  # HM=HOMING_START; PP=NEW_SETPOINT; PV=0; PT=0
+        OPERATION_MODE_SPECIFIC_2=5,  # PP=CHANGE_SET_IMMEDIATE; PV=0; PT=0
+        OPERATION_MODE_SPECIFIC_3=6,  # PP=RELATIVE_POS; PV=0; PT=0
         FAULT_RESET=7,  # (state machine)
         HALT=8,
         NA_1=9,
@@ -695,6 +752,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         return cw
 
     def _get_next_transition(self, curr_state=None):
+        if not self.feedback_in.get("oper"):
+            return -1
         return self._get_next_state(curr_state=curr_state, transition=True)
 
     def _get_next_state(self, curr_state=None, transition=False):
@@ -715,7 +774,6 @@ class CiA402Device(CiA301Device, ErrorDevice):
 
     def _get_next_control_mode(self, cmd_out):
         if self.command_in.get("home_request"):
-            # If `home_request` is set, command homing mode
             next_cm = self.MODE_HM
         else:
             # Otherwise, copy control_mode from command_in
@@ -725,6 +783,8 @@ class CiA402Device(CiA301Device, ErrorDevice):
         if cmd_out.changed("control_mode"):
             cm_str = self.control_mode_str(next_cm)
             self.logger.info(f"control_mode:  {cm_str}")
+            old_cm_str = cmd_out.get_old("control_mode")
+            self.logger.info(f"control_mode was:  {old_cm_str}")
 
 
 class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
@@ -739,10 +799,18 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
     feedback_in_data_types = dict(
         position_cmd="float",
         position_fb="float",
+        velocity_cmd="float",
+        velocity_fb="float",
+        torque_cmd="float",
+        torque_fb="float",
     )
     feedback_in_defaults = dict(
         position_cmd=0.0,
         position_fb=0.0,
+        velocity_cmd=0.0,
+        velocity_fb=0.0,
+        torque_cmd=0.0,
+        torque_fb=0.0,
     )
 
     feedback_out_data_types = dict(**feedback_in_data_types)
@@ -759,6 +827,8 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
 
     # diff. btw. pos. cmd + fb to signal target reached
     position_goal_tolerance = 0.01
+    velocity_goal_tolerance = 0.01  # TBD
+    torque_goal_tolerance = 0.01  # TBD
 
     # ------- Sim feedback -------
 
@@ -771,23 +841,37 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
             return dict()
 
     def target_reached(self, sw, cw):
+        control_mode = self.command_out.get("control_mode")
         fb_in = self.interface("feedback_in")
-        setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
-        new_setpoint = self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1")
-        if new_setpoint or setpoint_ack:
-            # Pretend we haven't reached new target before it's even set
-            return False
-        dtg = abs(fb_in.get("position_cmd") - fb_in.get("position_fb"))
-        return dtg < self.position_goal_tolerance
+        if control_mode == self.MODE_PP:
+            setpoint_ack = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+            new_setpoint = self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1")
+            if new_setpoint or setpoint_ack:
+                # Pretend we haven't reached new target before it's even set
+                return False
+            perr = abs(fb_in.get("position_cmd") - fb_in.get("position_fb"))
+            return perr < self.position_goal_tolerance
+        elif control_mode == self.MODE_PV:
+            # zero_speed = self.test_sw_bit(sw, "OPERATION_MODE_SPECIFIC_1")
+            # if zero_speed: ??
+            verr = abs(fb_in.get("velocity_cmd") - fb_in.get("velocity_fb"))
+            return verr < self.velocity_goal_tolerance
+        elif control_mode == self.MODE_PT:
+            terr = abs(fb_in.get("torque_cmd") - fb_in.get("torque_fb"))
+            return terr < self.torque_goal_tolerance
 
-    def set_sim_feedback_pp(self, cw, sw):
+    def set_sim_feedback_ppvt(self, cw, sw):
         # In MODE_PP, cw OPERATION_MODE_SPECIFIC_1 is NEW_SETPOINT cmd, sw
         # OPERATION_MODE_SPECIFIC_1 is SETPOINT_ACKNOWLEDGE fb
         if self.test_cw_bit(cw, "OPERATION_MODE_SPECIFIC_1"):
+            # MODE_PP only:
             # If cw NEW_SETPOINT is set, then set sw SETPOINT_ACKNOWLEDGE
+            self.logger.info("sim SETPOINT_ACKNOWLEDGE set")
             return dict(OPERATION_MODE_SPECIFIC_1=True)
         elif self.target_reached(sw, cw):
-            # Target reached when target position reached
+            # Target reached when target torque/velocity/position reached
+            if not self.test_sw_bit(sw, "TARGET_REACHED"):
+                self.logger.info("sim TARGET_REACHED set")
             return dict(TARGET_REACHED=True)
         else:
             return dict()
@@ -841,10 +925,11 @@ class CiA402SimDevice(CiA402Device, CiA301SimDevice, ErrorSimDevice):
             pass  # Don't update mode-specific flags
         elif control_mode == self.MODE_HM:
             sw_flags.update(self.set_sim_feedback_hm(control_word))
-        elif control_mode == self.MODE_PP:
+        elif control_mode in (self.MODE_PP, self.MODE_PV, self.MODE_PT):
             # Test previous cw because target_reached() looks at fb_in, which is
             # set after command_in
-            sw_flags.update(self.set_sim_feedback_pp(cw_prev, sw_prev))
+            sw_flags.update(self.set_sim_feedback_ppvt(cw_prev, sw_prev))
+
         status_word = self.add_status_word_flags(status_word, **sw_flags)
 
         sfb.update(

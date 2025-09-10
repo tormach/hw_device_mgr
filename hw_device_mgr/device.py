@@ -22,9 +22,16 @@ class Device(LoggingMixin, abc.ABC):
         goal_reason="str",
         fault="bit",
         fault_desc="str",
+        shutdown_complete="bit",
     )
-    command_in_data_types = dict()
-    command_out_data_types = dict()
+    command_in_data_types = dict(
+        reset_fault="bit",
+        shutdown="bit",
+    )
+    command_out_data_types = dict(
+        fasttrack="bit",
+        shutdown_latch="bit",
+    )
 
     feedback_in_defaults = dict()
     feedback_out_defaults = dict(
@@ -32,9 +39,21 @@ class Device(LoggingMixin, abc.ABC):
         goal_reason="Reached",
         fault=False,
         fault_desc="",
+        shutdown_complete=False,
     )
-    command_in_defaults = dict()
-    command_out_defaults = dict()
+    command_in_defaults = dict(
+        reset_fault=False,
+        shutdown=False,
+    )
+    command_out_defaults = dict(
+        fasttrack=False,
+        shutdown_latch=False,
+    )
+
+    feedback_in_overlap = set()
+    feedback_out_overlap = set()
+    command_in_overlap = set()
+    command_out_overlap = set()
 
     interface_names = {
         "feedback_in",
@@ -44,6 +63,9 @@ class Device(LoggingMixin, abc.ABC):
     }
 
     goal_reached_timeout = 10  # seconds
+
+    def clear_cached_properties(self, *args):
+        super().clear_cached_properties("addr_slug", *args)
 
     @classmethod
     def canon_address(cls, address):
@@ -55,8 +77,9 @@ class Device(LoggingMixin, abc.ABC):
         self.address = self.canon_address(address)
         self._timeout = None
 
+    @cached_property
     def logging_name(self):
-        return f"{self.category}.{self}"
+        return self.__str__()
 
     def init(self):
         """
@@ -73,18 +96,21 @@ class Device(LoggingMixin, abc.ABC):
         pass
 
     @classmethod
-    def merge_dict_attrs(cls, attr):
+    def merge_dict_attrs(cls, name, attr_suff):
         """
         Merge `dict` attributes across class hierarchy.
 
         Scan through class and parent classes for `attr`, a `dict`, and
         return merged `dict`.
         """
+        attr = f"{name}_{attr_suff}"
+        overlap_allowed = getattr(cls, f"{name}_overlap")
         res = dict()
-        for c in cls.__mro__:
+        for c in reversed(cls.__mro__):
             c_attr = c.__dict__.get(attr, dict())
-            # Overlap not allowed
-            assert not (set(res.keys()) & set(c_attr.keys()))
+            # Overlap strictly controlled
+            overlap = set(res.keys()) & set(c_attr.keys())
+            assert not (overlap - overlap_allowed)
             res.update(c_attr)
         return res
 
@@ -107,11 +133,11 @@ class Device(LoggingMixin, abc.ABC):
         intfs = self._interfaces = dict()
         dt_name2cls = self.data_type_class.by_shared_name
         for name in self.interface_names:
-            defaults = self.merge_dict_attrs(f"{name}_defaults")
+            defaults = self.merge_dict_attrs(name, "defaults")
             for k, v in defaults.items():
                 if isinstance(v, dict):
                     defaults[k] = v.copy()
-            dt_names = self.merge_dict_attrs(f"{name}_data_types")
+            dt_names = self.merge_dict_attrs(name, "data_types")
             data_types = {k: dt_name2cls(v) for k, v in dt_names.items()}
             intfs[name] = self.interface_class(name, defaults, data_types)
 
@@ -125,15 +151,6 @@ class Device(LoggingMixin, abc.ABC):
             raise AttributeError(f"'{cname}' object has no attribute '{name}'")
         return self._interfaces[name]
 
-    def set_interface(self, what, **kwargs):
-        self._interfaces[what].set(**kwargs)
-
-    def update_interface(self, what, **kwargs):
-        self._interfaces[what].update(**kwargs)
-
-    def interface_changed(self, what, key, return_vals=False):
-        return self._interfaces[what].changed(key, return_vals=return_vals)
-
     def read(self):
         """Read `feedback_in` from hardware interface."""
         self._interfaces["feedback_in"].set()
@@ -146,7 +163,20 @@ class Device(LoggingMixin, abc.ABC):
         fb_out.set(**fb_in)
         if timeout:
             fb_out.update(fault=True, fault_desc=timeout)
+        if self.command_out.get("shutdown_latch"):
+            fb_out.update(shutdown_complete=True)  # Higher levels may correct
         return fb_out
+
+    def log_goal_reached(self):
+        """Log whether goal is reached and if not, why; don't spam."""
+        fb_out = self._interfaces["feedback_out"]
+        if not fb_out.changed("goal_reason"):
+            return
+        reason = fb_out.get("goal_reason")
+        if fb_out.get("goal_reached"):
+            self.logger.info(f"Goal reached:  {reason}")
+        else:
+            self.logger.info(f"Goal not reached:  {reason}")
 
     def check_and_set_timeout(self):
         """Set fault if feedback_out goal_reached is False for too long."""
@@ -181,9 +211,19 @@ class Device(LoggingMixin, abc.ABC):
 
     def set_command(self, **kwargs) -> Interface:
         """Process `command_in` and return `command_out` interface."""
-        self._interfaces["command_in"].set(**kwargs)
-        self._interfaces["command_out"].set()  # Set defaults
-        return self._interfaces["command_out"]
+        cmd_in = self._interfaces["command_in"]
+        cmd_out = self._interfaces["command_out"]
+        cmd_in.set(**kwargs)
+        cmd_out.set()
+        if cmd_in.get("shutdown") or cmd_out.get("shutdown_latch"):
+            # Incoming shutdown command latches
+            cmd_out.update(shutdown_latch=True)
+            if cmd_out.rising_edge("shutdown_latch"):
+                self.logger.info("Commanding drive shutdown")
+        elif cmd_in.get("reset_fault"):
+            if cmd_in.rising_edge("reset_fault"):
+                self.logger.info("Reset fault command")
+        return cmd_out
 
     def write(self):
         """Write `command_out` to hardware interface."""
@@ -291,6 +331,11 @@ class Device(LoggingMixin, abc.ABC):
         assert name in model_registry, f"{name} not in {model_registry}"
         return model_registry[name]
 
+    @classmethod
+    def init_class(cls):
+        """Initialize device classes."""
+        pass
+
     ########################################
     # Device identifier registry and instance factory
 
@@ -383,6 +428,7 @@ class Device(LoggingMixin, abc.ABC):
 class SimDevice(Device):
     sim_feedback_data_types = dict()
     sim_feedback_defaults = dict()
+    sim_feedback_overlap = set()
 
     interface_names = {
         "feedback_in",
@@ -403,7 +449,7 @@ class SimDevice(Device):
         return cls.canon_address(sim_device_data["address"])
 
     @classmethod
-    def init_sim(cls, /, sim_device_data):
+    def init_class(cls, *, sim_device_data, **kwargs):
         """
         Create sim device objects for tests.
 
@@ -425,6 +471,7 @@ class SimDevice(Device):
             cls_sim_data[address] = {**dev, **updates}
 
         assert cls_sim_data
+        super().init_class(**kwargs)
 
     @classmethod
     def scan_devices(cls, **kwargs):
@@ -451,5 +498,5 @@ class SimDevice(Device):
 
     def write(self):
         """Write `command_out` to hardware interface."""
-        super().write()
         self.set_sim_feedback()
+        super().write()

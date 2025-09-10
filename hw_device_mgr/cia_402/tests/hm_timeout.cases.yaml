@@ -18,6 +18,10 @@
     control_mode_fb:  8
     position_cmd:  0.0
     position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     sto:  False
     error_code:  0x00000000
   feedback_out:
@@ -35,22 +39,35 @@
     goal_reached:  True
     goal_reason:  Reached
     move_success:  False
-    move_error:  False
+    velocity_zero:  False
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
+    following_error:  False
+    move_setpoint_ack: False
     position_cmd:  0.0
     position_fb:  0.0
     sto:  False
     error_code:  0x00000000
     description:  No error
     fault_desc: ""
+    shutdown_complete:  False
   command_in:
     state:  OPERATION ENABLED
     control_mode:  8
+    reset_fault: False
     home_request:  True
     move_request:  False
     relative_target:  False
+    shutdown:  False
+    quick_stop: False
   command_out:
     control_word:  0x000F
     control_mode:  6
+    init_params:  False
+    fasttrack:  False
+    shutdown_latch:  False
   sim_feedback:
     online:  True
     oper:  True
@@ -58,6 +75,10 @@
     control_mode_fb:  6
     position_cmd:  0.0
     position_fb:  0.0
+    velocity_cmd:  0
+    velocity_fb:  0
+    torque_cmd:  0
+    torque_fb:  0
     sto:  False
     error_code:  0x00000000
 
@@ -87,12 +108,14 @@
     # Timeout treated as fault
     fault:  True
     fault_desc:  "Timeout (15s):  homing not complete"
+    goal_reason:  Fault state reached; homing not complete
+    goal_reached:  True
   command_in:
     state:  FAULT
     home_request:  False
   command_out:
-    control_word:  0x0002  # QUICK STOP ACTIVE
+    control_word:  0x0000  # SWITCH ON DISABLED
     control_mode:  8  # MODE_CSP
   sim_feedback:
-    status_word:  0x0017  # QUICK_STOP_ACTIVE + VOLTAGE_ENABLED - HOMING_START
+    status_word:  0x0050  # SWITCH ON DISABLED + VOLTAGE_ENABLED - HOMING_START
     control_mode_fb:  8  # MODE_CSP
